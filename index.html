@@ -342,6 +342,9 @@
 </div>
 <div class="toast" id="toast"></div>
 
+<!-- Audio element for actual playback -->
+<audio id="audioPlayer" preload="metadata"></audio>
+
 <script>
 (function() {
   'use strict';
@@ -414,7 +417,8 @@
     expShow: $('expShow'), expPlay: $('expPlay'), expPlayIcon: $('expPlayIcon'),
     expCur: $('expCur'), expDur: $('expDur'), expBar: $('expBar'), expFill: $('expFill'),
     modal: $('modal'), fUrl: $('fUrl'), fName: $('fName'), fCat: $('fCat'), fSubmit: $('fSubmit'),
-    toast: $('toast'), searchInput: $('searchInput')
+    toast: $('toast'), searchInput: $('searchInput'),
+    audio: $('audioPlayer')
   };
   
   // === UTILS ===
@@ -572,17 +576,40 @@
 
   // Get image from itunes:image element (has href attribute)
   const getItunesImage = (parent) => {
-    // Try itunes:image first
-    let elements = parent.getElementsByTagName('itunes:image');
-    if (elements.length > 0) {
-      const href = elements[0].getAttribute('href');
-      if (href) return href;
-    }
+    // iTunes namespace URI
+    const itunesNS = 'http://www.itunes.com/dtds/podcast-1.0.dtd';
 
-    // Try just 'image' with href attribute
-    elements = parent.getElementsByTagName('image');
-    for (let i = 0; i < elements.length; i++) {
-      const href = elements[i].getAttribute('href');
+    // Try getElementsByTagNameNS with iTunes namespace
+    try {
+      let elements = parent.getElementsByTagNameNS(itunesNS, 'image');
+      if (elements.length > 0) {
+        const href = elements[0].getAttribute('href');
+        if (href) return href;
+      }
+    } catch(e) {}
+
+    // Try itunes:image with colon
+    try {
+      let elements = parent.getElementsByTagName('itunes:image');
+      if (elements.length > 0) {
+        const href = elements[0].getAttribute('href');
+        if (href) return href;
+      }
+    } catch(e) {}
+
+    // Try wildcard namespace with local name 'image'
+    try {
+      const elements = parent.getElementsByTagNameNS('*', 'image');
+      for (let i = 0; i < elements.length; i++) {
+        const href = elements[i].getAttribute('href');
+        if (href) return href;
+      }
+    } catch(e) {}
+
+    // Try just 'image' elements with href attribute
+    const imageEls = parent.getElementsByTagName('image');
+    for (let i = 0; i < imageEls.length; i++) {
+      const href = imageEls[i].getAttribute('href');
       if (href) return href;
     }
 
@@ -995,10 +1022,10 @@
       }
       el.podcastContent.innerHTML = `
         ${inProgress.length ? `<div class="section"><div class="section-header"><div class="section-title">Continue Listening</div></div><div class="episode-list">${inProgress.map(renderEpisode).join('')}</div></div>` : ''}
-        <div class="section"><div class="section-header"><div class="section-title">Your Shows</div></div><div class="shows-grid">${shows.map(s => `<div class="show-card" data-show="${s.id}"><img class="show-art" src="${s.image || 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22%231a1a1a%22 width=%22100%22 height=%22100%22/><text x=%2250%22 y=%2260%22 text-anchor=%22middle%22 font-size=%2240%22>🎙️</text></svg>'}"><div class="show-name">${s.name}</div><div class="show-author">${s.author || ''}</div></div>`).join('')}</div></div>
+        <div class="section"><div class="section-header"><div class="section-title">Your Shows</div></div><div class="shows-grid">${shows.map(s => `<div class="show-card" data-show="${s.id}"><img class="show-art" src="${s.image || placeholderImg}" onerror="this.src='${placeholderImg}'"><div class="show-name">${s.name}</div><div class="show-author">${s.author || ''}</div></div>`).join('')}</div></div>
         ${state.podcasts.length ? `<div class="section"><div class="section-header"><div class="section-title">Recent Episodes</div></div><div class="episode-list">${state.podcasts.slice(0, 6).map(renderEpisode).join('')}</div></div>` : ''}`;
     } else if (state.tab === 'shows') {
-      el.podcastContent.innerHTML = `<div class="section"><div class="section-header"><div class="section-title">All Shows</div><button class="add-btn" onclick="document.getElementById('tPodcast').click();document.getElementById('modal').classList.add('active')">+</button></div><div class="shows-grid">${shows.map(s => `<div class="show-card" data-show="${s.id}"><img class="show-art" src="${s.image}"><div class="show-name">${s.name}</div><div class="show-author">${s.author || ''}</div></div>`).join('')}</div></div>`;
+      el.podcastContent.innerHTML = `<div class="section"><div class="section-header"><div class="section-title">All Shows</div><button class="add-btn" onclick="document.getElementById('tPodcast').click();document.getElementById('modal').classList.add('active')">+</button></div><div class="shows-grid">${shows.map(s => `<div class="show-card" data-show="${s.id}"><img class="show-art" src="${s.image || placeholderImg}" onerror="this.src='${placeholderImg}'"><div class="show-name">${s.name}</div><div class="show-author">${s.author || ''}</div></div>`).join('')}</div></div>`;
     } else if (state.tab === 'queue') {
       el.podcastContent.innerHTML = `<div class="section"><div class="section-header"><div class="section-title">Up Next</div></div>${state.podcasts.length ? `<div class="episode-list">${state.podcasts.slice(0, 10).map(renderEpisode).join('')}</div>` : '<div class="empty"><div class="empty-icon">📋</div><div class="empty-title">Queue empty</div></div>'}</div>`;
     } else if (state.tab === 'downloads') {
@@ -1006,13 +1033,17 @@
     }
   };
   
+  // Placeholder SVG for broken images
+  const placeholderImg = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="#1a1a1a" width="100" height="100"/><text x="50" y="60" text-anchor="middle" font-size="40">🎙️</text></svg>');
+
   const renderEpisode = ep => {
     const show = state.feeds.find(f => f.id === ep.feedId);
     const pr = state.progress[ep.id] || 0;
     const pct = ep.duration ? (pr / ep.duration) * 100 : 0;
     const rem = ep.duration - pr;
     const done = pr >= ep.duration * 0.95;
-    return `<div class="episode" data-ep="${ep.id}"><img class="episode-art" src="${ep.image || show?.image}"><div class="episode-body"><div class="episode-show">${show?.name || ''}</div><div class="episode-title">${ep.title}</div><div class="episode-footer"><button class="ep-play" data-ep="${ep.id}"><svg width="10" height="10" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button><div class="ep-progress"><div class="ep-bar"><div class="ep-fill" style="width:${pct}%"></div></div><span class="ep-time">${done ? 'Played' : pr > 0 ? fmt(rem) + ' left' : fmt(ep.duration)}</span></div><button class="ep-dl ${ep.downloaded ? 'active' : ''}" data-dl="${ep.id}"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg></button></div></div></div>`;
+    const imgSrc = ep.image || show?.image || placeholderImg;
+    return `<div class="episode" data-ep="${ep.id}"><img class="episode-art" src="${imgSrc}" onerror="this.src='${placeholderImg}'"><div class="episode-body"><div class="episode-show">${show?.name || ''}</div><div class="episode-title">${ep.title}</div><div class="episode-footer"><button class="ep-play" data-ep="${ep.id}"><svg width="10" height="10" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button><div class="ep-progress"><div class="ep-bar"><div class="ep-fill" style="width:${pct}%"></div></div><span class="ep-time">${done ? 'Played' : pr > 0 ? fmt(rem) + ' left' : fmt(ep.duration)}</span></div><button class="ep-dl ${ep.downloaded ? 'active' : ''}" data-dl="${ep.id}"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg></button></div></div></div>`;
   };
   
   const renderShowPage = id => {
@@ -1022,7 +1053,7 @@
     const eps = state.podcasts.filter(p => p.feedId === id);
     el.podcastContent.style.display = 'none';
     el.showPage.classList.add('active');
-    el.showPage.innerHTML = `<div class="show-hero"><img class="show-hero-art" src="${show.image}"><div class="show-hero-info"><div class="show-hero-type">Podcast</div><div class="show-hero-title">${show.name}</div><div class="show-hero-author">${show.author || ''}</div></div></div><div class="show-actions"><button class="show-play" data-show="${id}"><svg width="22" height="22" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button></div><div class="show-episodes"><div class="show-episodes-title">Episodes</div><div class="episode-list">${eps.map(renderEpisode).join('')}</div></div>`;
+    el.showPage.innerHTML = `<div class="show-hero"><img class="show-hero-art" src="${show.image || placeholderImg}" onerror="this.src='${placeholderImg}'"><div class="show-hero-info"><div class="show-hero-type">Podcast</div><div class="show-hero-title">${show.name}</div><div class="show-hero-author">${show.author || ''}</div></div></div><div class="show-actions"><button class="show-play" data-show="${id}"><svg width="22" height="22" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button></div><div class="show-episodes"><div class="show-episodes-title">Episodes</div><div class="episode-list">${eps.map(renderEpisode).join('')}</div></div>`;
   };
   
   // === PLAYER ===
@@ -1031,8 +1062,11 @@
     const ep = state.currentEp, show = state.feeds.find(f => f.id === ep.feedId);
     const pr = state.progress[ep.id] || 0, pct = ep.duration ? (pr / ep.duration) * 100 : 0;
     el.player.classList.add('active');
-    el.playerArt.src = ep.image || show?.image || '';
-    el.expArt.src = ep.image || show?.image || '';
+    const artSrc = ep.image || show?.image || placeholderImg;
+    el.playerArt.src = artSrc;
+    el.playerArt.onerror = () => { el.playerArt.src = placeholderImg; };
+    el.expArt.src = artSrc;
+    el.expArt.onerror = () => { el.expArt.src = placeholderImg; };
     el.playerTitle.textContent = ep.title;
     el.playerShow.textContent = show?.name || '';
     el.expTitle.textContent = ep.title;
@@ -1049,66 +1083,148 @@
     el.pSpeed.textContent = state.speed + 'x';
   };
   
-  let playInt = null, progStart = 0;
-  
+  let progStart = 0;
+
+  // Audio event handlers
+  el.audio.addEventListener('timeupdate', () => {
+    if (!state.currentEp) return;
+    const cur = el.audio.currentTime;
+    state.progress[state.currentEp.id] = cur;
+
+    // Log progress every 30 seconds
+    if (cur - progStart >= 30) {
+      Mem.log('playback_progress', 'ep_' + state.currentEp.id, { from: progStart, to: cur });
+      progStart = cur;
+    }
+    updatePlayer();
+  });
+
+  el.audio.addEventListener('ended', () => {
+    if (state.currentEp) {
+      Mem.log('episode_completed', 'ep_' + state.currentEp.id);
+      state.progress[state.currentEp.id] = state.currentEp.duration;
+    }
+    state.playing = false;
+    save();
+    updatePlayer();
+  });
+
+  el.audio.addEventListener('pause', () => {
+    state.playing = false;
+    updatePlayer();
+  });
+
+  el.audio.addEventListener('play', () => {
+    state.playing = true;
+    updatePlayer();
+  });
+
+  el.audio.addEventListener('loadedmetadata', () => {
+    if (state.currentEp) {
+      // Update duration from audio if available
+      if (el.audio.duration && !isNaN(el.audio.duration)) {
+        state.currentEp.duration = el.audio.duration;
+      }
+      // Seek to saved position
+      const savedPos = state.progress[state.currentEp.id] || 0;
+      if (savedPos > 0 && savedPos < el.audio.duration) {
+        el.audio.currentTime = savedPos;
+      }
+    }
+    updatePlayer();
+  });
+
+  el.audio.addEventListener('error', (e) => {
+    console.error('Audio error:', e);
+    toast('Error loading audio. Try again.');
+    state.playing = false;
+    updatePlayer();
+  });
+
+  // Save progress periodically
+  setInterval(() => {
+    if (state.currentEp && state.playing) {
+      save();
+    }
+  }, 10000);
+
   const playEp = id => {
     const ep = state.podcasts.find(p => p.id === id);
     if (!ep) return;
-    if (state.currentEp && state.currentEp.id !== id) Mem.log('episode_exited', 'ep_' + state.currentEp.id, { pos: state.progress[state.currentEp.id] || 0 });
+    if (!ep.audioUrl) {
+      toast('No audio URL for this episode');
+      return;
+    }
+
+    if (state.currentEp && state.currentEp.id !== id) {
+      Mem.log('episode_exited', 'ep_' + state.currentEp.id, { pos: state.progress[state.currentEp.id] || 0 });
+    }
+
     state.currentEp = ep;
-    state.playing = true;
     const pr = state.progress[id] || 0;
     if (pr > 0) Mem.log('returned_to_episode', 'ep_' + id, { prev_pos: pr });
     Mem.log('play_pressed', 'ep_' + id, { pos: pr });
+
+    progStart = pr;
+
+    // Set audio source and play
+    if (el.audio.src !== ep.audioUrl) {
+      el.audio.src = ep.audioUrl;
+      el.audio.load();
+    }
+    el.audio.playbackRate = state.speed;
+    el.audio.play().catch(e => {
+      console.error('Playback failed:', e);
+      toast('Playback failed. Check audio source.');
+    });
+
+    state.playing = true;
     updatePlayer();
-    startPlay();
   };
-  
+
   const togglePlay = () => {
     if (!state.currentEp) return;
-    state.playing = !state.playing;
     const pr = state.progress[state.currentEp.id] || 0;
-    Mem.log(state.playing ? 'play_pressed' : 'pause_pressed', 'ep_' + state.currentEp.id, { pos: pr });
-    state.playing ? startPlay() : stopPlay();
-    updatePlayer();
+
+    if (state.playing) {
+      el.audio.pause();
+      Mem.log('pause_pressed', 'ep_' + state.currentEp.id, { pos: pr });
+    } else {
+      el.audio.play().catch(e => {
+        console.error('Playback failed:', e);
+        toast('Playback failed');
+      });
+      Mem.log('play_pressed', 'ep_' + state.currentEp.id, { pos: pr });
+    }
   };
-  
+
   const seekTo = pos => {
     if (!state.currentEp) return;
     const prev = state.progress[state.currentEp.id] || 0;
-    const p = Math.max(0, Math.min(state.currentEp.duration, pos));
+    const duration = el.audio.duration || state.currentEp.duration;
+    const p = Math.max(0, Math.min(duration, pos));
     Mem.log('seek', 'ep_' + state.currentEp.id, { from: prev, to: p });
+    el.audio.currentTime = p;
     state.progress[state.currentEp.id] = p;
-    save(); updatePlayer();
+    save();
+    updatePlayer();
   };
-  
-  const skip = s => { if (state.currentEp) seekTo((state.progress[state.currentEp.id] || 0) + s); };
-  
+
+  const skip = s => {
+    if (state.currentEp) {
+      seekTo(el.audio.currentTime + s);
+    }
+  };
+
   const cycleSpeed = () => {
     const sp = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
     const i = sp.indexOf(state.speed);
     const prev = state.speed;
     state.speed = sp[(i + 1) % sp.length];
+    el.audio.playbackRate = state.speed;
     Mem.log('speed_changed', 'settings', { speed: state.speed, prev });
     updatePlayer();
   };
-  
-  const startPlay = () => {
-    stopPlay();
-    if (!state.currentEp) return;
-    progStart = state.progress[state.currentEp.id] || 0;
-    playInt = setInterval(() => {
-      if (!state.playing || !state.currentEp) { stopPlay(); return; }
-      const cur = state.progress[state.currentEp.id] || 0;
-      const next = Math.min(state.currentEp.duration, cur + state.speed);
-      state.progress[state.currentEp.id] = next;
-      if (next - progStart >= 30) { Mem.log('playback_progress', 'ep_' + state.currentEp.id, { from: progStart, to: next }); progStart = next; }
-      if (next >= state.currentEp.duration * 0.95) { Mem.log('episode_completed', 'ep_' + state.currentEp.id); state.playing = false; stopPlay(); }
-      updatePlayer(); save();
-    }, 1000);
-  };
-  
-  const stopPlay = () => { if (playInt) { clearInterval(playInt); playInt = null; } };
   
   // === EVENTS ===
   document.querySelector('.main-toggle').onclick = e => {
