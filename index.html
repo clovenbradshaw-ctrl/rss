@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>BURSST</title>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -514,9 +515,9 @@
     <button class="hamburger" id="hamburgerBtn"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
     <div class="logo">BU<span class="logo-rss">RSS</span>T</div>
     <div class="main-toggle">
-      <button class="toggle-btn" data-view="all"><span>📚</span><span>All</span></button>
-      <button class="toggle-btn" data-view="news"><span>📰</span><span>News</span></button>
-      <button class="toggle-btn active" data-view="podcasts"><span>🎧</span><span>Podcasts</span></button>
+      <button class="toggle-btn" data-view="all"><span><i class="ph ph-books"></i></span><span>All</span></button>
+      <button class="toggle-btn" data-view="news"><span><i class="ph ph-newspaper"></i></span><span>News</span></button>
+      <button class="toggle-btn active" data-view="podcasts"><span><i class="ph ph-headphones"></i></span><span>Podcasts</span></button>
     </div>
     <div class="spacer"></div>
     <div class="search-box">
@@ -630,7 +631,7 @@
         <img class="expanded-art" id="expArt" src="">
         <div class="swipe-indicator" id="swipeIndicator">
           <div class="swipe-indicator-content">
-            <div class="swipe-indicator-icon" id="swipeIcon">⏪</div>
+            <div class="swipe-indicator-icon" id="swipeIcon"><i class="ph ph-rewind"></i></div>
             <div class="swipe-indicator-text" id="swipeText">-15s</div>
             <div class="swipe-indicator-label" id="swipeLabel">Rewind</div>
           </div>
@@ -673,8 +674,8 @@
       <div class="form-group"><label class="form-label">Creator / Author</label><input type="text" class="form-input" id="fAuthor" placeholder="Auto-detected from feed..."></div>
       <div class="form-group"><label class="form-label">Type</label>
         <div class="type-sel">
-          <button class="type-btn active" id="tNews"><span class="icon">📰</span><span class="label">News</span></button>
-          <button class="type-btn" id="tPodcast"><span class="icon">🎙️</span><span class="label">Podcast</span></button>
+          <button class="type-btn active" id="tNews"><span class="icon"><i class="ph ph-newspaper"></i></span><span class="label">News</span></button>
+          <button class="type-btn" id="tPodcast"><span class="icon"><i class="ph ph-microphone-stage"></i></span><span class="label">Podcast</span></button>
         </div>
       </div>
       <div class="form-group"><label class="form-label">Category</label><input type="text" class="form-input" id="fCat" placeholder="Tech, News..."></div>
@@ -1626,8 +1627,8 @@
   // === RENDER NEWS ===
   const renderNewsSources = () => {
     const news = state.feeds.filter(f => f.type === 'news');
-    el.newsSources.innerHTML = `<div class="source-item ${!state.selectedSource && !state.currentSourcePage ? 'active' : ''}" data-id="all"><div class="source-icon">📚</div><div class="source-name">All Sources</div></div>` +
-      news.map(f => `<div class="source-item ${state.currentSourcePage === f.id ? 'active' : ''}" data-id="${f.id}"><div class="source-icon">${f.image ? `<img src="${f.image}">` : '📰'}</div><div class="source-name">${f.name}</div>${f.unread ? `<span class="source-badge">${f.unread}</span>` : ''}<span class="source-arrow">→</span></div>`).join('');
+    el.newsSources.innerHTML = `<div class="source-item ${!state.selectedSource && !state.currentSourcePage ? 'active' : ''}" data-id="all"><div class="source-icon"><i class="ph ph-books"></i></div><div class="source-name">All Sources</div></div>` +
+      news.map(f => `<div class="source-item ${state.currentSourcePage === f.id ? 'active' : ''}" data-id="${f.id}"><div class="source-icon">${f.image ? `<img src="${f.image}">` : '<i class="ph ph-newspaper"></i>'}</div><div class="source-name">${f.name}</div>${f.unread ? `<span class="source-badge">${f.unread}</span>` : ''}<span class="source-arrow">→</span></div>`).join('');
   };
   
   const renderCategories = () => {
@@ -1644,12 +1645,12 @@
     if (!items.length) {
       const hasFeeds = state.feeds.filter(f => f.type === 'news').length > 0;
       el.newsList.innerHTML = hasFeeds
-        ? '<div class="empty"><div class="empty-icon">📭</div><div class="empty-title">No articles found</div><div style="color:var(--text3);margin-top:8px">Try refreshing your feeds</div></div>'
-        : '<div class="empty"><div class="empty-icon">📡</div><div class="empty-title">No news feeds yet</div><div style="color:var(--text3);margin-top:8px">Click + to add your first RSS feed</div></div>';
+        ? '<div class="empty"><div class="empty-icon"><i class="ph ph-tray"></i></div><div class="empty-title">No articles found</div><div style="color:var(--text3);margin-top:8px">Try refreshing your feeds</div></div>'
+        : '<div class="empty"><div class="empty-icon"><i class="ph ph-broadcast"></i></div><div class="empty-title">No news feeds yet</div><div style="color:var(--text3);margin-top:8px">Click + to add your first RSS feed</div></div>';
       return;
     }
     
-    el.newsList.innerHTML = items.map(i => `<div class="article ${i.unread ? 'unread' : ''}" data-id="${i.id}"><div class="article-icon">${i.feed?.image ? `<img src="${i.feed.image}">` : '📄'}</div><div class="article-body"><div class="article-meta"><span class="article-source">${i.feed?.name || ''}</span><span class="article-time">· ${i.time}</span>${i.unread ? '<span class="article-new">NEW</span>' : ''}</div><div class="article-title">${i.title}</div>${i.summary ? `<div class="article-summary">${i.summary}</div>` : ''}</div>${i.image ? `<img class="article-image" src="${i.image}">` : ''}</div>`).join('');
+    el.newsList.innerHTML = items.map(i => `<div class="article ${i.unread ? 'unread' : ''}" data-id="${i.id}"><div class="article-icon">${i.feed?.image ? `<img src="${i.feed.image}">` : '<i class="ph ph-article"></i>'}</div><div class="article-body"><div class="article-meta"><span class="article-source">${i.feed?.name || ''}</span><span class="article-time">· ${i.time}</span>${i.unread ? '<span class="article-new">NEW</span>' : ''}</div><div class="article-title">${i.title}</div>${i.summary ? `<div class="article-summary">${i.summary}</div>` : ''}</div>${i.image ? `<img class="article-image" src="${i.image}">` : ''}</div>`).join('');
   };
   
   // === RENDER PODCASTS ===
@@ -1663,7 +1664,7 @@
     
     if (state.tab === 'home') {
       if (!shows.length) {
-        el.podcastContent.innerHTML = '<div class="empty" style="padding-top:80px"><div class="empty-icon">🎙️</div><div class="empty-title">No podcasts yet</div><div style="color:var(--text3);margin-top:8px">Click + to add your first podcast feed</div></div>';
+        el.podcastContent.innerHTML = '<div class="empty" style="padding-top:80px"><div class="empty-icon"><i class="ph ph-microphone-stage"></i></div><div class="empty-title">No podcasts yet</div><div style="color:var(--text3);margin-top:8px">Click + to add your first podcast feed</div></div>';
         return;
       }
       el.podcastContent.innerHTML = `
@@ -1673,14 +1674,14 @@
     } else if (state.tab === 'shows') {
       el.podcastContent.innerHTML = `<div class="section"><div class="section-header"><div class="section-title">All Shows</div><button class="add-btn" onclick="document.getElementById('tPodcast').click();document.getElementById('modal').classList.add('active')">+</button></div><div class="shows-grid">${shows.map(s => `<div class="show-card" data-show="${s.id}"><img class="show-art" src="${s.image || placeholderImg}" onerror="this.src='${placeholderImg}'"><div class="show-name">${s.name}</div><div class="show-author">${s.author || ''}</div></div>`).join('')}</div></div>`;
     } else if (state.tab === 'queue') {
-      el.podcastContent.innerHTML = `<div class="section"><div class="section-header"><div class="section-title">Up Next</div></div>${state.podcasts.length ? `<div class="episode-list">${state.podcasts.slice(0, 10).map(renderEpisode).join('')}</div>` : '<div class="empty"><div class="empty-icon">📋</div><div class="empty-title">Queue empty</div></div>'}</div>`;
+      el.podcastContent.innerHTML = `<div class="section"><div class="section-header"><div class="section-title">Up Next</div></div>${state.podcasts.length ? `<div class="episode-list">${state.podcasts.slice(0, 10).map(renderEpisode).join('')}</div>` : '<div class="empty"><div class="empty-icon"><i class="ph ph-queue"></i></div><div class="empty-title">Queue empty</div></div>'}</div>`;
     } else if (state.tab === 'downloads') {
-      el.podcastContent.innerHTML = `<div class="section"><div class="section-header"><div class="section-title">Downloads</div></div>${downloaded.length ? `<div class="episode-list">${downloaded.map(renderEpisode).join('')}</div>` : '<div class="empty"><div class="empty-icon">⬇️</div><div class="empty-title">No downloads</div></div>'}</div>`;
+      el.podcastContent.innerHTML = `<div class="section"><div class="section-header"><div class="section-title">Downloads</div></div>${downloaded.length ? `<div class="episode-list">${downloaded.map(renderEpisode).join('')}</div>` : '<div class="empty"><div class="empty-icon"><i class="ph ph-download-simple"></i></div><div class="empty-title">No downloads</div></div>'}</div>`;
     }
   };
   
   // Placeholder SVG for broken images
-  const placeholderImg = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="#1a1a1a" width="100" height="100"/><text x="50" y="60" text-anchor="middle" font-size="40">🎙️</text></svg>');
+  const placeholderImg = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="#1a1a1a" width="100" height="100"/><path d="M50 20c-5.5 0-10 4.5-10 10v20c0 5.5 4.5 10 10 10s10-4.5 10-10V30c0-5.5-4.5-10-10-10zm20 30c0 11-9 20-20 20s-20-9-20-20h-5c0 13.3 10.1 24.2 23 25.7V85h4V75.7c12.9-1.5 23-12.4 23-25.7h-5z" fill="#666" transform="translate(0,5)"/></svg>');
 
   const renderEpisode = ep => {
     const show = state.feeds.find(f => f.id === ep.feedId);
@@ -1725,7 +1726,7 @@
   // Render article in different view modes
   const renderArticleCard = (article, feed) => `
     <div class="article-card ${article.unread ? 'unread' : ''}" data-id="${article.id}">
-      ${article.image ? `<img class="article-card-image" src="${article.image}" onerror="this.style.display='none'">` : '<div class="article-card-image" style="background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:32px">📄</div>'}
+      ${article.image ? `<img class="article-card-image" src="${article.image}" onerror="this.style.display='none'">` : '<div class="article-card-image" style="background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:32px"><i class="ph ph-article"></i></div>'}
       <div class="article-card-body">
         <div class="article-card-meta">
           <span class="article-card-source">${feed?.name || ''}</span>
@@ -1799,7 +1800,7 @@
 
   // Render articles content based on view mode
   const renderArticlesContent = (articles, viewMode, sourceId) => {
-    if (!articles.length) return '<div class="empty"><div class="empty-icon">📭</div><div class="empty-title">No articles found</div></div>';
+    if (!articles.length) return '<div class="empty"><div class="empty-icon"><i class="ph ph-tray"></i></div><div class="empty-title">No articles found</div></div>';
 
     switch (viewMode) {
       case 'cards':
@@ -1811,14 +1812,14 @@
       default: // list
         return `<div class="news-list-view">${articles.map(a => {
           const feed = state.feeds.find(f => f.id === a.feedId);
-          return `<div class="article ${a.unread ? 'unread' : ''}" data-id="${a.id}"><div class="article-icon">${feed?.image ? `<img src="${feed.image}">` : '📄'}</div><div class="article-body"><div class="article-meta"><span class="article-source">${feed?.name || ''}</span><span class="article-time">· ${a.time}</span>${a.unread ? '<span class="article-new">NEW</span>' : ''}</div><div class="article-title">${a.title}</div>${a.summary ? `<div class="article-summary">${a.summary}</div>` : ''}</div>${a.image ? `<img class="article-image" src="${a.image}">` : ''}</div>`;
+          return `<div class="article ${a.unread ? 'unread' : ''}" data-id="${a.id}"><div class="article-icon">${feed?.image ? `<img src="${feed.image}">` : '<i class="ph ph-article"></i>'}</div><div class="article-body"><div class="article-meta"><span class="article-source">${feed?.name || ''}</span><span class="article-time">· ${a.time}</span>${a.unread ? '<span class="article-new">NEW</span>' : ''}</div><div class="article-title">${a.title}</div>${a.summary ? `<div class="article-summary">${a.summary}</div>` : ''}</div>${a.image ? `<img class="article-image" src="${a.image}">` : ''}</div>`;
         }).join('')}</div>`;
     }
   };
 
   // Render episodes content based on view mode
   const renderEpisodesContent = (episodes, viewMode) => {
-    if (!episodes.length) return '<div class="empty"><div class="empty-icon">🎧</div><div class="empty-title">No episodes found</div></div>';
+    if (!episodes.length) return '<div class="empty"><div class="empty-icon"><i class="ph ph-headphones"></i></div><div class="empty-title">No episodes found</div></div>';
 
     switch (viewMode) {
       case 'cards':
@@ -1915,7 +1916,7 @@
   // === RENDER ALL ===
   const renderAllItem = (item, type) => {
     const feed = state.feeds.find(f => f.id === item.feedId);
-    const icon = feed?.image ? `<img src="${feed.image}">` : (type === 'podcast' ? '🎧' : '📰');
+    const icon = feed?.image ? `<img src="${feed.image}">` : (type === 'podcast' ? '<i class="ph ph-headphones"></i>' : '<i class="ph ph-newspaper"></i>');
     const summary = type === 'podcast' ? item.desc : item.summary;
     const image = item.image || feed?.image;
     return `<div class="all-item" data-type="${type}" data-id="${item.id}">
@@ -1937,9 +1938,9 @@
     const feed = state.feeds.find(f => f.id === item.feedId);
     const summary = type === 'podcast' ? item.desc : item.summary;
     const image = item.image || feed?.image;
-    const icon = type === 'podcast' ? '🎧' : '📰';
+    const icon = type === 'podcast' ? '<i class="ph ph-headphones"></i>' : '<i class="ph ph-newspaper"></i>';
     return `<div class="all-card" data-type="${type}" data-id="${item.id}">
-      <div class="all-card-image">${image ? `<img src="${image}" onerror="this.parentElement.innerHTML='${icon}'">` : icon}</div>
+      <div class="all-card-image">${image ? `<img src="${image}" onerror="this.parentElement.innerHTML=\`${icon}\`">` : icon}</div>
       <div class="all-card-body">
         <div class="all-card-meta">
           <span class="all-card-type">${type}</span>
@@ -2009,8 +2010,8 @@
     if (!allItems.length) {
       const hasFeeds = state.feeds.length > 0;
       el.allContent.innerHTML = hasFeeds
-        ? '<div class="empty"><div class="empty-icon">📭</div><div class="empty-title">No content found</div><div style="color:var(--text3);margin-top:8px">Try refreshing your feeds</div></div>'
-        : '<div class="empty"><div class="empty-icon">📡</div><div class="empty-title">No feeds yet</div><div style="color:var(--text3);margin-top:8px">Click + to add your first feed</div></div>';
+        ? '<div class="empty"><div class="empty-icon"><i class="ph ph-tray"></i></div><div class="empty-title">No content found</div><div style="color:var(--text3);margin-top:8px">Try refreshing your feeds</div></div>'
+        : '<div class="empty"><div class="empty-icon"><i class="ph ph-broadcast"></i></div><div class="empty-title">No feeds yet</div><div style="color:var(--text3);margin-top:8px">Click + to add your first feed</div></div>';
       return;
     }
 
@@ -2018,7 +2019,7 @@
     el.allContent.innerHTML = `
       <div class="all-section">
         <div class="all-section-header">
-          <div class="all-section-title">📚 All Content</div>
+          <div class="all-section-title"><i class="ph ph-books"></i> All Content</div>
           ${renderViewOptions('all', viewMode)}
         </div>
         ${renderAllContent(allItems.slice(0, 50), viewMode)}
@@ -2290,7 +2291,7 @@
     el.swipeIndicator.classList.toggle('forward', !isRewind);
 
     if (seekAmount > 0) {
-      el.swipeIcon.textContent = isRewind ? '⏪' : '⏩';
+      el.swipeIcon.innerHTML = isRewind ? '<i class="ph ph-rewind"></i>' : '<i class="ph ph-fast-forward"></i>';
       el.swipeText.textContent = (isRewind ? '-' : '+') + seekAmount + 's';
       el.swipeLabel.textContent = isRewind ? 'Rewind' : 'Forward';
     }
@@ -2666,7 +2667,7 @@
           <div class="drawer-section-title">Podcasts</div>
           ${podcasts.map(f => `
             <div class="drawer-item" data-type="podcast" data-id="${f.id}">
-              <div class="drawer-item-icon">${f.image ? `<img src="${f.image}">` : '🎙️'}</div>
+              <div class="drawer-item-icon">${f.image ? `<img src="${f.image}">` : '<i class="ph ph-microphone-stage"></i>'}</div>
               <span class="drawer-item-name">${f.name}</span>
             </div>
           `).join('')}
@@ -2677,7 +2678,7 @@
           <div class="drawer-section-title">News Sources</div>
           ${news.map(f => `
             <div class="drawer-item" data-type="news" data-id="${f.id}">
-              <div class="drawer-item-icon">${f.image ? `<img src="${f.image}">` : '📰'}</div>
+              <div class="drawer-item-icon">${f.image ? `<img src="${f.image}">` : '<i class="ph ph-newspaper"></i>'}</div>
               <span class="drawer-item-name">${f.name}</span>
               ${f.unread ? `<span class="drawer-item-badge">${f.unread}</span>` : ''}
             </div>
@@ -2687,11 +2688,11 @@
       <div class="drawer-section">
         <div class="drawer-section-title">Quick Actions</div>
         <div class="drawer-item" id="drawerAddFeed">
-          <div class="drawer-item-icon">➕</div>
+          <div class="drawer-item-icon"><i class="ph ph-plus"></i></div>
           <span class="drawer-item-name">Add Feed</span>
         </div>
         <div class="drawer-item" id="drawerRefresh">
-          <div class="drawer-item-icon">🔄</div>
+          <div class="drawer-item-icon"><i class="ph ph-arrows-clockwise"></i></div>
           <span class="drawer-item-name">Refresh All</span>
         </div>
       </div>
