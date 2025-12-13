@@ -291,7 +291,18 @@
     .expanded-skip:hover { background: var(--bg3); }
     .expanded-play { width: 56px; height: 56px; border-radius: 50%; background: var(--text); border: none; color: var(--bg); cursor: pointer; display: flex; align-items: center; justify-content: center; }
     .expanded-play:hover { background: var(--green); }
-    
+
+    /* Swipe Seeking */
+    .swipe-container { position: relative; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+    .swipe-indicator { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.7); border-radius: 10px; opacity: 0; pointer-events: none; transition: opacity 0.15s; }
+    .swipe-indicator.active { opacity: 1; }
+    .swipe-indicator-content { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+    .swipe-indicator-icon { font-size: 32px; color: var(--text); }
+    .swipe-indicator-text { font-size: 28px; font-weight: 700; color: var(--text); }
+    .swipe-indicator-label { font-size: 12px; color: var(--text2); text-transform: uppercase; letter-spacing: 1px; }
+    .swipe-indicator.rewind .swipe-indicator-icon { color: var(--green); }
+    .swipe-indicator.forward .swipe-indicator-icon { color: var(--green); }
+
     /* Modal */
     .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.75); display: none; align-items: center; justify-content: center; z-index: 300; }
     .modal.active { display: flex; }
@@ -426,7 +437,16 @@
       <div style="width:44px"></div>
     </div>
     <div class="expanded-body">
-      <img class="expanded-art" id="expArt" src="">
+      <div class="swipe-container" id="swipeContainer">
+        <img class="expanded-art" id="expArt" src="">
+        <div class="swipe-indicator" id="swipeIndicator">
+          <div class="swipe-indicator-content">
+            <div class="swipe-indicator-icon" id="swipeIcon">⏪</div>
+            <div class="swipe-indicator-text" id="swipeText">-15s</div>
+            <div class="swipe-indicator-label" id="swipeLabel">Rewind</div>
+          </div>
+        </div>
+      </div>
       <div class="expanded-info">
         <div class="expanded-title" id="expTitle"></div>
         <div class="expanded-show" id="expShow"></div>
@@ -554,6 +574,8 @@
     expanded: $('expanded'), expArt: $('expArt'), expTitle: $('expTitle'),
     expShow: $('expShow'), expPlay: $('expPlay'), expPlayIcon: $('expPlayIcon'),
     expCur: $('expCur'), expDur: $('expDur'), expBar: $('expBar'), expFill: $('expFill'),
+    swipeContainer: $('swipeContainer'), swipeIndicator: $('swipeIndicator'),
+    swipeIcon: $('swipeIcon'), swipeText: $('swipeText'), swipeLabel: $('swipeLabel'),
     modal: $('modal'), fUrl: $('fUrl'), fName: $('fName'), fAuthor: $('fAuthor'), fCat: $('fCat'),
     fFetch: $('fFetch'), fStatus: $('fStatus'), fSubmit: $('fSubmit'),
     toast: $('toast'), searchInput: $('searchInput'),
@@ -1678,7 +1700,129 @@
     Mem.log('speed_changed', 'settings', { speed: state.speed, prev });
     updatePlayer();
   };
-  
+
+  // === SWIPE SEEKING ===
+  // Swipe on cover art to seek: right = rewind, left = forward
+  // Short swipe = 5s, medium = 15s, long = 30s, very long = 60s
+  const swipeState = {
+    active: false,
+    startX: 0,
+    startY: 0,
+    currentX: 0,
+    seekAmount: 0
+  };
+
+  const getSeekAmount = (distance) => {
+    const absDistance = Math.abs(distance);
+    if (absDistance < 30) return 0;      // Dead zone
+    if (absDistance < 80) return 5;      // Short swipe: 5s
+    if (absDistance < 150) return 15;    // Medium swipe: 15s
+    if (absDistance < 250) return 30;    // Long swipe: 30s
+    return 60;                            // Very long swipe: 60s
+  };
+
+  const triggerHaptic = (intensity = 'light') => {
+    if ('vibrate' in navigator) {
+      const patterns = { light: 10, medium: 25, heavy: 50 };
+      navigator.vibrate(patterns[intensity] || 10);
+    }
+  };
+
+  const updateSwipeIndicator = (distance, seekAmount) => {
+    if (!el.swipeIndicator) return;
+
+    const isRewind = distance > 0;  // Right swipe = rewind
+
+    el.swipeIndicator.classList.toggle('active', seekAmount > 0);
+    el.swipeIndicator.classList.toggle('rewind', isRewind);
+    el.swipeIndicator.classList.toggle('forward', !isRewind);
+
+    if (seekAmount > 0) {
+      el.swipeIcon.textContent = isRewind ? '⏪' : '⏩';
+      el.swipeText.textContent = (isRewind ? '-' : '+') + seekAmount + 's';
+      el.swipeLabel.textContent = isRewind ? 'Rewind' : 'Forward';
+    }
+  };
+
+  const handleSwipeStart = (e) => {
+    if (!state.currentEp) return;
+
+    const touch = e.touches ? e.touches[0] : e;
+    swipeState.active = true;
+    swipeState.startX = touch.clientX;
+    swipeState.startY = touch.clientY;
+    swipeState.currentX = touch.clientX;
+    swipeState.seekAmount = 0;
+  };
+
+  const handleSwipeMove = (e) => {
+    if (!swipeState.active || !state.currentEp) return;
+
+    const touch = e.touches ? e.touches[0] : e;
+    const deltaX = touch.clientX - swipeState.startX;
+    const deltaY = touch.clientY - swipeState.startY;
+
+    // Ignore if vertical swipe is dominant (allow scrolling)
+    if (Math.abs(deltaY) > Math.abs(deltaX) * 1.5) return;
+
+    // Prevent default to stop scrolling during horizontal swipe
+    if (Math.abs(deltaX) > 20) {
+      e.preventDefault();
+    }
+
+    swipeState.currentX = touch.clientX;
+    const newSeekAmount = getSeekAmount(deltaX);
+
+    // Haptic feedback when crossing thresholds
+    if (newSeekAmount !== swipeState.seekAmount && newSeekAmount > 0) {
+      triggerHaptic(newSeekAmount >= 30 ? 'medium' : 'light');
+    }
+
+    swipeState.seekAmount = newSeekAmount;
+    updateSwipeIndicator(deltaX, newSeekAmount);
+  };
+
+  const handleSwipeEnd = (e) => {
+    if (!swipeState.active) return;
+
+    const deltaX = swipeState.currentX - swipeState.startX;
+    const seekAmount = swipeState.seekAmount;
+
+    if (seekAmount > 0 && state.currentEp) {
+      const direction = deltaX > 0 ? -1 : 1;  // Right = rewind (negative), Left = forward (positive)
+      const seekSeconds = direction * seekAmount;
+
+      skip(seekSeconds);
+      triggerHaptic('medium');
+      Mem.log('swipe_seek', 'ep_' + state.currentEp.id, {
+        direction: deltaX > 0 ? 'rewind' : 'forward',
+        amount: seekAmount,
+        swipeDistance: Math.abs(deltaX)
+      });
+    }
+
+    // Reset state
+    swipeState.active = false;
+    swipeState.seekAmount = 0;
+    updateSwipeIndicator(0, 0);
+  };
+
+  // Attach swipe handlers to the artwork container
+  if (el.swipeContainer) {
+    el.swipeContainer.addEventListener('touchstart', handleSwipeStart, { passive: true });
+    el.swipeContainer.addEventListener('touchmove', handleSwipeMove, { passive: false });
+    el.swipeContainer.addEventListener('touchend', handleSwipeEnd, { passive: true });
+    el.swipeContainer.addEventListener('touchcancel', handleSwipeEnd, { passive: true });
+
+    // Mouse support for desktop testing
+    el.swipeContainer.addEventListener('mousedown', handleSwipeStart);
+    el.swipeContainer.addEventListener('mousemove', (e) => {
+      if (swipeState.active) handleSwipeMove(e);
+    });
+    el.swipeContainer.addEventListener('mouseup', handleSwipeEnd);
+    el.swipeContainer.addEventListener('mouseleave', handleSwipeEnd);
+  }
+
   // === EVENTS ===
   document.querySelector('.main-toggle').onclick = e => {
     const btn = e.target.closest('.toggle-btn');
