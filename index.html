@@ -80,6 +80,24 @@
     .chip:hover { background: rgba(255,255,255,0.08); color: var(--text); border-color: var(--border2); }
     .chip.active { background: var(--blue); border-color: var(--blue); color: #fff; box-shadow: 0 2px 8px rgba(59,130,246,0.3); }
 
+    /* Tag Filter Styles */
+    .tag-filter-section { padding: 12px 24px; border-bottom: 1px solid var(--border2); background: var(--bg2); }
+    .tag-filter-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .tag-filter-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text3); }
+    .tag-chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+    .tag-chips::-webkit-scrollbar { display: none; }
+    .tag-chip { padding: 6px 12px; background: var(--bg4); border: 1px solid var(--border2); border-radius: 16px; color: var(--text2); font-size: 12px; font-weight: 500; cursor: pointer; white-space: nowrap; font-family: inherit; transition: all 0.2s ease-out; display: flex; align-items: center; gap: 5px; }
+    .tag-chip:hover { background: rgba(255,255,255,0.08); color: var(--text); border-color: var(--border2); }
+    .tag-chip.active { background: var(--blue); border-color: var(--blue); color: #fff; box-shadow: 0 2px 8px rgba(59,130,246,0.3); }
+    .tag-chip .tag-icon { font-size: 12px; }
+    .tag-chip .tag-count { background: rgba(0,0,0,0.2); padding: 2px 6px; border-radius: 10px; font-size: 10px; margin-left: 2px; }
+    .tag-chip.active .tag-count { background: rgba(255,255,255,0.2); }
+
+    /* Item Tags Display */
+    .item-tags { display: flex; gap: 4px; margin-top: 6px; flex-wrap: wrap; }
+    .item-tag { font-size: 10px; padding: 3px 8px; background: var(--bg4); border-radius: 8px; color: var(--text3); display: flex; align-items: center; gap: 4px; }
+    .item-tag-icon { font-size: 10px; }
+
     .news-list { flex: 1; overflow-y: auto; padding: 16px 24px 120px; }
     .article { display: flex; gap: 16px; padding: 20px; background: var(--bg3); border-radius: 16px; margin-bottom: 12px; cursor: pointer; border: 1px solid var(--border2); transition: all 0.2s ease-out; }
     .article:hover { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.15); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
@@ -539,6 +557,12 @@
           <div class="news-title" id="newsTitle">All Articles</div>
           <div class="category-chips" id="categoryChips"></div>
         </div>
+        <div class="tag-filter-section" id="tagFilterSection">
+          <div class="tag-filter-header">
+            <span class="tag-filter-title">Filter by Topic</span>
+          </div>
+          <div class="tag-chips" id="tagChips"></div>
+        </div>
         <div class="news-list" id="newsList"></div>
       </div>
       <div class="source-page" id="sourcePage"></div>
@@ -730,25 +754,119 @@
 (function() {
   'use strict';
   
-  // === MEMORY SYSTEM ===
+  // === MEMORY & USER BEHAVIOR SYSTEM ===
+  // Comprehensive tracking system for user behavior that can sync to API
   const Mem = {
     pending: [],
     session: 's_' + Date.now(),
     endpoint: null,
+    syncInterval: null,
 
     log(action, target, data = {}) {
-      const m = { id: 'm_' + Date.now() + '_' + Math.random().toString(36).substr(2,4), ts: new Date().toISOString(), action, target, session: this.session, ctx: { view: state.view, tab: state.tab }, ...data };
+      const m = {
+        id: 'm_' + Date.now() + '_' + Math.random().toString(36).substr(2,4),
+        ts: new Date().toISOString(),
+        action,
+        target,
+        session: this.session,
+        ctx: { view: state.view, tab: state.tab },
+        ...data
+      };
       this.pending.push(m);
-      try { const a = JSON.parse(localStorage.getItem('mem') || '[]'); a.push(m); if (a.length > 500) a.splice(0, a.length - 500); localStorage.setItem('mem', JSON.stringify(a)); } catch(e) {}
+      try {
+        const a = JSON.parse(localStorage.getItem('mem') || '[]');
+        a.push(m);
+        if (a.length > 1000) a.splice(0, a.length - 1000);
+        localStorage.setItem('mem', JSON.stringify(a));
+      } catch(e) {}
       this.sync();
     },
+
     sync() {
       if (!this.endpoint || !this.pending.length) return;
-      const t = [...this.pending]; this.pending = [];
-      fetch(this.endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ memories: t }) }).catch(() => this.pending = [...t, ...this.pending]);
+      const t = [...this.pending];
+      this.pending = [];
+      fetch(this.endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          memories: t,
+          session: this.session,
+          timestamp: new Date().toISOString()
+        })
+      }).catch(() => this.pending = [...t, ...this.pending]);
     },
-    setEndpoint(u) { this.endpoint = u; this.sync(); },
-    getLocal() { try { return JSON.parse(localStorage.getItem('mem') || '[]'); } catch(e) { return []; } }
+
+    setEndpoint(u) {
+      this.endpoint = u;
+      // Start periodic sync every 30 seconds if endpoint is set
+      if (this.syncInterval) clearInterval(this.syncInterval);
+      if (u) {
+        this.syncInterval = setInterval(() => this.sync(), 30000);
+      }
+      this.sync();
+    },
+
+    getLocal() {
+      try { return JSON.parse(localStorage.getItem('mem') || '[]'); }
+      catch(e) { return []; }
+    },
+
+    // Get aggregated behavior stats
+    getStats() {
+      const logs = this.getLocal();
+      const stats = {
+        totalEvents: logs.length,
+        sessions: [...new Set(logs.map(l => l.session))].length,
+        articleReads: logs.filter(l => l.action === 'article_opened').length,
+        episodePlays: logs.filter(l => l.action === 'play_pressed').length,
+        searches: logs.filter(l => l.action === 'search').length,
+        tagFilters: logs.filter(l => l.action === 'tag_filter_changed').length,
+        byAction: {},
+        byTag: {}
+      };
+
+      // Count by action type
+      logs.forEach(l => {
+        stats.byAction[l.action] = (stats.byAction[l.action] || 0) + 1;
+      });
+
+      // Count tag filter usage
+      logs.filter(l => l.action === 'tag_filter_changed').forEach(l => {
+        const tag = l.target?.replace('tag_', '') || 'unknown';
+        stats.byTag[tag] = (stats.byTag[tag] || 0) + 1;
+      });
+
+      return stats;
+    },
+
+    // Clear all local logs
+    clear() {
+      localStorage.removeItem('mem');
+      this.pending = [];
+    },
+
+    // Export all behavior data for API sync
+    exportForSync() {
+      return {
+        logs: this.getLocal(),
+        stats: this.getStats(),
+        feeds: state.feeds.map(f => ({
+          id: f.id,
+          name: f.name,
+          type: f.type,
+          tags: f.tags,
+          category: f.category
+        })),
+        preferences: {
+          viewPrefs: state.viewPrefs,
+          bookmarks: Object.keys(state.bookmarks).length,
+          progress: Object.keys(state.progress).length
+        },
+        session: this.session,
+        exportedAt: new Date().toISOString()
+      };
+    }
   };
   window.Memory = Mem;
 
@@ -821,6 +939,197 @@
   // Track ongoing downloads
   const downloadProgress = {}; // { episodeId: { progress: 0-100, status: 'downloading'|'done'|'error' } }
   
+  // === CONTENT TAGS TAXONOMY ===
+  // Comprehensive tag system for auto-categorizing content
+  const CONTENT_TAGS = {
+    // News Categories
+    technology: {
+      label: 'Technology',
+      icon: '💻',
+      keywords: ['tech', 'technology', 'software', 'hardware', 'programming', 'code', 'developer', 'app', 'startup', 'silicon valley', 'ai', 'artificial intelligence', 'machine learning', 'robotics', 'cyber', 'digital', 'computer', 'internet', 'web', 'mobile', 'gadget', 'innovation', 'blockchain', 'crypto', 'cloud', 'data', 'algorithm', 'api', 'devops', 'saas', 'fintech', 'techcrunch', 'wired', 'verge', 'ars technica', 'hacker', 'github', 'open source']
+    },
+    business: {
+      label: 'Business',
+      icon: '💼',
+      keywords: ['business', 'economy', 'market', 'stock', 'invest', 'finance', 'entrepreneur', 'startup', 'company', 'corporate', 'trade', 'commerce', 'industry', 'ceo', 'executive', 'revenue', 'profit', 'wall street', 'nasdaq', 'dow', 'earnings', 'merger', 'acquisition', 'ipo', 'venture capital', 'forbes', 'bloomberg', 'wsj', 'financial times', 'economist']
+    },
+    politics: {
+      label: 'Politics',
+      icon: '🏛️',
+      keywords: ['politics', 'political', 'government', 'election', 'congress', 'senate', 'parliament', 'president', 'minister', 'democrat', 'republican', 'liberal', 'conservative', 'policy', 'legislation', 'vote', 'campaign', 'poll', 'diplomacy', 'foreign policy', 'washington', 'capitol', 'white house', 'politico', 'axios']
+    },
+    science: {
+      label: 'Science',
+      icon: '🔬',
+      keywords: ['science', 'research', 'study', 'scientist', 'discovery', 'experiment', 'physics', 'chemistry', 'biology', 'astronomy', 'space', 'nasa', 'climate', 'environment', 'nature', 'evolution', 'genetics', 'quantum', 'laboratory', 'scientific american', 'new scientist', 'phys.org']
+    },
+    health: {
+      label: 'Health',
+      icon: '🏥',
+      keywords: ['health', 'medical', 'medicine', 'doctor', 'hospital', 'disease', 'treatment', 'therapy', 'wellness', 'fitness', 'nutrition', 'diet', 'mental health', 'psychology', 'vaccine', 'pharmaceutical', 'fda', 'cdc', 'healthcare', 'patient', 'diagnosis', 'symptom']
+    },
+    entertainment: {
+      label: 'Entertainment',
+      icon: '🎬',
+      keywords: ['entertainment', 'movie', 'film', 'tv', 'television', 'show', 'series', 'celebrity', 'actor', 'actress', 'music', 'album', 'concert', 'streaming', 'netflix', 'disney', 'hollywood', 'box office', 'award', 'oscar', 'emmy', 'grammy', 'variety', 'deadline', 'ign', 'gamespot']
+    },
+    sports: {
+      label: 'Sports',
+      icon: '⚽',
+      keywords: ['sports', 'football', 'soccer', 'basketball', 'baseball', 'hockey', 'tennis', 'golf', 'olympics', 'nfl', 'nba', 'mlb', 'nhl', 'fifa', 'espn', 'athlete', 'team', 'league', 'championship', 'tournament', 'game', 'score', 'player', 'coach']
+    },
+    gaming: {
+      label: 'Gaming',
+      icon: '🎮',
+      keywords: ['gaming', 'game', 'video game', 'playstation', 'xbox', 'nintendo', 'steam', 'pc gaming', 'esports', 'twitch', 'streamer', 'fps', 'rpg', 'mmorpg', 'indie game', 'gamer', 'console', 'gameplay', 'kotaku', 'polygon', 'ign']
+    },
+    world: {
+      label: 'World News',
+      icon: '🌍',
+      keywords: ['world', 'international', 'global', 'foreign', 'abroad', 'overseas', 'europe', 'asia', 'africa', 'middle east', 'latin america', 'united nations', 'un', 'eu', 'nato', 'bbc', 'reuters', 'ap news', 'afp', 'al jazeera']
+    },
+    finance: {
+      label: 'Finance',
+      icon: '📈',
+      keywords: ['finance', 'money', 'banking', 'investment', 'trading', 'forex', 'cryptocurrency', 'bitcoin', 'ethereum', 'defi', 'personal finance', 'savings', 'retirement', 'mortgage', 'loan', 'credit', 'portfolio', 'dividend', 'bond', 'mutual fund', 'etf']
+    },
+    education: {
+      label: 'Education',
+      icon: '📚',
+      keywords: ['education', 'learning', 'school', 'university', 'college', 'student', 'teacher', 'course', 'curriculum', 'academic', 'research', 'study', 'degree', 'scholarship', 'online learning', 'mooc', 'tutorial', 'lecture']
+    },
+    lifestyle: {
+      label: 'Lifestyle',
+      icon: '✨',
+      keywords: ['lifestyle', 'fashion', 'travel', 'food', 'cooking', 'recipe', 'home', 'interior', 'design', 'beauty', 'style', 'wellness', 'self-care', 'hobby', 'diy', 'craft', 'garden', 'pet']
+    },
+
+    // Podcast Categories
+    truecrime: {
+      label: 'True Crime',
+      icon: '🔍',
+      keywords: ['true crime', 'murder', 'mystery', 'investigation', 'detective', 'crime', 'serial killer', 'cold case', 'forensic', 'criminal', 'unsolved', 'case file', 'dateline', 'criminal podcast']
+    },
+    comedy: {
+      label: 'Comedy',
+      icon: '😂',
+      keywords: ['comedy', 'funny', 'humor', 'joke', 'laugh', 'comedian', 'standup', 'improv', 'sketch', 'satire', 'parody', 'hilarious']
+    },
+    interview: {
+      label: 'Interviews',
+      icon: '🎤',
+      keywords: ['interview', 'conversation', 'talk', 'chat', 'discussion', 'guest', 'host', 'q&a', 'dialogue', 'joe rogan', 'lex fridman', 'marc maron', 'tim ferriss']
+    },
+    history: {
+      label: 'History',
+      icon: '📜',
+      keywords: ['history', 'historical', 'ancient', 'medieval', 'war', 'civilization', 'empire', 'revolution', 'documentary', 'dan carlin', 'hardcore history']
+    },
+    selfhelp: {
+      label: 'Self-Help',
+      icon: '🧘',
+      keywords: ['self-help', 'self help', 'improvement', 'motivation', 'productivity', 'mindfulness', 'meditation', 'habits', 'success', 'mindset', 'growth', 'personal development', 'life coaching']
+    },
+    storytelling: {
+      label: 'Storytelling',
+      icon: '📖',
+      keywords: ['story', 'storytelling', 'narrative', 'fiction', 'audio drama', 'serial', 'this american life', 'radiolab', 'moth', 'tale', 'anthology']
+    },
+    news_daily: {
+      label: 'Daily News',
+      icon: '📰',
+      keywords: ['daily', 'news', 'briefing', 'morning', 'update', 'headlines', 'today', 'current events', 'the daily', 'up first', 'news roundup']
+    },
+    culture: {
+      label: 'Culture',
+      icon: '🎭',
+      keywords: ['culture', 'society', 'social', 'cultural', 'art', 'literature', 'philosophy', 'ideas', 'think', 'debate', 'discourse', 'cultural commentary']
+    }
+  };
+
+  // Get all tag keys for iteration
+  const TAG_KEYS = Object.keys(CONTENT_TAGS);
+
+  // === FUZZY MATCHING FOR AUTO-TAGGING ===
+  // Advanced fuzzy matcher that scores content against tag keywords
+  const calculateTagScore = (text, tag) => {
+    if (!text || !tag) return 0;
+    const textLower = text.toLowerCase();
+    const keywords = CONTENT_TAGS[tag]?.keywords || [];
+    let score = 0;
+    let matches = 0;
+
+    for (const keyword of keywords) {
+      const keywordLower = keyword.toLowerCase();
+      if (textLower.includes(keywordLower)) {
+        // Longer keyword matches are worth more
+        const weight = keyword.length > 10 ? 3 : keyword.length > 5 ? 2 : 1;
+        score += weight;
+        matches++;
+      }
+    }
+
+    // Bonus for multiple matches
+    if (matches > 2) score *= 1.5;
+    if (matches > 5) score *= 2;
+
+    return score;
+  };
+
+  // Auto-detect tags for a feed based on its metadata
+  const autoDetectFeedTags = (feed, feedContent = '') => {
+    const textToAnalyze = [
+      feed.name || '',
+      feed.author || '',
+      feed.description || '',
+      feed.category || '',
+      feed.url || '',
+      feedContent
+    ].join(' ').toLowerCase();
+
+    const tagScores = [];
+    for (const tagKey of TAG_KEYS) {
+      const score = calculateTagScore(textToAnalyze, tagKey);
+      if (score > 0) {
+        tagScores.push({ tag: tagKey, score });
+      }
+    }
+
+    // Sort by score descending and take top 3
+    tagScores.sort((a, b) => b.score - a.score);
+    return tagScores.slice(0, 3).map(t => t.tag);
+  };
+
+  // Auto-detect tags for an individual content item (article/episode)
+  const autoDetectItemTags = (item, feedTags = []) => {
+    const textToAnalyze = [
+      item.title || '',
+      item.summary || item.desc || '',
+    ].join(' ').toLowerCase();
+
+    const tagScores = [];
+    for (const tagKey of TAG_KEYS) {
+      let score = calculateTagScore(textToAnalyze, tagKey);
+      // Give bonus if feed already has this tag
+      if (feedTags.includes(tagKey)) score *= 1.5;
+      if (score > 0) {
+        tagScores.push({ tag: tagKey, score });
+      }
+    }
+
+    tagScores.sort((a, b) => b.score - a.score);
+
+    // If no tags detected, inherit from feed
+    if (tagScores.length === 0 && feedTags.length > 0) {
+      return [feedTags[0]];
+    }
+
+    return tagScores.slice(0, 2).map(t => t.tag);
+  };
+
+  // Get tag info by key
+  const getTagInfo = (tagKey) => CONTENT_TAGS[tagKey] || { label: tagKey, icon: '🏷️', keywords: [] };
+
   // === FUZZY SEARCH ===
   const fuzzy = (q, items, fields) => {
     if (!q.trim()) return items;
@@ -834,6 +1143,12 @@
       return { item, score };
     }).filter(x => x.score > 0).map(x => x.item);
   };
+
+  // Filter items by tag
+  const filterByTag = (items, tag) => {
+    if (!tag || tag === 'all') return items;
+    return items.filter(item => item.tags && item.tags.includes(tag));
+  };
   
   // === STATE ===
   const state = {
@@ -842,9 +1157,12 @@
     feeds: [],
     articles: [],
     podcasts: [],
+    archivedArticles: [], // Historical articles no longer in feed but preserved locally
+    archivedPodcasts: [], // Historical episodes no longer in feed but preserved locally
     categories: new Set(['All']),
     selectedSource: null,
     selectedCat: 'All',
+    selectedTag: 'all', // Selected tag filter
     query: '',
     feedType: 'news',
     currentEp: null,
@@ -857,7 +1175,13 @@
     bookmarks: {}, // { episodeId: [{ time, note, created }] }
     sleepTimer: null, // { endTime, intervalId, fadeIntervalId }
     speedPanelOpen: false,
-    bookmarksPanelOpen: false
+    bookmarksPanelOpen: false,
+    userBehavior: { // Track user behavior for API sync
+      reads: [], // { articleId, timestamp, duration }
+      plays: [], // { episodeId, timestamp, duration, completed }
+      searches: [], // { query, timestamp, results }
+      subscriptions: [] // { feedId, timestamp, action: 'add'|'remove' }
+    }
   };
   
   // === DOM ===
@@ -868,6 +1192,7 @@
     newsSources: $('newsSources'), newsTitle: $('newsTitle'),
     categoryChips: $('categoryChips'), newsList: $('newsList'),
     newsContent: $('newsContent'), sourcePage: $('sourcePage'),
+    tagFilterSection: $('tagFilterSection'), tagChips: $('tagChips'),
     podcastContent: $('podcastContent'), showPage: $('showPage'),
     player: $('player'), playerArt: $('playerArt'), playerTitle: $('playerTitle'),
     playerShow: $('playerShow'), pPlay: $('pPlay'), pPlayIcon: $('pPlayIcon'),
@@ -898,12 +1223,47 @@
   const fmt = s => { if (isNaN(s) || s < 0) return '0:00'; const m = Math.floor(s / 60), sec = Math.floor(s % 60); return m + ':' + String(sec).padStart(2, '0'); };
   const fmtLong = s => { if (isNaN(s) || s < 0) return '0:00'; const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = Math.floor(s % 60); return h > 0 ? h + ':' + String(m).padStart(2, '0') + ':' + String(sec).padStart(2, '0') : m + ':' + String(sec).padStart(2, '0'); };
   const toast = m => { el.toast.textContent = m; el.toast.classList.add('show'); setTimeout(() => el.toast.classList.remove('show'), 2500); };
-  const save = () => localStorage.setItem('feedr2', JSON.stringify({ feeds: state.feeds, articles: state.articles, podcasts: state.podcasts, progress: state.progress, view: state.view, viewPrefs: state.viewPrefs, bookmarks: state.bookmarks }));
+  const save = () => localStorage.setItem('feedr2', JSON.stringify({
+    feeds: state.feeds,
+    articles: state.articles,
+    podcasts: state.podcasts,
+    archivedArticles: state.archivedArticles,
+    archivedPodcasts: state.archivedPodcasts,
+    progress: state.progress,
+    view: state.view,
+    viewPrefs: state.viewPrefs,
+    bookmarks: state.bookmarks,
+    userBehavior: state.userBehavior
+  }));
 
   const load = () => {
     try {
       const d = JSON.parse(localStorage.getItem('feedr2'));
-      if (d) { state.feeds = d.feeds || []; state.articles = d.articles || []; state.podcasts = d.podcasts || []; state.progress = d.progress || {}; if (d.view) state.view = d.view; state.viewPrefs = d.viewPrefs || {}; state.bookmarks = d.bookmarks || {}; }
+      if (d) {
+        state.feeds = d.feeds || [];
+        state.articles = d.articles || [];
+        state.podcasts = d.podcasts || [];
+        state.archivedArticles = d.archivedArticles || [];
+        state.archivedPodcasts = d.archivedPodcasts || [];
+        state.progress = d.progress || {};
+        if (d.view) state.view = d.view;
+        state.viewPrefs = d.viewPrefs || {};
+        state.bookmarks = d.bookmarks || {};
+        state.userBehavior = d.userBehavior || { reads: [], plays: [], searches: [], subscriptions: [] };
+
+        // Migrate: ensure all feeds have tags array
+        state.feeds.forEach(f => {
+          if (!f.tags) f.tags = [];
+        });
+        // Migrate: ensure all articles have tags array
+        state.articles.forEach(a => {
+          if (!a.tags) a.tags = [];
+        });
+        // Migrate: ensure all podcasts have tags array
+        state.podcasts.forEach(p => {
+          if (!p.tags) p.tags = [];
+        });
+      }
       state.feeds.forEach(f => f.category && state.categories.add(f.category));
       if (!state.feeds.length) loadDemo();
     } catch(e) { loadDemo(); }
@@ -1485,11 +1845,19 @@
       }
     }
 
+    // Get itunes category for podcasts
+    let itunesCategory = '';
+    const categoryEls = channel.getElementsByTagName('itunes:category');
+    if (categoryEls.length > 0) {
+      itunesCategory = categoryEls[0].getAttribute('text') || '';
+    }
+
     return {
       title: getNodeText(channel, 'title'),
       description: getNodeText(channel, 'description') || getNodeText(channel, 'subtitle'),
       author,
-      image
+      image,
+      itunesCategory
     };
   };
 
@@ -1532,22 +1900,124 @@
       if (meta.title && (!feed.name || feed.name === 'Loading...')) feed.name = meta.title;
       if (meta.image && !feed.image) feed.image = meta.image;
       if (meta.author && !feed.author) feed.author = meta.author;
+      if (meta.description) feed.description = meta.description;
+
+      // Auto-detect tags for the feed if not already set
+      const feedContentSample = meta.description || meta.itunesCategory || '';
+      if (!feed.tags || feed.tags.length === 0) {
+        feed.tags = autoDetectFeedTags(feed, feedContentSample);
+        console.log(`Auto-detected tags for ${feed.name}:`, feed.tags.map(t => getTagInfo(t).label));
+      }
 
       if (feed.type === 'news') {
         const articles = parseNewsFeed(xml, feed.id);
-        // Merge with existing, avoiding duplicates by title
-        const existingTitles = new Set(state.articles.filter(a => a.feedId === feed.id).map(a => a.title));
-        const newArticles = articles.filter(a => !existingTitles.has(a.title));
-        state.articles = [...newArticles, ...state.articles.filter(a => a.feedId !== feed.id || existingTitles.has(a.title))];
+
+        // Auto-tag each article
+        articles.forEach(article => {
+          article.tags = autoDetectItemTags(article, feed.tags);
+        });
+
+        // Get all existing articles for this feed (including archived)
+        const existingArticles = state.articles.filter(a => a.feedId === feed.id);
+        const archivedForFeed = state.archivedArticles.filter(a => a.feedId === feed.id);
+
+        // Create sets of existing titles (both active and archived)
+        const existingTitles = new Set(existingArticles.map(a => a.title));
+        const archivedTitles = new Set(archivedForFeed.map(a => a.title));
+
+        // Find truly new articles (not in current or archived)
+        const newArticles = articles.filter(a => !existingTitles.has(a.title) && !archivedTitles.has(a.title));
+
+        // Find articles that are in current list but NOT in new feed (they're being archived)
+        const currentTitlesInFeed = new Set(articles.map(a => a.title));
+        const toArchive = existingArticles.filter(a => !currentTitlesInFeed.has(a.title));
+
+        // Archive items that fell off the feed (preserve history)
+        if (toArchive.length > 0) {
+          toArchive.forEach(a => a.archived = true);
+          state.archivedArticles = [...state.archivedArticles, ...toArchive];
+          // Limit archived items per feed to prevent unbounded growth (keep last 500)
+          const feedArchived = state.archivedArticles.filter(a => a.feedId === feed.id);
+          if (feedArchived.length > 500) {
+            const toRemove = feedArchived.slice(0, feedArchived.length - 500).map(a => a.id);
+            state.archivedArticles = state.archivedArticles.filter(a => !toRemove.includes(a.id));
+          }
+        }
+
+        // Update articles: new + existing that are still in feed
+        const updatedArticles = articles.map(feedArticle => {
+          // Check if we have an existing version with user state (read status, etc.)
+          const existing = existingArticles.find(a => a.title === feedArticle.title);
+          if (existing) {
+            // Preserve user state but update content
+            return { ...feedArticle, unread: existing.unread, tags: existing.tags?.length ? existing.tags : feedArticle.tags };
+          }
+          return feedArticle;
+        });
+
+        state.articles = [
+          ...state.articles.filter(a => a.feedId !== feed.id),
+          ...updatedArticles
+        ];
+
         // Sort by date
         state.articles.sort((a, b) => new Date(b.pubDate || 0) - new Date(a.pubDate || 0));
         // Update unread count
         feed.unread = state.articles.filter(a => a.feedId === feed.id && a.unread).length;
+
       } else {
         const episodes = parsePodcastFeed(xml, feed.id);
-        const existingTitles = new Set(state.podcasts.filter(p => p.feedId === feed.id).map(p => p.title));
-        const newEpisodes = episodes.filter(e => !existingTitles.has(e.title));
-        state.podcasts = [...newEpisodes, ...state.podcasts.filter(p => p.feedId !== feed.id || existingTitles.has(p.title))];
+
+        // Auto-tag each episode
+        episodes.forEach(episode => {
+          episode.tags = autoDetectItemTags(episode, feed.tags);
+        });
+
+        // Get all existing episodes for this feed (including archived)
+        const existingEpisodes = state.podcasts.filter(p => p.feedId === feed.id);
+        const archivedForFeed = state.archivedPodcasts.filter(p => p.feedId === feed.id);
+
+        // Create sets of existing titles
+        const existingTitles = new Set(existingEpisodes.map(p => p.title));
+        const archivedTitles = new Set(archivedForFeed.map(p => p.title));
+
+        // Find truly new episodes
+        const newEpisodes = episodes.filter(e => !existingTitles.has(e.title) && !archivedTitles.has(e.title));
+
+        // Find episodes to archive
+        const currentTitlesInFeed = new Set(episodes.map(e => e.title));
+        const toArchive = existingEpisodes.filter(p => !currentTitlesInFeed.has(p.title));
+
+        // Archive episodes that fell off the feed
+        if (toArchive.length > 0) {
+          toArchive.forEach(p => p.archived = true);
+          state.archivedPodcasts = [...state.archivedPodcasts, ...toArchive];
+          // Limit archived per feed
+          const feedArchived = state.archivedPodcasts.filter(p => p.feedId === feed.id);
+          if (feedArchived.length > 500) {
+            const toRemove = feedArchived.slice(0, feedArchived.length - 500).map(p => p.id);
+            state.archivedPodcasts = state.archivedPodcasts.filter(p => !toRemove.includes(p.id));
+          }
+        }
+
+        // Update episodes: preserve user state (progress, downloaded, etc.)
+        const updatedEpisodes = episodes.map(feedEp => {
+          const existing = existingEpisodes.find(p => p.title === feedEp.title);
+          if (existing) {
+            return {
+              ...feedEp,
+              downloaded: existing.downloaded,
+              tags: existing.tags?.length ? existing.tags : feedEp.tags
+            };
+          }
+          return feedEp;
+        });
+
+        state.podcasts = [
+          ...state.podcasts.filter(p => p.feedId !== feed.id),
+          ...updatedEpisodes
+        ];
+
         // Sort by date
         state.podcasts.sort((a, b) => new Date(b.pubDate || 0) - new Date(a.pubDate || 0));
       }
@@ -1578,8 +2048,10 @@
     save();
     renderNewsSources();
     renderCategories();
+    renderTagFilters();
     renderNews();
     if (state.view === 'podcasts') renderPodcasts();
+    if (state.view === 'all') renderAll();
 
     if (failed > 0) {
       toast(`Refreshed ${success} feeds, ${failed} failed`);
@@ -1598,21 +2070,38 @@
       category: category || 'Uncategorized',
       image: '',
       author: author || '',
-      unread: 0
+      unread: 0,
+      tags: [], // Will be auto-detected during fetch
+      description: ''
     };
 
     state.feeds.push(feed);
     state.categories.add(feed.category);
+
+    // Track subscription for user behavior API
+    state.userBehavior.subscriptions.push({
+      feedId: id,
+      timestamp: new Date().toISOString(),
+      action: 'add',
+      feedType: type
+    });
+
     save();
 
     toast('Adding feed...');
     const success = await fetchAndParseFeed(feed);
 
     if (success) {
+      // Log tags that were auto-detected
+      if (feed.tags.length > 0) {
+        const tagLabels = feed.tags.map(t => getTagInfo(t).label).join(', ');
+        console.log(`Feed ${feed.name} auto-tagged: ${tagLabels}`);
+      }
       save();
       renderNewsSources();
       renderCategories();
       renderNews();
+      renderTagFilters();
       if (state.view === 'podcasts') renderPodcasts();
       toast(`Added: ${feed.name}`);
     } else {
@@ -1634,22 +2123,82 @@
     const cats = ['All', ...Array.from(state.categories).filter(c => c !== 'All')];
     el.categoryChips.innerHTML = cats.map(c => `<button class="chip ${state.selectedCat === c ? 'active' : ''}" data-cat="${c}">${c}</button>`).join('');
   };
+
+  // Render tag filter chips based on what tags exist in current content
+  const renderTagFilters = () => {
+    // Collect all tags from articles and count occurrences
+    const tagCounts = {};
+    state.articles.forEach(a => {
+      if (a.tags) {
+        a.tags.forEach(tag => {
+          tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+        });
+      }
+    });
+
+    // Also include tags from feeds
+    state.feeds.filter(f => f.type === 'news').forEach(f => {
+      if (f.tags) {
+        f.tags.forEach(tag => {
+          if (!tagCounts[tag]) tagCounts[tag] = 0;
+        });
+      }
+    });
+
+    // Sort tags by count descending
+    const sortedTags = Object.entries(tagCounts)
+      .filter(([_, count]) => count > 0)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 12); // Limit to top 12 tags
+
+    if (sortedTags.length === 0) {
+      el.tagFilterSection.style.display = 'none';
+      return;
+    }
+
+    el.tagFilterSection.style.display = 'block';
+    el.tagChips.innerHTML = `
+      <button class="tag-chip ${state.selectedTag === 'all' ? 'active' : ''}" data-tag="all">
+        <span class="tag-icon">🏷️</span>All
+      </button>
+      ${sortedTags.map(([tag, count]) => {
+        const info = getTagInfo(tag);
+        return `<button class="tag-chip ${state.selectedTag === tag ? 'active' : ''}" data-tag="${tag}">
+          <span class="tag-icon">${info.icon}</span>${info.label}<span class="tag-count">${count}</span>
+        </button>`;
+      }).join('')}
+    `;
+  };
+
+  // Helper to render item tags as badges
+  const renderItemTags = (tags) => {
+    if (!tags || tags.length === 0) return '';
+    return `<div class="item-tags">${tags.slice(0, 2).map(tag => {
+      const info = getTagInfo(tag);
+      return `<span class="item-tag"><span class="item-tag-icon">${info.icon}</span>${info.label}</span>`;
+    }).join('')}</div>`;
+  };
   
   const renderNews = () => {
     let items = state.articles.map(a => ({ ...a, feed: state.feeds.find(f => f.id === a.feedId) }));
     if (state.selectedSource) items = items.filter(i => i.feedId === state.selectedSource);
     if (state.selectedCat !== 'All') items = fuzzy(state.selectedCat, items, ['feed.category']);
+    // Apply tag filter
+    if (state.selectedTag && state.selectedTag !== 'all') {
+      items = filterByTag(items, state.selectedTag);
+    }
     if (state.query) items = fuzzy(state.query, items, ['title', 'summary', 'feed.name']);
-    
+
     if (!items.length) {
       const hasFeeds = state.feeds.filter(f => f.type === 'news').length > 0;
+      const hasTagFilter = state.selectedTag && state.selectedTag !== 'all';
       el.newsList.innerHTML = hasFeeds
-        ? '<div class="empty"><div class="empty-icon">📭</div><div class="empty-title">No articles found</div><div style="color:var(--text3);margin-top:8px">Try refreshing your feeds</div></div>'
+        ? `<div class="empty"><div class="empty-icon">📭</div><div class="empty-title">No articles found</div><div style="color:var(--text3);margin-top:8px">${hasTagFilter ? 'Try selecting a different topic' : 'Try refreshing your feeds'}</div></div>`
         : '<div class="empty"><div class="empty-icon">📡</div><div class="empty-title">No news feeds yet</div><div style="color:var(--text3);margin-top:8px">Click + to add your first RSS feed</div></div>';
       return;
     }
-    
-    el.newsList.innerHTML = items.map(i => `<div class="article ${i.unread ? 'unread' : ''}" data-id="${i.id}"><div class="article-icon">${i.feed?.image ? `<img src="${i.feed.image}">` : '📄'}</div><div class="article-body"><div class="article-meta"><span class="article-source">${i.feed?.name || ''}</span><span class="article-time">· ${i.time}</span>${i.unread ? '<span class="article-new">NEW</span>' : ''}</div><div class="article-title">${i.title}</div>${i.summary ? `<div class="article-summary">${i.summary}</div>` : ''}</div>${i.image ? `<img class="article-image" src="${i.image}">` : ''}</div>`).join('');
+
+    el.newsList.innerHTML = items.map(i => `<div class="article ${i.unread ? 'unread' : ''}" data-id="${i.id}"><div class="article-icon">${i.feed?.image ? `<img src="${i.feed.image}">` : '📄'}</div><div class="article-body"><div class="article-meta"><span class="article-source">${i.feed?.name || ''}</span><span class="article-time">· ${i.time}</span>${i.unread ? '<span class="article-new">NEW</span>' : ''}</div><div class="article-title">${i.title}</div>${i.summary ? `<div class="article-summary">${i.summary}</div>` : ''}${renderItemTags(i.tags)}</div>${i.image ? `<img class="article-image" src="${i.image}">` : ''}</div>`).join('');
   };
   
   // === RENDER PODCASTS ===
@@ -1928,6 +2477,7 @@
         </div>
         <div class="all-item-title">${item.title}</div>
         ${summary ? `<div class="all-item-summary">${summary}</div>` : ''}
+        ${renderItemTags(item.tags)}
       </div>
       ${image ? `<img class="all-item-image" src="${image}" onerror="this.style.display='none'">` : ''}
     </div>`;
@@ -1948,6 +2498,7 @@
         </div>
         <div class="all-card-title">${item.title}</div>
         ${summary ? `<div class="all-card-summary">${summary}</div>` : ''}
+        ${renderItemTags(item.tags)}
       </div>
     </div>`;
   };
@@ -2771,7 +3322,18 @@
     Mem.log('category_changed', 'cat_' + state.selectedCat, { prev });
     renderCategories(); renderNews();
   };
-  
+
+  // Tag filter click handler
+  el.tagChips.onclick = e => {
+    const chip = e.target.closest('.tag-chip');
+    if (!chip) return;
+    const prev = state.selectedTag;
+    state.selectedTag = chip.dataset.tag;
+    Mem.log('tag_filter_changed', 'tag_' + state.selectedTag, { prev });
+    renderTagFilters();
+    renderNews();
+  };
+
   el.newsList.onclick = e => {
     // Source name click - navigate to source page
     const sourceEl = e.target.closest('.article-source');
@@ -3282,12 +3844,20 @@
     applyView();
     renderNewsSources();
     renderCategories();
+    renderTagFilters();
     renderNews();
     if (state.view === 'podcasts') renderPodcasts();
     if (state.view === 'all') renderAll();
 
     console.log('BURSST loaded');
-    console.log('Memory API: Memory.setEndpoint(url), Memory.getLocal()');
+    console.log('📊 User Behavior API:');
+    console.log('  Memory.setEndpoint(url) - Set API endpoint for behavior sync');
+    console.log('  Memory.getLocal() - Get all local behavior logs');
+    console.log('  Memory.getStats() - Get aggregated behavior statistics');
+    console.log('  Memory.exportForSync() - Export all data for API sync');
+    console.log('  Memory.clear() - Clear local behavior logs');
+    console.log('🏷️ Content Tags:', Object.keys(CONTENT_TAGS).length, 'categories available for auto-tagging');
+    console.log('📦 Archived:', state.archivedArticles.length, 'articles,', state.archivedPodcasts.length, 'episodes preserved');
   };
 
   init();
