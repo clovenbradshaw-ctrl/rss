@@ -109,6 +109,50 @@
     .all-item-summary { font-size: 12px; color: var(--text3); margin-top: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
     .all-item-time { font-size: 11px; color: var(--text3); }
 
+    /* All Content View Modes */
+    .all-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+    .all-card { background: var(--bg2); border-radius: 12px; overflow: hidden; cursor: pointer; border: 1px solid transparent; transition: all 0.15s; display: flex; flex-direction: column; }
+    .all-card:hover { background: var(--bg3); border-color: var(--border2); transform: translateY(-2px); }
+    .all-card-image { width: 100%; height: 160px; object-fit: cover; background: var(--bg3); display: flex; align-items: center; justify-content: center; font-size: 48px; }
+    .all-card-image img { width: 100%; height: 100%; object-fit: cover; }
+    .all-card-body { padding: 14px; flex: 1; display: flex; flex-direction: column; }
+    .all-card-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 12px; }
+    .all-card-type { background: var(--bg4); color: var(--text2); padding: 2px 6px; border-radius: 4px; font-size: 10px; text-transform: uppercase; }
+    .all-card-source { color: var(--green); font-weight: 500; }
+    .all-card-time { color: var(--text3); }
+    .all-card-title { font-size: 15px; font-weight: 600; line-height: 1.4; margin-bottom: 8px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .all-card-summary { font-size: 13px; color: var(--text2); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; flex: 1; }
+
+    .all-masonry { column-count: 3; column-gap: 16px; }
+    .all-masonry-item { break-inside: avoid; margin-bottom: 16px; background: var(--bg2); border-radius: 12px; overflow: hidden; cursor: pointer; border: 1px solid transparent; transition: all 0.15s; }
+    .all-masonry-item:hover { background: var(--bg3); border-color: var(--border2); }
+    .all-masonry-image { width: 100%; object-fit: cover; }
+    .all-masonry-body { padding: 14px; }
+    .all-masonry-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 12px; }
+    .all-masonry-type { background: var(--bg4); color: var(--text2); padding: 2px 6px; border-radius: 4px; font-size: 10px; text-transform: uppercase; }
+    .all-masonry-source { color: var(--green); font-weight: 500; }
+    .all-masonry-time { color: var(--text3); }
+    .all-masonry-title { font-size: 15px; font-weight: 600; line-height: 1.4; margin-bottom: 8px; }
+    .all-masonry-summary { font-size: 13px; color: var(--text2); line-height: 1.5; }
+
+    .all-table { width: 100%; border-collapse: collapse; }
+    .all-table th { text-align: left; padding: 12px; font-size: 12px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); }
+    .all-table td { padding: 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    .all-table tr { cursor: pointer; transition: background 0.15s; }
+    .all-table tbody tr:hover { background: var(--bg3); }
+    .all-table .table-title { font-weight: 500; max-width: 400px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .all-table .table-type { font-size: 10px; text-transform: uppercase; padding: 2px 6px; border-radius: 4px; background: var(--bg4); color: var(--text2); }
+    .all-table .table-source { color: var(--green); font-weight: 500; font-size: 13px; }
+    .all-table .table-time { color: var(--text3); font-size: 13px; white-space: nowrap; }
+
+    @media (max-width: 1024px) {
+      .all-masonry { column-count: 2; }
+    }
+    @media (max-width: 640px) {
+      .all-masonry { column-count: 1; }
+      .all-cards { grid-template-columns: 1fr; }
+    }
+
     .podcast-nav { display: flex; background: var(--bg2); border-bottom: 1px solid var(--border); padding: 0 16px; }
     .nav-btn { padding: 14px 18px; background: none; border: none; border-bottom: 2px solid transparent; color: var(--text2); font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit; transition: all 0.15s; }
     .nav-btn:hover { color: var(--text); }
@@ -1691,6 +1735,67 @@
     </div>`;
   };
 
+  const renderAllCard = (item, type) => {
+    const feed = state.feeds.find(f => f.id === item.feedId);
+    const summary = type === 'podcast' ? item.desc : item.summary;
+    const image = item.image || feed?.image;
+    const icon = type === 'podcast' ? '🎧' : '📰';
+    return `<div class="all-card" data-type="${type}" data-id="${item.id}">
+      <div class="all-card-image">${image ? `<img src="${image}" onerror="this.parentElement.innerHTML='${icon}'">` : icon}</div>
+      <div class="all-card-body">
+        <div class="all-card-meta">
+          <span class="all-card-type">${type}</span>
+          <span class="all-card-source">${feed?.name || ''}</span>
+          <span class="all-card-time">· ${item.time || item.date}</span>
+        </div>
+        <div class="all-card-title">${item.title}</div>
+        ${summary ? `<div class="all-card-summary">${summary}</div>` : ''}
+      </div>
+    </div>`;
+  };
+
+  const renderAllMasonry = (item, type) => {
+    const feed = state.feeds.find(f => f.id === item.feedId);
+    const summary = type === 'podcast' ? item.desc : item.summary;
+    const image = item.image || feed?.image;
+    return `<div class="all-masonry-item" data-type="${type}" data-id="${item.id}">
+      ${image ? `<img class="all-masonry-image" src="${image}" onerror="this.style.display='none'">` : ''}
+      <div class="all-masonry-body">
+        <div class="all-masonry-meta">
+          <span class="all-masonry-type">${type}</span>
+          <span class="all-masonry-source">${feed?.name || ''}</span>
+          <span class="all-masonry-time">· ${item.time || item.date}</span>
+        </div>
+        <div class="all-masonry-title">${item.title}</div>
+        ${summary ? `<div class="all-masonry-summary">${summary}</div>` : ''}
+      </div>
+    </div>`;
+  };
+
+  const renderAllTable = (item, type) => {
+    const feed = state.feeds.find(f => f.id === item.feedId);
+    return `<tr data-type="${type}" data-id="${item.id}">
+      <td><span class="table-type">${type}</span></td>
+      <td class="table-title">${item.title}</td>
+      <td class="table-source">${feed?.name || ''}</td>
+      <td class="table-time">${item.time || item.date}</td>
+    </tr>`;
+  };
+
+  const renderAllContent = (items, viewMode) => {
+    if (!items.length) return '';
+    switch (viewMode) {
+      case 'cards':
+        return `<div class="all-cards">${items.map(item => renderAllCard(item, item.type)).join('')}</div>`;
+      case 'masonry':
+        return `<div class="all-masonry">${items.map(item => renderAllMasonry(item, item.type)).join('')}</div>`;
+      case 'table':
+        return `<table class="all-table"><thead><tr><th>Type</th><th>Title</th><th>Source</th><th>Time</th></tr></thead><tbody>${items.map(item => renderAllTable(item, item.type)).join('')}</tbody></table>`;
+      default: // list
+        return `<div class="all-feed-list">${items.map(item => renderAllItem(item, item.type)).join('')}</div>`;
+    }
+  };
+
   const renderAll = () => {
     const articles = state.articles.map(a => ({ ...a, sortDate: new Date(a.pubDate), type: 'news' }));
     const episodes = state.podcasts.map(p => ({ ...p, sortDate: new Date(p.pubDate), type: 'podcast' }));
@@ -1711,21 +1816,31 @@
       return;
     }
 
+    const viewMode = getViewPref('all', 'list');
     el.allContent.innerHTML = `
       <div class="all-section">
         <div class="all-section-header">
           <div class="all-section-title">📚 All Content</div>
+          ${renderViewOptions('all', viewMode)}
         </div>
-        <div class="all-feed-list">
-          ${allItems.slice(0, 50).map(item => renderAllItem(item, item.type)).join('')}
-        </div>
+        ${renderAllContent(allItems.slice(0, 50), viewMode)}
       </div>
     `;
   };
 
   // Handle clicks in all view
   el.allContent.onclick = e => {
-    const item = e.target.closest('.all-item');
+    // View options
+    const viewBtn = e.target.closest('.view-btn');
+    if (viewBtn) {
+      const newView = viewBtn.dataset.view;
+      setViewPref('all', newView);
+      renderAll();
+      return;
+    }
+
+    // Handle all view types (list, card, masonry, table row)
+    const item = e.target.closest('.all-item, .all-card, .all-masonry-item, tr[data-type]');
     if (!item) return;
     const type = item.dataset.type;
     const id = parseInt(item.dataset.id);
