@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Feedr</title>
+  <title>BURSST</title>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -23,7 +23,9 @@
     
     /* Header */
     .header { background: var(--bg); border-bottom: 1px solid var(--border); padding: 12px 16px; display: flex; align-items: center; gap: 16px; }
-    .logo { font-size: 22px; font-weight: 700; }
+    .logo { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; }
+    .logo-rss { position: relative; }
+    .logo-rss::after { content: ''; position: absolute; left: 0; right: 0; bottom: -2px; height: 3px; background: #f97316; border-radius: 2px; }
     .main-toggle { display: flex; background: var(--bg3); border-radius: 25px; padding: 4px; }
     .toggle-btn { padding: 10px 20px; background: transparent; border: none; border-radius: 21px; color: var(--text2); font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; display: flex; align-items: center; gap: 8px; transition: all 0.2s; }
     .toggle-btn.active { background: var(--green); color: #000; }
@@ -268,10 +270,12 @@
     .player-progress { width: 100%; display: flex; align-items: center; gap: 8px; }
     .player-time { font-size: 11px; color: var(--text3); font-family: monospace; min-width: 40px; }
     .player-time.right { text-align: right; }
-    .player-bar { flex: 1; height: 4px; background: var(--border2); border-radius: 2px; cursor: pointer; }
+    .player-bar { flex: 1; height: 4px; background: var(--border2); border-radius: 2px; cursor: pointer; position: relative; }
     .player-bar:hover { height: 6px; }
-    .player-fill { height: 100%; background: var(--text); border-radius: 2px; }
+    .player-fill { height: 100%; background: var(--text); border-radius: 2px; position: relative; z-index: 1; }
     .player-bar:hover .player-fill { background: var(--green); }
+    .scrub-tooltip { position: absolute; bottom: 20px; background: var(--bg2); border: 1px solid var(--border2); border-radius: 4px; padding: 4px 8px; font-family: monospace; font-size: 12px; font-weight: 600; white-space: nowrap; pointer-events: none; transform: translateX(-50%); display: none; z-index: 10; }
+    .player-bar:hover .scrub-tooltip { display: block; }
     .player-right { display: flex; align-items: center; gap: 10px; width: 25%; justify-content: flex-end; }
     .speed-btn { font-size: 12px; font-weight: 600; padding: 5px 8px; background: var(--bg3); border: 1px solid var(--border2); border-radius: 4px; color: var(--text2); cursor: pointer; font-family: inherit; }
     .speed-btn:hover { color: var(--text); border-color: var(--text); }
@@ -337,6 +341,88 @@
     
     .toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); background: var(--bg4); color: var(--text); padding: 12px 24px; border-radius: 8px; font-size: 14px; z-index: 400; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
     .toast.show { opacity: 1; }
+
+    /* Mobile Hamburger & Drawer */
+    .hamburger { display: none; background: none; border: none; color: var(--text); cursor: pointer; padding: 8px; }
+    @media (max-width: 768px) { .hamburger { display: flex; } }
+    .drawer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 150; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+    .drawer-overlay.active { opacity: 1; pointer-events: auto; }
+    .drawer { position: fixed; top: 0; left: 0; bottom: 0; width: 280px; background: var(--bg2); z-index: 160; transform: translateX(-100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; }
+    .drawer.active { transform: translateX(0); }
+    .drawer-header { padding: 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+    .drawer-header .logo { font-size: 20px; }
+    .drawer-close { background: none; border: none; color: var(--text2); cursor: pointer; padding: 8px; }
+    .drawer-content { flex: 1; overflow-y: auto; padding: 12px; }
+    .drawer-section { margin-bottom: 16px; }
+    .drawer-section-title { font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text3); padding: 8px 12px; }
+    .drawer-item { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 8px; cursor: pointer; transition: background 0.15s; }
+    .drawer-item:hover { background: var(--bg3); }
+    .drawer-item.active { background: var(--bg4); }
+    .drawer-item-icon { width: 32px; height: 32px; border-radius: 6px; background: var(--bg3); display: flex; align-items: center; justify-content: center; font-size: 16px; }
+    .drawer-item-icon img { width: 100%; height: 100%; object-fit: cover; border-radius: 6px; }
+    .drawer-item-name { flex: 1; font-size: 14px; font-weight: 500; }
+    .drawer-item-badge { background: var(--green); color: #000; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 10px; }
+
+    /* Sleep Timer */
+    .sleep-timer-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.75); display: none; align-items: center; justify-content: center; z-index: 350; }
+    .sleep-timer-modal.active { display: flex; }
+    .sleep-timer-box { background: var(--bg2); border-radius: 14px; width: 90%; max-width: 360px; padding: 20px; }
+    .sleep-timer-title { font-size: 18px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .sleep-timer-presets { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
+    .sleep-preset { padding: 12px; background: var(--bg3); border: 2px solid var(--border2); border-radius: 10px; color: var(--text); cursor: pointer; font-size: 14px; font-weight: 500; font-family: inherit; transition: all 0.15s; text-align: center; }
+    .sleep-preset:hover { background: var(--bg4); border-color: var(--text3); }
+    .sleep-preset.active { border-color: var(--green); background: rgba(29,185,84,0.15); }
+    .sleep-custom { display: flex; gap: 8px; margin-bottom: 16px; }
+    .sleep-custom input { flex: 1; padding: 10px 14px; background: var(--bg3); border: 1px solid var(--border2); border-radius: 8px; color: var(--text); font-size: 14px; font-family: inherit; }
+    .sleep-custom input:focus { outline: none; border-color: var(--green); }
+    .sleep-custom button { padding: 10px 16px; background: var(--green); border: none; border-radius: 8px; color: #000; font-weight: 600; cursor: pointer; font-family: inherit; }
+    .sleep-timer-active { background: rgba(29,185,84,0.1); border: 1px solid var(--green); border-radius: 10px; padding: 12px; display: flex; align-items: center; justify-content: space-between; }
+    .sleep-timer-countdown { font-size: 24px; font-weight: 700; font-family: monospace; color: var(--green); }
+    .sleep-timer-cancel { background: none; border: 1px solid var(--text3); border-radius: 6px; padding: 6px 12px; color: var(--text); cursor: pointer; font-size: 13px; font-family: inherit; }
+    .sleep-badge { position: absolute; top: -4px; right: -4px; background: var(--green); color: #000; font-size: 9px; font-weight: 700; padding: 2px 5px; border-radius: 8px; min-width: 18px; text-align: center; }
+
+    /* Speed Control Panel */
+    .speed-panel { position: absolute; bottom: 100%; right: 0; background: var(--bg2); border: 1px solid var(--border2); border-radius: 12px; padding: 16px; width: 280px; display: none; z-index: 110; box-shadow: 0 -4px 20px rgba(0,0,0,0.3); }
+    .speed-panel.active { display: block; }
+    .speed-panel-title { font-size: 14px; font-weight: 600; margin-bottom: 12px; }
+    .speed-slider-container { margin-bottom: 16px; }
+    .speed-value { font-size: 28px; font-weight: 700; text-align: center; margin-bottom: 8px; color: var(--green); }
+    .speed-slider { width: 100%; height: 6px; -webkit-appearance: none; background: var(--bg4); border-radius: 3px; outline: none; }
+    .speed-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; background: var(--green); border-radius: 50%; cursor: pointer; }
+    .speed-slider::-moz-range-thumb { width: 18px; height: 18px; background: var(--green); border-radius: 50%; cursor: pointer; border: none; }
+    .speed-presets { display: flex; gap: 6px; flex-wrap: wrap; }
+    .speed-preset-btn { padding: 8px 12px; background: var(--bg3); border: 1px solid var(--border2); border-radius: 6px; color: var(--text2); cursor: pointer; font-size: 13px; font-weight: 500; font-family: inherit; transition: all 0.15s; }
+    .speed-preset-btn:hover { background: var(--bg4); color: var(--text); }
+    .speed-preset-btn.active { background: var(--green); border-color: var(--green); color: #000; }
+
+    /* Bookmarks */
+    .bookmarks-panel { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: var(--bg2); border: 1px solid var(--border2); border-radius: 12px; padding: 16px; width: 320px; max-height: 300px; display: none; z-index: 110; box-shadow: 0 -4px 20px rgba(0,0,0,0.3); overflow-y: auto; }
+    .bookmarks-panel.active { display: block; }
+    .bookmarks-title { font-size: 14px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
+    .bookmark-add-btn { background: var(--green); border: none; color: #000; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-size: 14px; }
+    .bookmark-item { display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--bg3); border-radius: 8px; margin-bottom: 6px; cursor: pointer; transition: background 0.15s; }
+    .bookmark-item:hover { background: var(--bg4); }
+    .bookmark-time { font-family: monospace; font-size: 13px; font-weight: 600; color: var(--green); min-width: 50px; }
+    .bookmark-note { flex: 1; font-size: 13px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .bookmark-delete { background: none; border: none; color: var(--text3); cursor: pointer; padding: 4px; opacity: 0; transition: opacity 0.15s; }
+    .bookmark-item:hover .bookmark-delete { opacity: 1; }
+    .bookmark-delete:hover { color: #e74c3c; }
+    .bookmark-marker { position: absolute; top: -4px; width: 8px; height: 8px; background: #f97316; border-radius: 50%; transform: translateX(-50%); cursor: pointer; z-index: 5; }
+    .bookmark-marker:hover { transform: translateX(-50%) scale(1.3); }
+    .bookmarks-empty { text-align: center; color: var(--text3); padding: 20px; font-size: 13px; }
+
+    /* Scrubbing Preview */
+    .scrub-preview { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: var(--bg2); border: 1px solid var(--border2); border-radius: 6px; padding: 6px 12px; font-family: monospace; font-size: 14px; font-weight: 600; display: none; white-space: nowrap; pointer-events: none; }
+    .scrub-preview.active { display: block; }
+
+    /* Adaptive Background */
+    .expanded.adaptive-bg { background: linear-gradient(180deg, var(--adaptive-color, var(--bg)) 0%, var(--bg) 60%); }
+
+    /* Player enhancements */
+    .player-right { display: flex; align-items: center; gap: 10px; width: 25%; justify-content: flex-end; position: relative; }
+    .player-btn { background: none; border: none; color: var(--text2); cursor: pointer; padding: 8px; border-radius: 50%; transition: all 0.15s; position: relative; }
+    .player-btn:hover { background: var(--bg3); color: var(--text); }
+    .player-btn.active { color: var(--green); }
     
     .empty { display: flex; flex-direction: column; align-items: center; padding: 48px 24px; text-align: center; color: var(--text3); }
     .empty-icon { font-size: 48px; margin-bottom: 12px; }
@@ -356,7 +442,8 @@
 <body>
 <div class="app">
   <header class="header">
-    <div class="logo">📡 Feedr</div>
+    <button class="hamburger" id="hamburgerBtn"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+    <div class="logo">BU<span class="logo-rss">RSS</span>T</div>
     <div class="main-toggle">
       <button class="toggle-btn" data-view="all"><span>📚</span><span>All</span></button>
       <button class="toggle-btn" data-view="news"><span>📰</span><span>News</span></button>
@@ -423,13 +510,38 @@
       </div>
       <div class="player-progress">
         <span class="player-time" id="pCur">0:00</span>
-        <div class="player-bar" id="pBar"><div class="player-fill" id="pFill"></div></div>
+        <div class="player-bar" id="pBar"><div class="player-fill" id="pFill"></div><div class="scrub-tooltip" id="scrubTooltip">0:00</div></div>
         <span class="player-time right" id="pDur">0:00</span>
       </div>
     </div>
     <div class="player-right">
-      <button class="speed-btn" id="pSpeed">1x</button>
-      <button class="icon-btn" id="pExpand"><svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></button>
+      <button class="player-btn" id="pBookmark" title="Bookmarks (B)"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg></button>
+      <button class="player-btn" id="pSleep" title="Sleep Timer (M)"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg><span class="sleep-badge" id="sleepBadge" style="display:none"></span></button>
+      <button class="speed-btn" id="pSpeed" title="Speed (S)">1x</button>
+      <button class="icon-btn" id="pExpand" title="Fullscreen (F)"><svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></button>
+      <!-- Speed Panel -->
+      <div class="speed-panel" id="speedPanel">
+        <div class="speed-panel-title">Playback Speed</div>
+        <div class="speed-slider-container">
+          <div class="speed-value" id="speedValue">1.00x</div>
+          <input type="range" class="speed-slider" id="speedSlider" min="0.5" max="3" step="0.05" value="1">
+        </div>
+        <div class="speed-presets">
+          <button class="speed-preset-btn" data-speed="0.75">0.75x</button>
+          <button class="speed-preset-btn active" data-speed="1">1x</button>
+          <button class="speed-preset-btn" data-speed="1.25">1.25x</button>
+          <button class="speed-preset-btn" data-speed="1.5">1.5x</button>
+          <button class="speed-preset-btn" data-speed="2">2x</button>
+        </div>
+      </div>
+      <!-- Bookmarks Panel -->
+      <div class="bookmarks-panel" id="bookmarksPanel">
+        <div class="bookmarks-title">
+          <span>Bookmarks</span>
+          <button class="bookmark-add-btn" id="addBookmarkBtn" title="Add bookmark at current position">+</button>
+        </div>
+        <div id="bookmarksList"></div>
+      </div>
     </div>
   </div>
   
@@ -498,6 +610,45 @@
   </div>
 </div>
 <div class="toast" id="toast"></div>
+
+<!-- Mobile Drawer -->
+<div class="drawer-overlay" id="drawerOverlay"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-header">
+    <div class="logo">BU<span class="logo-rss">RSS</span>T</div>
+    <button class="drawer-close" id="drawerClose"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 5L5 15M5 5l10 10"/></svg></button>
+  </div>
+  <div class="drawer-content" id="drawerContent"></div>
+</div>
+
+<!-- Sleep Timer Modal -->
+<div class="sleep-timer-modal" id="sleepTimerModal">
+  <div class="sleep-timer-box">
+    <div class="sleep-timer-title"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg> Sleep Timer</div>
+    <div id="sleepTimerContent">
+      <div class="sleep-timer-presets" id="sleepPresets">
+        <button class="sleep-preset" data-minutes="5">5 min</button>
+        <button class="sleep-preset" data-minutes="10">10 min</button>
+        <button class="sleep-preset" data-minutes="15">15 min</button>
+        <button class="sleep-preset" data-minutes="30">30 min</button>
+        <button class="sleep-preset" data-minutes="45">45 min</button>
+        <button class="sleep-preset" data-minutes="60">60 min</button>
+        <button class="sleep-preset" data-minutes="episode" style="grid-column: span 3">End of Episode</button>
+      </div>
+      <div class="sleep-custom">
+        <input type="number" id="sleepCustomInput" placeholder="Custom minutes" min="1" max="999">
+        <button id="sleepCustomBtn">Set</button>
+      </div>
+    </div>
+    <div id="sleepTimerActive" class="sleep-timer-active" style="display:none">
+      <div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:4px">Stopping in</div>
+        <div class="sleep-timer-countdown" id="sleepCountdown">00:00</div>
+      </div>
+      <button class="sleep-timer-cancel" id="sleepCancelBtn">Cancel</button>
+    </div>
+  </div>
+</div>
 
 <!-- Audio element for actual playback -->
 <audio id="audioPlayer" preload="metadata"></audio>
@@ -629,7 +780,11 @@
     progress: {},
     viewPrefs: {}, // { sourceId: 'list'|'table'|'cards'|'masonry' }
     currentSourcePage: null, // Currently viewing source page (news)
-    currentShowPage: null // Currently viewing show page (podcasts)
+    currentShowPage: null, // Currently viewing show page (podcasts)
+    bookmarks: {}, // { episodeId: [{ time, note, created }] }
+    sleepTimer: null, // { endTime, intervalId, fadeIntervalId }
+    speedPanelOpen: false,
+    bookmarksPanelOpen: false
   };
   
   // === DOM ===
@@ -643,7 +798,11 @@
     podcastContent: $('podcastContent'), showPage: $('showPage'),
     player: $('player'), playerArt: $('playerArt'), playerTitle: $('playerTitle'),
     playerShow: $('playerShow'), pPlay: $('pPlay'), pPlayIcon: $('pPlayIcon'),
-    pCur: $('pCur'), pDur: $('pDur'), pBar: $('pBar'), pFill: $('pFill'), pSpeed: $('pSpeed'),
+    pCur: $('pCur'), pDur: $('pDur'), pBar: $('pBar'), pFill: $('pFill'), pSpeed: $('pSpeed'), scrubTooltip: $('scrubTooltip'),
+    pBookmark: $('pBookmark'), pSleep: $('pSleep'),
+    speedPanel: $('speedPanel'), speedSlider: $('speedSlider'), speedValue: $('speedValue'),
+    bookmarksPanel: $('bookmarksPanel'), bookmarksList: $('bookmarksList'), addBookmarkBtn: $('addBookmarkBtn'),
+    sleepBadge: $('sleepBadge'),
     expanded: $('expanded'), expArt: $('expArt'), expTitle: $('expTitle'),
     expShow: $('expShow'), expPlay: $('expPlay'), expPlayIcon: $('expPlayIcon'),
     expCur: $('expCur'), expDur: $('expDur'), expBar: $('expBar'), expFill: $('expFill'),
@@ -652,18 +811,26 @@
     modal: $('modal'), fUrl: $('fUrl'), fName: $('fName'), fAuthor: $('fAuthor'), fCat: $('fCat'),
     fFetch: $('fFetch'), fStatus: $('fStatus'), fSubmit: $('fSubmit'),
     toast: $('toast'), searchInput: $('searchInput'),
-    audio: $('audioPlayer')
+    audio: $('audioPlayer'),
+    // New elements
+    hamburgerBtn: $('hamburgerBtn'), drawer: $('drawer'), drawerOverlay: $('drawerOverlay'),
+    drawerContent: $('drawerContent'), drawerClose: $('drawerClose'),
+    sleepTimerModal: $('sleepTimerModal'), sleepTimerContent: $('sleepTimerContent'),
+    sleepTimerActive: $('sleepTimerActive'), sleepCountdown: $('sleepCountdown'),
+    sleepPresets: $('sleepPresets'), sleepCustomInput: $('sleepCustomInput'),
+    sleepCustomBtn: $('sleepCustomBtn'), sleepCancelBtn: $('sleepCancelBtn')
   };
   
   // === UTILS ===
   const fmt = s => { if (isNaN(s) || s < 0) return '0:00'; const m = Math.floor(s / 60), sec = Math.floor(s % 60); return m + ':' + String(sec).padStart(2, '0'); };
+  const fmtLong = s => { if (isNaN(s) || s < 0) return '0:00'; const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = Math.floor(s % 60); return h > 0 ? h + ':' + String(m).padStart(2, '0') + ':' + String(sec).padStart(2, '0') : m + ':' + String(sec).padStart(2, '0'); };
   const toast = m => { el.toast.textContent = m; el.toast.classList.add('show'); setTimeout(() => el.toast.classList.remove('show'), 2500); };
-  const save = () => localStorage.setItem('feedr2', JSON.stringify({ feeds: state.feeds, articles: state.articles, podcasts: state.podcasts, progress: state.progress, view: state.view, viewPrefs: state.viewPrefs }));
+  const save = () => localStorage.setItem('feedr2', JSON.stringify({ feeds: state.feeds, articles: state.articles, podcasts: state.podcasts, progress: state.progress, view: state.view, viewPrefs: state.viewPrefs, bookmarks: state.bookmarks }));
 
   const load = () => {
     try {
       const d = JSON.parse(localStorage.getItem('feedr2'));
-      if (d) { state.feeds = d.feeds || []; state.articles = d.articles || []; state.podcasts = d.podcasts || []; state.progress = d.progress || {}; if (d.view) state.view = d.view; state.viewPrefs = d.viewPrefs || {}; }
+      if (d) { state.feeds = d.feeds || []; state.articles = d.articles || []; state.podcasts = d.podcasts || []; state.progress = d.progress || {}; if (d.view) state.view = d.view; state.viewPrefs = d.viewPrefs || {}; state.bookmarks = d.bookmarks || {}; }
       state.feeds.forEach(f => f.category && state.categories.add(f.category));
       if (!state.feeds.length) loadDemo();
     } catch(e) { loadDemo(); }
@@ -1781,6 +1948,8 @@
       progStart = cur;
     }
     updatePlayer();
+    updatePositionState();
+    sleepTimer.checkEpisodeEnd();
   });
 
   el.audio.addEventListener('ended', () => {
@@ -1816,6 +1985,8 @@
       }
     }
     updatePlayer();
+    updateMediaSession();
+    renderBookmarkMarkers();
   });
 
   el.audio.addEventListener('error', (e) => {
@@ -1888,6 +2059,8 @@
 
     state.playing = true;
     updatePlayer();
+    updateMediaSession();
+    renderBookmarkMarkers();
   };
 
   const togglePlay = () => {
@@ -2055,6 +2228,353 @@
     el.swipeContainer.addEventListener('mouseup', handleSwipeEnd);
     el.swipeContainer.addEventListener('mouseleave', handleSwipeEnd);
   }
+
+  // === SLEEP TIMER ===
+  const sleepTimer = {
+    endTime: null,
+    intervalId: null,
+    fadeIntervalId: null,
+    endOfEpisode: false,
+
+    start(minutes) {
+      this.cancel();
+      if (minutes === 'episode') {
+        this.endOfEpisode = true;
+        this.updateUI();
+        toast('Sleep timer: end of episode');
+        return;
+      }
+      this.endOfEpisode = false;
+      this.endTime = Date.now() + minutes * 60 * 1000;
+      this.intervalId = setInterval(() => this.tick(), 1000);
+      this.updateUI();
+      toast(`Sleep timer: ${minutes} minutes`);
+    },
+
+    tick() {
+      const remaining = this.endTime - Date.now();
+      if (remaining <= 0) {
+        this.stop();
+        return;
+      }
+      // Start fade out 15 seconds before end
+      if (remaining <= 15000 && !this.fadeIntervalId) {
+        this.startFade();
+      }
+      this.updateUI();
+    },
+
+    startFade() {
+      const originalVolume = el.audio.volume;
+      let fadeStep = originalVolume / 15;
+      this.fadeIntervalId = setInterval(() => {
+        if (el.audio.volume > fadeStep) {
+          el.audio.volume = Math.max(0, el.audio.volume - fadeStep);
+        }
+      }, 1000);
+    },
+
+    stop() {
+      el.audio.pause();
+      el.audio.volume = 1;
+      this.cancel();
+      toast('Sleep timer: stopped playback');
+    },
+
+    cancel() {
+      if (this.intervalId) clearInterval(this.intervalId);
+      if (this.fadeIntervalId) clearInterval(this.fadeIntervalId);
+      this.intervalId = null;
+      this.fadeIntervalId = null;
+      this.endTime = null;
+      this.endOfEpisode = false;
+      el.audio.volume = 1;
+      this.updateUI();
+    },
+
+    updateUI() {
+      const isActive = this.endTime || this.endOfEpisode;
+      el.sleepTimerContent.style.display = isActive ? 'none' : 'block';
+      el.sleepTimerActive.style.display = isActive ? 'flex' : 'none';
+      el.sleepBadge.style.display = isActive ? 'block' : 'none';
+      el.pSleep.classList.toggle('active', isActive);
+
+      if (this.endOfEpisode) {
+        el.sleepCountdown.textContent = 'End of Episode';
+        el.sleepBadge.textContent = 'EP';
+      } else if (this.endTime) {
+        const remaining = Math.max(0, Math.floor((this.endTime - Date.now()) / 1000));
+        el.sleepCountdown.textContent = fmtLong(remaining);
+        el.sleepBadge.textContent = Math.ceil(remaining / 60);
+      }
+    },
+
+    checkEpisodeEnd() {
+      if (this.endOfEpisode && state.currentEp) {
+        const current = el.audio.currentTime;
+        const duration = el.audio.duration || state.currentEp.duration;
+        if (duration - current <= 15 && !this.fadeIntervalId) {
+          this.startFade();
+        }
+      }
+    }
+  };
+
+  // === BOOKMARKS ===
+  const addBookmark = () => {
+    if (!state.currentEp) return;
+    const time = el.audio.currentTime;
+    const epId = state.currentEp.id;
+    if (!state.bookmarks[epId]) state.bookmarks[epId] = [];
+    state.bookmarks[epId].push({ time, note: 'Bookmark', created: Date.now() });
+    state.bookmarks[epId].sort((a, b) => a.time - b.time);
+    save();
+    renderBookmarks();
+    toast('Bookmark added at ' + fmt(time));
+    Mem.log('bookmark_added', 'ep_' + epId, { time });
+  };
+
+  const deleteBookmark = (epId, index) => {
+    if (state.bookmarks[epId]) {
+      state.bookmarks[epId].splice(index, 1);
+      if (state.bookmarks[epId].length === 0) delete state.bookmarks[epId];
+      save();
+      renderBookmarks();
+    }
+  };
+
+  const jumpToBookmark = (time) => {
+    seekTo(time);
+    closeAllPanels();
+  };
+
+  const renderBookmarks = () => {
+    if (!state.currentEp) {
+      el.bookmarksList.innerHTML = '<div class="bookmarks-empty">No episode playing</div>';
+      return;
+    }
+    const epId = state.currentEp.id;
+    const bookmarks = state.bookmarks[epId] || [];
+    if (bookmarks.length === 0) {
+      el.bookmarksList.innerHTML = '<div class="bookmarks-empty">No bookmarks yet. Click + to add one.</div>';
+      return;
+    }
+    el.bookmarksList.innerHTML = bookmarks.map((b, i) => `
+      <div class="bookmark-item" data-time="${b.time}">
+        <span class="bookmark-time">${fmt(b.time)}</span>
+        <span class="bookmark-note">${b.note}</span>
+        <button class="bookmark-delete" data-index="${i}"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 5L5 15M5 5l10 10"/></svg></button>
+      </div>
+    `).join('');
+  };
+
+  const renderBookmarkMarkers = () => {
+    // Remove existing markers
+    document.querySelectorAll('.bookmark-marker').forEach(m => m.remove());
+    if (!state.currentEp) return;
+    const epId = state.currentEp.id;
+    const bookmarks = state.bookmarks[epId] || [];
+    const duration = el.audio.duration || state.currentEp.duration;
+
+    bookmarks.forEach(b => {
+      const pct = (b.time / duration) * 100;
+      const marker = document.createElement('div');
+      marker.className = 'bookmark-marker';
+      marker.style.left = pct + '%';
+      marker.title = fmt(b.time);
+      marker.onclick = (e) => { e.stopPropagation(); jumpToBookmark(b.time); };
+      el.pBar.appendChild(marker);
+    });
+  };
+
+  // === SPEED PANEL ===
+  const setSpeed = (speed) => {
+    const prev = state.speed;
+    state.speed = Math.round(speed * 100) / 100;
+    el.audio.playbackRate = state.speed;
+    el.pSpeed.textContent = state.speed + 'x';
+    el.speedValue.textContent = state.speed.toFixed(2) + 'x';
+    el.speedSlider.value = state.speed;
+    // Update preset buttons
+    document.querySelectorAll('.speed-preset-btn').forEach(btn => {
+      btn.classList.toggle('active', parseFloat(btn.dataset.speed) === state.speed);
+    });
+    if (prev !== state.speed) {
+      Mem.log('speed_changed', 'settings', { speed: state.speed, prev });
+    }
+  };
+
+  // === ADAPTIVE BACKGROUND ===
+  const extractColor = (img) => {
+    try {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = 50;
+      canvas.height = 50;
+      ctx.drawImage(img, 0, 0, 50, 50);
+      const data = ctx.getImageData(0, 0, 50, 50).data;
+      let r = 0, g = 0, b = 0, count = 0;
+      for (let i = 0; i < data.length; i += 4) {
+        r += data[i];
+        g += data[i + 1];
+        b += data[i + 2];
+        count++;
+      }
+      r = Math.floor(r / count);
+      g = Math.floor(g / count);
+      b = Math.floor(b / count);
+      // Make color darker for better contrast
+      r = Math.floor(r * 0.4);
+      g = Math.floor(g * 0.4);
+      b = Math.floor(b * 0.4);
+      return `rgb(${r}, ${g}, ${b})`;
+    } catch (e) {
+      return null;
+    }
+  };
+
+  const updateAdaptiveBackground = () => {
+    if (!el.expArt.complete || !el.expArt.src) return;
+    const color = extractColor(el.expArt);
+    if (color) {
+      el.expanded.style.setProperty('--adaptive-color', color);
+      el.expanded.classList.add('adaptive-bg');
+    }
+  };
+
+  el.expArt.onload = updateAdaptiveBackground;
+  el.expArt.crossOrigin = 'anonymous';
+
+  // === MEDIA SESSION API ===
+  const updateMediaSession = () => {
+    if (!('mediaSession' in navigator) || !state.currentEp) return;
+    const show = state.feeds.find(f => f.id === state.currentEp.feedId);
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: state.currentEp.title,
+      artist: show?.name || 'Unknown Show',
+      album: show?.name || 'Podcast',
+      artwork: [{ src: state.currentEp.image || show?.image || '', sizes: '512x512', type: 'image/jpeg' }]
+    });
+    navigator.mediaSession.setActionHandler('play', () => { el.audio.play(); });
+    navigator.mediaSession.setActionHandler('pause', () => { el.audio.pause(); });
+    navigator.mediaSession.setActionHandler('seekbackward', () => skip(-15));
+    navigator.mediaSession.setActionHandler('seekforward', () => skip(30));
+    navigator.mediaSession.setActionHandler('previoustrack', () => playPreviousEpisode());
+    navigator.mediaSession.setActionHandler('nexttrack', () => playNextEpisode());
+    navigator.mediaSession.setActionHandler('seekto', (e) => { if (e.seekTime != null) seekTo(e.seekTime); });
+  };
+
+  const updatePositionState = () => {
+    if (!('mediaSession' in navigator) || !state.currentEp) return;
+    try {
+      navigator.mediaSession.setPositionState({
+        duration: el.audio.duration || state.currentEp.duration,
+        playbackRate: state.speed,
+        position: el.audio.currentTime
+      });
+    } catch (e) {}
+  };
+
+  const playNextEpisode = () => {
+    if (!state.currentEp) return;
+    const eps = state.podcasts.filter(p => p.feedId === state.currentEp.feedId);
+    const idx = eps.findIndex(p => p.id === state.currentEp.id);
+    if (idx > 0) playEp(eps[idx - 1].id);
+  };
+
+  const playPreviousEpisode = () => {
+    if (!state.currentEp) return;
+    const eps = state.podcasts.filter(p => p.feedId === state.currentEp.feedId);
+    const idx = eps.findIndex(p => p.id === state.currentEp.id);
+    if (idx < eps.length - 1) playEp(eps[idx + 1].id);
+  };
+
+  // === DRAWER ===
+  const openDrawer = () => {
+    renderDrawerContent();
+    el.drawer.classList.add('active');
+    el.drawerOverlay.classList.add('active');
+  };
+
+  const closeDrawer = () => {
+    el.drawer.classList.remove('active');
+    el.drawerOverlay.classList.remove('active');
+  };
+
+  const renderDrawerContent = () => {
+    const podcasts = state.feeds.filter(f => f.type === 'podcast');
+    const news = state.feeds.filter(f => f.type === 'news');
+    el.drawerContent.innerHTML = `
+      ${podcasts.length ? `
+        <div class="drawer-section">
+          <div class="drawer-section-title">Podcasts</div>
+          ${podcasts.map(f => `
+            <div class="drawer-item" data-type="podcast" data-id="${f.id}">
+              <div class="drawer-item-icon">${f.image ? `<img src="${f.image}">` : '🎙️'}</div>
+              <span class="drawer-item-name">${f.name}</span>
+            </div>
+          `).join('')}
+        </div>
+      ` : ''}
+      ${news.length ? `
+        <div class="drawer-section">
+          <div class="drawer-section-title">News Sources</div>
+          ${news.map(f => `
+            <div class="drawer-item" data-type="news" data-id="${f.id}">
+              <div class="drawer-item-icon">${f.image ? `<img src="${f.image}">` : '📰'}</div>
+              <span class="drawer-item-name">${f.name}</span>
+              ${f.unread ? `<span class="drawer-item-badge">${f.unread}</span>` : ''}
+            </div>
+          `).join('')}
+        </div>
+      ` : ''}
+      <div class="drawer-section">
+        <div class="drawer-section-title">Quick Actions</div>
+        <div class="drawer-item" id="drawerAddFeed">
+          <div class="drawer-item-icon">➕</div>
+          <span class="drawer-item-name">Add Feed</span>
+        </div>
+        <div class="drawer-item" id="drawerRefresh">
+          <div class="drawer-item-icon">🔄</div>
+          <span class="drawer-item-name">Refresh All</span>
+        </div>
+      </div>
+    `;
+  };
+
+  // === PANEL MANAGEMENT ===
+  const closeAllPanels = () => {
+    el.speedPanel.classList.remove('active');
+    el.bookmarksPanel.classList.remove('active');
+    state.speedPanelOpen = false;
+    state.bookmarksPanelOpen = false;
+  };
+
+  const toggleSpeedPanel = () => {
+    const wasOpen = state.speedPanelOpen;
+    closeAllPanels();
+    if (!wasOpen) {
+      el.speedPanel.classList.add('active');
+      state.speedPanelOpen = true;
+    }
+  };
+
+  const toggleBookmarksPanel = () => {
+    const wasOpen = state.bookmarksPanelOpen;
+    closeAllPanels();
+    if (!wasOpen) {
+      renderBookmarks();
+      el.bookmarksPanel.classList.add('active');
+      state.bookmarksPanelOpen = true;
+    }
+  };
+
+  // Close panels when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.player-right') && !e.target.closest('.speed-panel') && !e.target.closest('.bookmarks-panel')) {
+      closeAllPanels();
+    }
+  });
 
   // === EVENTS ===
   document.querySelector('.main-toggle').onclick = e => {
@@ -2282,7 +2802,16 @@
   $('pSkipFwd').onclick = () => skip(30);
   $('expBack').onclick = () => skip(-15);
   $('expFwd').onclick = () => skip(30);
-  el.pBar.onclick = e => { if (!state.currentEp) return; const r = el.pBar.getBoundingClientRect(); seekTo((e.clientX - r.left) / r.width * state.currentEp.duration); };
+  el.pBar.onclick = e => { if (!state.currentEp) return; const r = el.pBar.getBoundingClientRect(); seekTo((e.clientX - r.left) / r.width * (el.audio.duration || state.currentEp.duration)); };
+  el.pBar.onmousemove = e => {
+    if (!state.currentEp) return;
+    const r = el.pBar.getBoundingClientRect();
+    const pct = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+    const duration = el.audio.duration || state.currentEp.duration;
+    const time = pct * duration;
+    el.scrubTooltip.textContent = fmt(time);
+    el.scrubTooltip.style.left = (pct * 100) + '%';
+  };
   el.expBar.onclick = e => { if (!state.currentEp) return; const r = el.expBar.getBoundingClientRect(); seekTo((e.clientX - r.left) / r.width * state.currentEp.duration); };
   $('pExpand').onclick = () => el.expanded.classList.add('active');
   $('expClose').onclick = () => el.expanded.classList.remove('active');
@@ -2407,8 +2936,154 @@
   let searchTO;
   el.searchInput.oninput = e => { clearTimeout(searchTO); searchTO = setTimeout(() => { state.query = e.target.value; if (state.view === 'news') renderNews(); if (state.view === 'all') renderAll(); }, 200); };
   
-  document.onkeydown = e => { if (e.target.tagName === 'INPUT') return; if (e.code === 'Space') { e.preventDefault(); togglePlay(); } if (e.code === 'ArrowLeft') skip(-15); if (e.code === 'ArrowRight') skip(30); };
-  
+  // === KEYBOARD SHORTCUTS ===
+  document.onkeydown = e => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+    // Basic playback
+    if (e.code === 'Space') { e.preventDefault(); togglePlay(); return; }
+    if (e.code === 'ArrowLeft') { skip(-15); return; }
+    if (e.code === 'ArrowRight') { skip(30); return; }
+
+    // Fullscreen toggle
+    if (e.key === 'f' || e.key === 'F') {
+      e.preventDefault();
+      el.expanded.classList.toggle('active');
+      return;
+    }
+    if (e.key === 'Escape') {
+      el.expanded.classList.remove('active');
+      el.sleepTimerModal.classList.remove('active');
+      closeAllPanels();
+      closeDrawer();
+      return;
+    }
+
+    // Bookmarks
+    if (e.key === 'b' || e.key === 'B') {
+      if (!e.shiftKey) { e.preventDefault(); addBookmark(); }
+      return;
+    }
+
+    // Speed panel
+    if (e.key === 's' || e.key === 'S') {
+      if (!e.ctrlKey && !e.metaKey) { e.preventDefault(); toggleSpeedPanel(); }
+      return;
+    }
+
+    // Sleep timer
+    if (e.key === 'm' || e.key === 'M') {
+      e.preventDefault();
+      el.sleepTimerModal.classList.toggle('active');
+      return;
+    }
+
+    // Speed adjust with brackets
+    if (e.key === '[') { e.preventDefault(); setSpeed(Math.max(0.5, state.speed - 0.05)); return; }
+    if (e.key === ']') { e.preventDefault(); setSpeed(Math.min(3, state.speed + 0.05)); return; }
+
+    // Speed presets with Ctrl+1-5
+    if (e.ctrlKey || e.metaKey) {
+      const presets = { '1': 0.75, '2': 1, '3': 1.25, '4': 1.5, '5': 2 };
+      if (presets[e.key]) { e.preventDefault(); setSpeed(presets[e.key]); return; }
+    }
+
+    // Next/Previous episode with Shift+N/P
+    if (e.shiftKey) {
+      if (e.key === 'N' || e.key === 'n') { e.preventDefault(); playNextEpisode(); return; }
+      if (e.key === 'P' || e.key === 'p') { e.preventDefault(); playPreviousEpisode(); return; }
+    }
+  };
+
+  // === NEW FEATURE EVENT HANDLERS ===
+
+  // Hamburger & Drawer
+  el.hamburgerBtn.onclick = openDrawer;
+  el.drawerClose.onclick = closeDrawer;
+  el.drawerOverlay.onclick = closeDrawer;
+  el.drawerContent.onclick = e => {
+    const item = e.target.closest('.drawer-item');
+    if (!item) return;
+    if (item.id === 'drawerAddFeed') {
+      closeDrawer();
+      el.modal.classList.add('active');
+      return;
+    }
+    if (item.id === 'drawerRefresh') {
+      closeDrawer();
+      refreshAllFeeds();
+      return;
+    }
+    const type = item.dataset.type;
+    const id = parseInt(item.dataset.id);
+    closeDrawer();
+    if (type === 'podcast') {
+      document.querySelectorAll('.toggle-btn').forEach(b => b.classList.toggle('active', b.dataset.view === 'podcasts'));
+      state.view = 'podcasts';
+      el.newsView.classList.remove('active');
+      el.podcastView.classList.add('active');
+      el.allView.classList.remove('active');
+      renderShowPage(id);
+    } else if (type === 'news') {
+      document.querySelectorAll('.toggle-btn').forEach(b => b.classList.toggle('active', b.dataset.view === 'news'));
+      state.view = 'news';
+      el.newsView.classList.add('active');
+      el.podcastView.classList.remove('active');
+      el.allView.classList.remove('active');
+      renderSourcePage(id);
+    }
+  };
+
+  // Sleep Timer
+  el.pSleep.onclick = () => el.sleepTimerModal.classList.add('active');
+  el.sleepTimerModal.onclick = e => { if (e.target === el.sleepTimerModal) el.sleepTimerModal.classList.remove('active'); };
+  el.sleepPresets.onclick = e => {
+    const btn = e.target.closest('.sleep-preset');
+    if (!btn) return;
+    const minutes = btn.dataset.minutes;
+    sleepTimer.start(minutes === 'episode' ? 'episode' : parseInt(minutes));
+    el.sleepTimerModal.classList.remove('active');
+  };
+  el.sleepCustomBtn.onclick = () => {
+    const val = parseInt(el.sleepCustomInput.value);
+    if (val > 0 && val <= 999) {
+      sleepTimer.start(val);
+      el.sleepCustomInput.value = '';
+      el.sleepTimerModal.classList.remove('active');
+    }
+  };
+  el.sleepCancelBtn.onclick = () => {
+    sleepTimer.cancel();
+    toast('Sleep timer cancelled');
+  };
+
+  // Speed Panel
+  el.pSpeed.onclick = (e) => { e.stopPropagation(); toggleSpeedPanel(); };
+  el.speedSlider.oninput = () => setSpeed(parseFloat(el.speedSlider.value));
+  el.speedPanel.onclick = e => {
+    e.stopPropagation();
+    const btn = e.target.closest('.speed-preset-btn');
+    if (btn) setSpeed(parseFloat(btn.dataset.speed));
+  };
+
+  // Bookmarks Panel
+  el.pBookmark.onclick = (e) => { e.stopPropagation(); toggleBookmarksPanel(); };
+  el.addBookmarkBtn.onclick = (e) => { e.stopPropagation(); addBookmark(); };
+  el.bookmarksList.onclick = e => {
+    e.stopPropagation();
+    const del = e.target.closest('.bookmark-delete');
+    if (del) {
+      const epId = state.currentEp?.id;
+      const idx = parseInt(del.dataset.index);
+      if (epId !== undefined) deleteBookmark(epId, idx);
+      return;
+    }
+    const item = e.target.closest('.bookmark-item');
+    if (item) {
+      jumpToBookmark(parseFloat(item.dataset.time));
+    }
+  };
+
   // === INIT ===
   const init = async () => {
     load();
@@ -2455,7 +3130,7 @@
     if (state.view === 'podcasts') renderPodcasts();
     if (state.view === 'all') renderAll();
 
-    console.log('Feedr loaded');
+    console.log('BURSST loaded');
     console.log('Memory API: Memory.setEndpoint(url), Memory.getLocal()');
   };
 
