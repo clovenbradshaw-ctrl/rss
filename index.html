@@ -59,6 +59,7 @@
     .source-badge { background: var(--green); color: #000; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 10px; }
     
     .news-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .news-content.hidden { display: none; }
     .news-header { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
     .news-title { font-size: 18px; font-weight: 600; margin-right: 16px; }
     .category-chips { display: flex; gap: 8px; overflow-x: auto; flex: 1; }
@@ -121,20 +122,63 @@
     .ep-dl:hover { color: var(--text); }
     .ep-dl.active { color: var(--green); }
     
-    /* Show Page */
-    .show-page { display: none; }
-    .show-page.active { display: block; }
-    .show-hero { padding: 28px; background: linear-gradient(180deg, #1a1a3a 0%, var(--bg) 100%); display: flex; gap: 24px; align-items: flex-end; }
-    .show-hero-art { width: 180px; height: 180px; border-radius: 10px; object-fit: cover; box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
-    .show-hero-info { flex: 1; }
-    .show-hero-type { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--text2); margin-bottom: 6px; }
-    .show-hero-title { font-size: 36px; font-weight: 700; line-height: 1.1; margin-bottom: 10px; }
-    .show-hero-author { font-size: 14px; color: var(--text2); }
-    .show-actions { padding: 16px 28px; display: flex; gap: 12px; }
+    /* Show Page & Source Page */
+    .show-page, .source-page { display: none; height: 100%; overflow-y: auto; }
+    .show-page.active, .source-page.active { display: block; }
+    .show-hero, .source-hero { padding: 28px; background: linear-gradient(180deg, #1a1a3a 0%, var(--bg) 100%); display: flex; gap: 24px; align-items: flex-end; }
+    .show-hero-art, .source-hero-art { width: 180px; height: 180px; border-radius: 10px; object-fit: cover; box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+    .show-hero-info, .source-hero-info { flex: 1; }
+    .show-hero-type, .source-hero-type { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--text2); margin-bottom: 6px; }
+    .show-hero-title, .source-hero-title { font-size: 36px; font-weight: 700; line-height: 1.1; margin-bottom: 10px; }
+    .show-hero-author, .source-hero-author { font-size: 14px; color: var(--text2); }
+    .show-actions, .source-actions { padding: 16px 28px; display: flex; gap: 12px; align-items: center; }
     .show-play { width: 48px; height: 48px; border-radius: 50%; background: var(--green); border: none; color: #000; cursor: pointer; display: flex; align-items: center; justify-content: center; }
     .show-play:hover { transform: scale(1.05); }
     .show-episodes { padding: 0 28px 120px; }
     .show-episodes-title { font-size: 18px; font-weight: 600; margin-bottom: 14px; }
+    .source-articles { padding: 0 28px 120px; }
+    .source-articles-title { font-size: 18px; font-weight: 600; margin-bottom: 14px; }
+    .back-btn { background: var(--bg3); border: 1px solid var(--border2); color: var(--text); padding: 10px 16px; border-radius: 20px; cursor: pointer; font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 6px; font-family: inherit; }
+    .back-btn:hover { background: var(--bg4); }
+
+    /* View Options */
+    .view-options { display: flex; gap: 4px; margin-left: auto; background: var(--bg3); padding: 4px; border-radius: 8px; }
+    .view-btn { background: none; border: none; color: var(--text3); padding: 8px 10px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .view-btn:hover { color: var(--text); background: var(--bg4); }
+    .view-btn.active { color: var(--green); background: var(--bg4); }
+
+    /* Table View */
+    .articles-table { width: 100%; border-collapse: collapse; }
+    .articles-table th { text-align: left; padding: 12px 16px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text3); border-bottom: 1px solid var(--border); }
+    .articles-table td { padding: 12px 16px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    .articles-table tr:hover td { background: var(--bg2); }
+    .articles-table .table-title { font-weight: 500; color: var(--text); cursor: pointer; }
+    .articles-table .table-title:hover { color: var(--green); }
+    .articles-table .table-time { color: var(--text3); font-size: 13px; white-space: nowrap; }
+    .articles-table .table-badge { background: var(--green); color: #000; font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 8px; margin-left: 8px; }
+    .articles-table .table-img { width: 48px; height: 36px; border-radius: 4px; object-fit: cover; }
+
+    /* Cards View (Equal) */
+    .articles-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+    .article-card { background: var(--bg2); border-radius: 12px; overflow: hidden; cursor: pointer; border: 1px solid transparent; transition: all 0.15s; display: flex; flex-direction: column; }
+    .article-card:hover { background: var(--bg3); border-color: var(--border2); transform: translateY(-2px); }
+    .article-card-img { width: 100%; height: 160px; object-fit: cover; background: var(--bg3); }
+    .article-card-body { padding: 14px; flex: 1; display: flex; flex-direction: column; }
+    .article-card-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 12px; }
+    .article-card-source { color: var(--green); font-weight: 500; }
+    .article-card-time { color: var(--text3); }
+    .article-card-title { font-size: 15px; font-weight: 600; line-height: 1.4; margin-bottom: 8px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .article-card-summary { font-size: 13px; color: var(--text2); line-height: 1.5; flex: 1; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    .article-card.unread::before { content: ''; position: absolute; top: 0; left: 0; bottom: 0; width: 3px; background: var(--green); }
+    .article-card { position: relative; }
+
+    /* Masonry View (Varied Sizes) */
+    .articles-masonry { columns: 3; column-gap: 16px; }
+    .articles-masonry .article-card { break-inside: avoid; margin-bottom: 16px; }
+    .articles-masonry .article-card-img { height: auto; min-height: 120px; max-height: 240px; }
+    .articles-masonry .article-card-summary { -webkit-line-clamp: 5; }
+    @media (max-width: 1200px) { .articles-masonry { columns: 2; } }
+    @media (max-width: 768px) { .articles-masonry { columns: 1; } .articles-grid { grid-template-columns: 1fr; } }
     
     /* === PLAYER === */
     .player { position: fixed; bottom: 0; left: 0; right: 0; height: 76px; background: var(--bg2); border-top: 1px solid var(--border); display: none; align-items: center; padding: 0 16px; z-index: 100; }
@@ -252,13 +296,14 @@
         <div class="sidebar-header"><h2>Sources</h2><button class="add-btn" id="addNewsBtn">+</button></div>
         <div class="sidebar-content" id="newsSources"></div>
       </aside>
-      <div class="news-content">
+      <div class="news-content" id="newsContent">
         <div class="news-header">
           <div class="news-title" id="newsTitle">All Articles</div>
           <div class="category-chips" id="categoryChips"></div>
         </div>
         <div class="news-list" id="newsList"></div>
       </div>
+      <div class="source-page" id="sourcePage"></div>
     </div>
     
     <!-- PODCAST VIEW -->
@@ -416,7 +461,9 @@
     currentEp: null,
     playing: false,
     speed: 1,
-    progress: {}
+    progress: {},
+    viewPrefs: {}, // Per-source view preferences: { feedId: 'table' | 'cards' | 'masonry' }
+    currentSourcePage: null // Currently viewed source page (feed id)
   };
   
   // === DOM ===
@@ -425,6 +472,7 @@
     newsView: $('newsView'), podcastView: $('podcastView'),
     newsSources: $('newsSources'), newsTitle: $('newsTitle'),
     categoryChips: $('categoryChips'), newsList: $('newsList'),
+    newsContent: $('newsContent'), sourcePage: $('sourcePage'),
     podcastContent: $('podcastContent'), showPage: $('showPage'),
     player: $('player'), playerArt: $('playerArt'), playerTitle: $('playerTitle'),
     playerShow: $('playerShow'), pPlay: $('pPlay'), pPlayIcon: $('pPlayIcon'),
@@ -441,12 +489,12 @@
   // === UTILS ===
   const fmt = s => { if (isNaN(s) || s < 0) return '0:00'; const m = Math.floor(s / 60), sec = Math.floor(s % 60); return m + ':' + String(sec).padStart(2, '0'); };
   const toast = m => { el.toast.textContent = m; el.toast.classList.add('show'); setTimeout(() => el.toast.classList.remove('show'), 2500); };
-  const save = () => localStorage.setItem('feedr2', JSON.stringify({ feeds: state.feeds, articles: state.articles, podcasts: state.podcasts, progress: state.progress }));
+  const save = () => localStorage.setItem('feedr2', JSON.stringify({ feeds: state.feeds, articles: state.articles, podcasts: state.podcasts, progress: state.progress, viewPrefs: state.viewPrefs }));
   
   const load = () => {
     try {
       const d = JSON.parse(localStorage.getItem('feedr2'));
-      if (d) { state.feeds = d.feeds || []; state.articles = d.articles || []; state.podcasts = d.podcasts || []; state.progress = d.progress || {}; }
+      if (d) { state.feeds = d.feeds || []; state.articles = d.articles || []; state.podcasts = d.podcasts || []; state.progress = d.progress || {}; state.viewPrefs = d.viewPrefs || {}; }
       state.feeds.forEach(f => f.category && state.categories.add(f.category));
       if (!state.feeds.length) loadDemo();
     } catch(e) { loadDemo(); }
@@ -1070,7 +1118,100 @@
     
     el.newsList.innerHTML = items.map(i => `<div class="article ${i.unread ? 'unread' : ''}" data-id="${i.id}"><div class="article-icon">${i.feed?.image ? `<img src="${i.feed.image}">` : '📄'}</div><div class="article-body"><div class="article-meta"><span class="article-source">${i.feed?.name || ''}</span><span class="article-time">· ${i.time}</span>${i.unread ? '<span class="article-new">NEW</span>' : ''}</div><div class="article-title">${i.title}</div>${i.summary ? `<div class="article-summary">${i.summary}</div>` : ''}</div>${i.image ? `<img class="article-image" src="${i.image}">` : ''}</div>`).join('');
   };
-  
+
+  // View icons for source page
+  const viewIcons = {
+    table: '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 3h18v18H3zM3 9h18M3 15h18M9 3v18"/></svg>',
+    cards: '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>',
+    masonry: '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="3" y="16" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/></svg>'
+  };
+
+  // Render article card for grid/masonry view
+  const renderArticleCard = (article, feed) => {
+    const placeholder = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 60"><rect fill="#1a1a1a" width="100" height="60"/><text x="50" y="35" text-anchor="middle" font-size="20" fill="#333">📰</text></svg>');
+    return `<div class="article-card ${article.unread ? 'unread' : ''}" data-id="${article.id}">
+      ${article.image ? `<img class="article-card-img" src="${article.image}" onerror="this.style.display='none'">` : ''}
+      <div class="article-card-body">
+        <div class="article-card-meta">
+          <span class="article-card-time">${article.time}</span>
+          ${article.unread ? '<span style="color:var(--green);font-weight:600;font-size:10px">NEW</span>' : ''}
+        </div>
+        <div class="article-card-title">${article.title}</div>
+        ${article.summary ? `<div class="article-card-summary">${article.summary}</div>` : ''}
+      </div>
+    </div>`;
+  };
+
+  // Render articles based on view type
+  const renderArticlesView = (articles, viewType, feed) => {
+    if (viewType === 'table') {
+      return `<table class="articles-table">
+        <thead><tr><th></th><th>Title</th><th>Date</th></tr></thead>
+        <tbody>
+          ${articles.map(a => `<tr data-id="${a.id}">
+            <td>${a.image ? `<img class="table-img" src="${a.image}" onerror="this.style.display='none'">` : ''}</td>
+            <td><span class="table-title">${a.title}</span>${a.unread ? '<span class="table-badge">NEW</span>' : ''}</td>
+            <td class="table-time">${a.time}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`;
+    } else if (viewType === 'masonry') {
+      return `<div class="articles-masonry">${articles.map(a => renderArticleCard(a, feed)).join('')}</div>`;
+    } else {
+      // Default: cards (equal grid)
+      return `<div class="articles-grid">${articles.map(a => renderArticleCard(a, feed)).join('')}</div>`;
+    }
+  };
+
+  // === RENDER SOURCE PAGE (News) ===
+  const renderSourcePage = id => {
+    const feed = state.feeds.find(f => f.id === id);
+    if (!feed) return;
+
+    state.currentSourcePage = id;
+    Mem.log('feed_opened', 'source_' + id);
+
+    const articles = state.articles.filter(a => a.feedId === id);
+    const viewType = state.viewPrefs[id] || 'cards';
+    const placeholder = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="#1a1a1a" width="100" height="100"/><text x="50" y="60" text-anchor="middle" font-size="40">📰</text></svg>');
+
+    el.newsContent.classList.add('hidden');
+    el.sourcePage.classList.add('active');
+
+    el.sourcePage.innerHTML = `
+      <div class="source-hero">
+        <img class="source-hero-art" src="${feed.image || placeholder}" onerror="this.src='${placeholder}'">
+        <div class="source-hero-info">
+          <div class="source-hero-type">News Feed</div>
+          <div class="source-hero-title">${feed.name}</div>
+          <div class="source-hero-author">${feed.author || feed.category || ''}</div>
+        </div>
+      </div>
+      <div class="source-actions">
+        <button class="back-btn" id="sourceBackBtn">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          Back
+        </button>
+        <div class="view-options">
+          <button class="view-btn ${viewType === 'table' ? 'active' : ''}" data-view="table" title="Table view">${viewIcons.table}</button>
+          <button class="view-btn ${viewType === 'cards' ? 'active' : ''}" data-view="cards" title="Cards view">${viewIcons.cards}</button>
+          <button class="view-btn ${viewType === 'masonry' ? 'active' : ''}" data-view="masonry" title="Masonry view">${viewIcons.masonry}</button>
+        </div>
+      </div>
+      <div class="source-articles">
+        <div class="source-articles-title">${articles.length} Article${articles.length !== 1 ? 's' : ''}</div>
+        ${articles.length ? renderArticlesView(articles, viewType, feed) : '<div class="empty"><div class="empty-icon">📭</div><div class="empty-title">No articles yet</div></div>'}
+      </div>
+    `;
+  };
+
+  const closeSourcePage = () => {
+    state.currentSourcePage = null;
+    el.sourcePage.classList.remove('active');
+    el.newsContent.classList.remove('hidden');
+    renderNewsSources();
+  };
+
   // === RENDER PODCASTS ===
   const renderPodcasts = () => {
     el.showPage.classList.remove('active');
@@ -1111,14 +1252,99 @@
     return `<div class="episode" data-ep="${ep.id}"><img class="episode-art" src="${imgSrc}" onerror="this.src='${placeholderImg}'"><div class="episode-body"><div class="episode-show">${show?.name || ''}</div><div class="episode-title">${ep.title}</div><div class="episode-footer"><button class="ep-play" data-ep="${ep.id}"><svg width="10" height="10" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button><div class="ep-progress"><div class="ep-bar"><div class="ep-fill" style="width:${pct}%"></div></div><span class="ep-time">${done ? 'Played' : pr > 0 ? fmt(rem) + ' left' : fmt(ep.duration)}</span></div><button class="ep-dl ${ep.downloaded ? 'active' : ''}" data-dl="${ep.id}"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg></button></div></div></div>`;
   };
   
+  // Render episode card for grid/masonry view
+  const renderEpisodeCard = ep => {
+    const show = state.feeds.find(f => f.id === ep.feedId);
+    const pr = state.progress[ep.id] || 0;
+    const pct = ep.duration ? (pr / ep.duration) * 100 : 0;
+    const done = pr >= ep.duration * 0.95;
+    const imgSrc = ep.image || show?.image || placeholderImg;
+    return `<div class="article-card" data-ep="${ep.id}">
+      <img class="article-card-img" src="${imgSrc}" onerror="this.src='${placeholderImg}'">
+      <div class="article-card-body">
+        <div class="article-card-meta">
+          <span class="article-card-time">${ep.date}</span>
+          <span style="color:var(--text3);font-size:11px">${fmt(ep.duration)}</span>
+        </div>
+        <div class="article-card-title">${ep.title}</div>
+        ${ep.desc ? `<div class="article-card-summary">${ep.desc}</div>` : ''}
+        <div style="margin-top:auto;padding-top:10px;display:flex;align-items:center;gap:8px">
+          <div style="flex:1;height:4px;background:var(--border2);border-radius:2px"><div style="height:100%;width:${pct}%;background:var(--green);border-radius:2px"></div></div>
+          <span style="font-size:11px;color:var(--text3)">${done ? 'Played' : pr > 0 ? fmt(ep.duration - pr) + ' left' : ''}</span>
+        </div>
+      </div>
+    </div>`;
+  };
+
+  // Render episodes based on view type
+  const renderEpisodesView = (episodes, viewType) => {
+    if (viewType === 'table') {
+      return `<table class="articles-table">
+        <thead><tr><th></th><th>Title</th><th>Duration</th><th>Date</th></tr></thead>
+        <tbody>
+          ${episodes.map(ep => {
+            const pr = state.progress[ep.id] || 0;
+            const done = pr >= ep.duration * 0.95;
+            const imgSrc = ep.image || state.feeds.find(f => f.id === ep.feedId)?.image || placeholderImg;
+            return `<tr data-ep="${ep.id}">
+              <td><img class="table-img" src="${imgSrc}" onerror="this.src='${placeholderImg}'"></td>
+              <td><span class="table-title">${ep.title}</span>${done ? '<span class="table-badge" style="background:var(--text3)">PLAYED</span>' : ''}</td>
+              <td class="table-time">${fmt(ep.duration)}</td>
+              <td class="table-time">${ep.date}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>`;
+    } else if (viewType === 'masonry') {
+      return `<div class="articles-masonry">${episodes.map(renderEpisodeCard).join('')}</div>`;
+    } else if (viewType === 'cards') {
+      return `<div class="articles-grid">${episodes.map(renderEpisodeCard).join('')}</div>`;
+    } else {
+      // Default: list
+      return `<div class="episode-list">${episodes.map(renderEpisode).join('')}</div>`;
+    }
+  };
+
   const renderShowPage = id => {
     const show = state.feeds.find(f => f.id === id);
     if (!show) return;
+    state.currentSourcePage = id;
     Mem.log('feed_opened', 'source_' + id);
     const eps = state.podcasts.filter(p => p.feedId === id);
+    const viewType = state.viewPrefs[id] || 'list';
     el.podcastContent.style.display = 'none';
     el.showPage.classList.add('active');
-    el.showPage.innerHTML = `<div class="show-hero"><img class="show-hero-art" src="${show.image || placeholderImg}" onerror="this.src='${placeholderImg}'"><div class="show-hero-info"><div class="show-hero-type">Podcast</div><div class="show-hero-title">${show.name}</div><div class="show-hero-author">${show.author || ''}</div></div></div><div class="show-actions"><button class="show-play" data-show="${id}"><svg width="22" height="22" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button></div><div class="show-episodes"><div class="show-episodes-title">Episodes</div><div class="episode-list">${eps.map(renderEpisode).join('')}</div></div>`;
+    el.showPage.innerHTML = `
+      <div class="show-hero">
+        <img class="show-hero-art" src="${show.image || placeholderImg}" onerror="this.src='${placeholderImg}'">
+        <div class="show-hero-info">
+          <div class="show-hero-type">Podcast</div>
+          <div class="show-hero-title">${show.name}</div>
+          <div class="show-hero-author">${show.author || ''}</div>
+        </div>
+      </div>
+      <div class="show-actions">
+        <button class="back-btn" id="showBackBtn">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          Back
+        </button>
+        <button class="show-play" data-show="${id}">
+          <svg width="22" height="22" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        </button>
+        <div class="view-options">
+          <button class="view-btn ${viewType === 'list' ? 'active' : ''}" data-view="list" title="List view">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+          </button>
+          <button class="view-btn ${viewType === 'table' ? 'active' : ''}" data-view="table" title="Table view">${viewIcons.table}</button>
+          <button class="view-btn ${viewType === 'cards' ? 'active' : ''}" data-view="cards" title="Cards view">${viewIcons.cards}</button>
+          <button class="view-btn ${viewType === 'masonry' ? 'active' : ''}" data-view="masonry" title="Masonry view">${viewIcons.masonry}</button>
+        </div>
+      </div>
+      <div class="show-episodes">
+        <div class="show-episodes-title">${eps.length} Episode${eps.length !== 1 ? 's' : ''}</div>
+        ${eps.length ? renderEpisodesView(eps, viewType) : '<div class="empty"><div class="empty-icon">🎙️</div><div class="empty-title">No episodes yet</div></div>'}
+      </div>
+    `;
   };
   
   // === PLAYER ===
@@ -1309,9 +1535,16 @@
     const src = e.target.closest('.source-item');
     if (!src) return;
     const id = src.dataset.id;
-    state.selectedSource = id === 'all' ? null : parseInt(id);
-    el.newsTitle.textContent = id === 'all' ? 'All Articles' : state.feeds.find(f => f.id === state.selectedSource)?.name || '';
-    renderNewsSources(); renderNews();
+    if (id === 'all') {
+      // Show all articles in main view
+      state.selectedSource = null;
+      el.newsTitle.textContent = 'All Articles';
+      closeSourcePage();
+      renderNewsSources(); renderNews();
+    } else {
+      // Navigate to source page
+      renderSourcePage(parseInt(id));
+    }
   };
   
   el.categoryChips.onclick = e => {
@@ -1328,9 +1561,49 @@
     if (!item) return;
     const id = parseInt(item.dataset.id);
     const art = state.articles.find(a => a.id === id);
-    if (art) { Mem.log('article_opened', 'art_' + id, { source: art.feedId }); toast('Opening article...'); }
+    if (art) {
+      art.unread = false;
+      save();
+      Mem.log('article_opened', 'art_' + id, { source: art.feedId });
+      if (art.link) window.open(art.link, '_blank');
+      renderNews();
+    }
   };
-  
+
+  // Source page click handler
+  el.sourcePage.onclick = e => {
+    // Back button
+    const backBtn = e.target.closest('.back-btn');
+    if (backBtn) { closeSourcePage(); return; }
+
+    // View toggle buttons
+    const viewBtn = e.target.closest('.view-btn');
+    if (viewBtn && state.currentSourcePage) {
+      const newView = viewBtn.dataset.view;
+      state.viewPrefs[state.currentSourcePage] = newView;
+      save();
+      renderSourcePage(state.currentSourcePage);
+      return;
+    }
+
+    // Article clicks (in cards, masonry, or table view)
+    const articleCard = e.target.closest('.article-card');
+    const tableRow = e.target.closest('tr[data-id]');
+    const articleEl = articleCard || tableRow;
+
+    if (articleEl) {
+      const id = parseInt(articleEl.dataset.id);
+      const art = state.articles.find(a => a.id === id);
+      if (art) {
+        art.unread = false;
+        save();
+        Mem.log('article_opened', 'art_' + id, { source: art.feedId });
+        if (art.link) window.open(art.link, '_blank');
+        renderSourcePage(state.currentSourcePage);
+      }
+    }
+  };
+
   document.querySelector('.podcast-nav').onclick = e => {
     const btn = e.target.closest('.nav-btn');
     if (!btn) return;
@@ -1353,12 +1626,39 @@
   };
   
   el.showPage.onclick = e => {
+    // Back button
+    const backBtn = e.target.closest('.back-btn');
+    if (backBtn) {
+      state.currentSourcePage = null;
+      el.showPage.classList.remove('active');
+      el.podcastContent.style.display = 'block';
+      renderPodcasts();
+      return;
+    }
+
+    // View toggle buttons
+    const viewBtn = e.target.closest('.view-btn');
+    if (viewBtn && state.currentSourcePage) {
+      const newView = viewBtn.dataset.view;
+      state.viewPrefs[state.currentSourcePage] = newView;
+      save();
+      renderShowPage(state.currentSourcePage);
+      return;
+    }
+
     const playBtn = e.target.closest('.ep-play');
     if (playBtn) { playEp(parseInt(playBtn.dataset.ep)); return; }
     const showPlay = e.target.closest('.show-play');
     if (showPlay) { const eps = state.podcasts.filter(p => p.feedId === parseInt(showPlay.dataset.show)); if (eps.length) playEp(eps[0].id); return; }
     const ep = e.target.closest('.episode');
     if (ep && !e.target.closest('.ep-dl')) { playEp(parseInt(ep.dataset.ep)); return; }
+
+    // Episode clicks in cards/table view
+    const epCard = e.target.closest('.article-card[data-ep]');
+    const epRow = e.target.closest('tr[data-ep]');
+    const epEl = epCard || epRow;
+    if (epEl) { playEp(parseInt(epEl.dataset.ep)); return; }
+
     const dl = e.target.closest('.ep-dl');
     if (dl) { const id = parseInt(dl.dataset.dl); const p = state.podcasts.find(x => x.id === id); if (p) { p.downloaded = !p.downloaded; save(); renderShowPage(p.feedId); toast(p.downloaded ? 'Downloaded' : 'Removed'); } }
   };
