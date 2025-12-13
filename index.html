@@ -616,14 +616,32 @@
     return '';
   };
 
+  // Check if URL looks like a valid image URL (not just a homepage)
+  const isValidImageUrl = url => {
+    if (!url) return false;
+    try {
+      const parsed = new URL(url);
+      // Reject URLs that are just hostnames with no meaningful path
+      if (parsed.pathname === '/' || parsed.pathname === '') return false;
+      // Accept URLs with image extensions or meaningful paths
+      const imageExtensions = /\.(jpg|jpeg|png|gif|webp|svg|bmp|ico)(\?|$)/i;
+      if (imageExtensions.test(parsed.pathname)) return true;
+      // Accept URLs with paths that look like they could be images
+      if (parsed.pathname.length > 1) return true;
+      return false;
+    } catch (e) {
+      return false;
+    }
+  };
+
   const extractImage = item => {
     // Try media:content
     let img = getNodeAttr(item, 'media:content', 'url');
-    if (img) return img;
+    if (img && isValidImageUrl(img)) return img;
 
     // Try media:thumbnail
     img = getNodeAttr(item, 'media:thumbnail', 'url');
-    if (img) return img;
+    if (img && isValidImageUrl(img)) return img;
 
     // Try enclosure with image type
     const enclosure = findElement(item, 'enclosure');
