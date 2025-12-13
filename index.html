@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Feedr</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0a0a; --bg2: #111; --bg3: #1a1a1a; --bg4: #1f1f1f;
+      --border: #1f1f1f; --border2: #333;
+      --text: #e5e5e5; --text2: #a0a0a0; --text3: #666;
+      --green: #1db954; --green2: #1ed760;
+    }
+    html, body { height: 100%; }
+    body { font-family: 'IBM Plex Sans', system-ui, sans-serif; background: var(--bg); color: var(--text); overflow: hidden; }
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+    
+    .app { display: flex; flex-direction: column; height: 100vh; }
+    
+    /* Header */
+    .header { background: var(--bg); border-bottom: 1px solid var(--border); padding: 12px 16px; display: flex; align-items: center; gap: 16px; }
+    .logo { font-size: 22px; font-weight: 700; }
+    .main-toggle { display: flex; background: var(--bg3); border-radius: 25px; padding: 4px; }
+    .toggle-btn { padding: 10px 20px; background: transparent; border: none; border-radius: 21px; color: var(--text2); font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; display: flex; align-items: center; gap: 8px; transition: all 0.2s; }
+    .toggle-btn.active { background: var(--green); color: #000; }
+    .toggle-btn:not(.active):hover { background: var(--bg4); color: var(--text); }
+    .spacer { flex: 1; }
+    .search-box { max-width: 280px; flex: 1; position: relative; }
+    .search-box input { width: 100%; padding: 10px 16px 10px 38px; background: var(--bg3); border: 1px solid var(--border2); border-radius: 20px; color: var(--text); font-size: 14px; font-family: inherit; }
+    .search-box input:focus { outline: none; border-color: var(--green); }
+    .search-box input::placeholder { color: var(--text3); }
+    .search-box svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text3); }
+    .icon-btn { background: none; border: none; color: var(--text2); cursor: pointer; padding: 10px; border-radius: 50%; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
+    .icon-btn:hover { background: var(--bg4); color: var(--text); }
+    
+    /* Main */
+    .main { flex: 1; overflow: hidden; }
+    
+    /* === NEWS VIEW === */
+    .news-view { display: none; height: 100%; }
+    .news-view.active { display: flex; }
+    
+    .news-sidebar { width: 240px; background: var(--bg2); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+    .sidebar-header { padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+    .sidebar-header h2 { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text2); }
+    .add-btn { background: var(--green); border: none; color: #000; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-size: 16px; }
+    .sidebar-content { flex: 1; overflow-y: auto; padding: 8px; }
+    
+    .source-item { display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 8px; cursor: pointer; margin-bottom: 2px; transition: background 0.15s; }
+    .source-item:hover { background: var(--bg3); }
+    .source-item.active { background: var(--bg4); }
+    .source-icon { width: 32px; height: 32px; border-radius: 6px; background: var(--bg3); display: flex; align-items: center; justify-content: center; font-size: 16px; overflow: hidden; }
+    .source-icon img { width: 100%; height: 100%; object-fit: cover; }
+    .source-name { flex: 1; font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .source-badge { background: var(--green); color: #000; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 10px; }
+    
+    .news-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .news-header { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
+    .news-title { font-size: 18px; font-weight: 600; margin-right: 16px; }
+    .category-chips { display: flex; gap: 8px; overflow-x: auto; flex: 1; }
+    .chip { padding: 6px 14px; background: var(--bg3); border: 1px solid var(--border2); border-radius: 16px; color: var(--text2); font-size: 12px; font-weight: 500; cursor: pointer; white-space: nowrap; font-family: inherit; transition: all 0.15s; }
+    .chip:hover { background: var(--bg4); color: var(--text); }
+    .chip.active { background: var(--green); border-color: var(--green); color: #000; }
+    
+    .news-list { flex: 1; overflow-y: auto; padding: 12px 16px 100px; }
+    .article { display: flex; gap: 14px; padding: 14px; background: var(--bg2); border-radius: 10px; margin-bottom: 8px; cursor: pointer; border: 1px solid transparent; transition: all 0.15s; }
+    .article:hover { background: var(--bg3); border-color: var(--border2); }
+    .article.unread { border-left: 3px solid var(--green); }
+    .article-icon { width: 40px; height: 40px; border-radius: 8px; background: var(--bg3); display: flex; align-items: center; justify-content: center; font-size: 20px; overflow: hidden; flex-shrink: 0; }
+    .article-icon img { width: 100%; height: 100%; object-fit: cover; }
+    .article-body { flex: 1; min-width: 0; }
+    .article-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; font-size: 12px; }
+    .article-source { color: var(--green); font-weight: 500; }
+    .article-time { color: var(--text3); }
+    .article-new { color: var(--green); font-weight: 600; font-size: 10px; }
+    .article-title { font-size: 15px; font-weight: 500; line-height: 1.4; margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .article-summary { font-size: 13px; color: var(--text2); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .article-image { width: 100px; height: 70px; border-radius: 6px; object-fit: cover; flex-shrink: 0; }
+    
+    /* === PODCAST VIEW === */
+    .podcast-view { display: none; height: 100%; flex-direction: column; }
+    .podcast-view.active { display: flex; }
+    
+    .podcast-nav { display: flex; background: var(--bg2); border-bottom: 1px solid var(--border); padding: 0 16px; }
+    .nav-btn { padding: 14px 18px; background: none; border: none; border-bottom: 2px solid transparent; color: var(--text2); font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+    .nav-btn:hover { color: var(--text); }
+    .nav-btn.active { color: var(--green); border-bottom-color: var(--green); }
+    
+    .podcast-content { flex: 1; overflow-y: auto; padding: 20px; padding-bottom: 120px; }
+    
+    .section { margin-bottom: 28px; }
+    .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .section-title { font-size: 18px; font-weight: 600; }
+    
+    .shows-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 16px; }
+    .show-card { cursor: pointer; transition: transform 0.15s; }
+    .show-card:hover { transform: translateY(-4px); }
+    .show-art { width: 100%; aspect-ratio: 1; border-radius: 8px; object-fit: cover; margin-bottom: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+    .show-name { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .show-author { font-size: 12px; color: var(--text3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    
+    .episode-list { display: flex; flex-direction: column; gap: 8px; }
+    .episode { display: flex; gap: 12px; padding: 12px; background: var(--bg2); border-radius: 10px; cursor: pointer; transition: background 0.15s; }
+    .episode:hover { background: var(--bg3); }
+    .episode-art { width: 64px; height: 64px; border-radius: 6px; object-fit: cover; flex-shrink: 0; }
+    .episode-body { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
+    .episode-show { font-size: 12px; color: var(--green); font-weight: 500; margin-bottom: 2px; }
+    .episode-title { font-size: 14px; font-weight: 500; margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .episode-footer { display: flex; align-items: center; gap: 10px; }
+    .ep-play { width: 28px; height: 28px; border-radius: 50%; background: var(--text); border: none; color: var(--bg); cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .ep-play:hover { background: var(--green); }
+    .ep-progress { flex: 1; display: flex; align-items: center; gap: 8px; }
+    .ep-bar { flex: 1; height: 4px; background: var(--border2); border-radius: 2px; overflow: hidden; }
+    .ep-fill { height: 100%; background: var(--green); }
+    .ep-time { font-size: 11px; color: var(--text3); white-space: nowrap; }
+    .ep-dl { background: none; border: none; color: var(--text3); cursor: pointer; padding: 4px; }
+    .ep-dl:hover { color: var(--text); }
+    .ep-dl.active { color: var(--green); }
+    
+    /* Show Page */
+    .show-page { display: none; }
+    .show-page.active { display: block; }
+    .show-hero { padding: 28px; background: linear-gradient(180deg, #1a1a3a 0%, var(--bg) 100%); display: flex; gap: 24px; align-items: flex-end; }
+    .show-hero-art { width: 180px; height: 180px; border-radius: 10px; object-fit: cover; box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+    .show-hero-info { flex: 1; }
+    .show-hero-type { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--text2); margin-bottom: 6px; }
+    .show-hero-title { font-size: 36px; font-weight: 700; line-height: 1.1; margin-bottom: 10px; }
+    .show-hero-author { font-size: 14px; color: var(--text2); }
+    .show-actions { padding: 16px 28px; display: flex; gap: 12px; }
+    .show-play { width: 48px; height: 48px; border-radius: 50%; background: var(--green); border: none; color: #000; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .show-play:hover { transform: scale(1.05); }
+    .show-episodes { padding: 0 28px 120px; }
+    .show-episodes-title { font-size: 18px; font-weight: 600; margin-bottom: 14px; }
+    
+    /* === PLAYER === */
+    .player { position: fixed; bottom: 0; left: 0; right: 0; height: 76px; background: var(--bg2); border-top: 1px solid var(--border); display: none; align-items: center; padding: 0 16px; z-index: 100; }
+    .player.active { display: flex; }
+    .player-left { display: flex; align-items: center; gap: 12px; width: 25%; min-width: 160px; }
+    .player-art { width: 52px; height: 52px; border-radius: 6px; object-fit: cover; cursor: pointer; }
+    .player-info { min-width: 0; }
+    .player-title { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .player-show { font-size: 12px; color: var(--text2); cursor: pointer; }
+    .player-show:hover { color: var(--green); text-decoration: underline; }
+    .player-center { flex: 1; display: flex; flex-direction: column; align-items: center; max-width: 600px; padding: 0 20px; }
+    .player-controls { display: flex; align-items: center; gap: 16px; margin-bottom: 4px; }
+    .player-skip { background: none; border: none; color: var(--text); cursor: pointer; font-size: 12px; font-weight: 600; padding: 6px; font-family: inherit; }
+    .player-skip:hover { color: var(--green); }
+    .player-play { width: 36px; height: 36px; border-radius: 50%; background: var(--text); border: none; color: var(--bg); cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .player-play:hover { background: var(--green); }
+    .player-progress { width: 100%; display: flex; align-items: center; gap: 8px; }
+    .player-time { font-size: 11px; color: var(--text3); font-family: monospace; min-width: 40px; }
+    .player-time.right { text-align: right; }
+    .player-bar { flex: 1; height: 4px; background: var(--border2); border-radius: 2px; cursor: pointer; }
+    .player-bar:hover { height: 6px; }
+    .player-fill { height: 100%; background: var(--text); border-radius: 2px; }
+    .player-bar:hover .player-fill { background: var(--green); }
+    .player-right { display: flex; align-items: center; gap: 10px; width: 25%; justify-content: flex-end; }
+    .speed-btn { font-size: 12px; font-weight: 600; padding: 5px 8px; background: var(--bg3); border: 1px solid var(--border2); border-radius: 4px; color: var(--text2); cursor: pointer; font-family: inherit; }
+    .speed-btn:hover { color: var(--text); border-color: var(--text); }
+    
+    /* Expanded */
+    .expanded { position: fixed; inset: 0; background: var(--bg); z-index: 200; display: none; flex-direction: column; }
+    .expanded.active { display: flex; }
+    .expanded-header { padding: 16px; display: flex; justify-content: space-between; align-items: center; }
+    .expanded-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--text3); }
+    .expanded-body { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; }
+    .expanded-art { width: 260px; height: 260px; border-radius: 10px; object-fit: cover; box-shadow: 0 16px 48px rgba(0,0,0,0.5); margin-bottom: 28px; }
+    .expanded-info { text-align: center; margin-bottom: 28px; max-width: 360px; }
+    .expanded-title { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+    .expanded-show { font-size: 14px; color: var(--text2); }
+    .expanded-progress { width: 100%; max-width: 360px; margin-bottom: 24px; }
+    .expanded-bar { width: 100%; height: 4px; background: var(--border2); border-radius: 2px; cursor: pointer; margin-bottom: 6px; }
+    .expanded-fill { height: 100%; background: var(--green); border-radius: 2px; }
+    .expanded-times { display: flex; justify-content: space-between; font-size: 12px; color: var(--text3); font-family: monospace; }
+    .expanded-controls { display: flex; align-items: center; gap: 28px; }
+    .expanded-skip { width: 44px; height: 44px; border-radius: 50%; background: none; border: none; color: var(--text); cursor: pointer; font-size: 13px; font-weight: 600; font-family: inherit; }
+    .expanded-skip:hover { background: var(--bg3); }
+    .expanded-play { width: 56px; height: 56px; border-radius: 50%; background: var(--text); border: none; color: var(--bg); cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .expanded-play:hover { background: var(--green); }
+    
+    /* Modal */
+    .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.75); display: none; align-items: center; justify-content: center; z-index: 300; }
+    .modal.active { display: flex; }
+    .modal-box { background: var(--bg2); border-radius: 14px; width: 90%; max-width: 400px; }
+    .modal-header { padding: 18px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+    .modal-header h2 { font-size: 18px; font-weight: 600; }
+    .modal-close { background: none; border: none; color: var(--text2); cursor: pointer; }
+    .modal-body { padding: 20px; }
+    .form-group { margin-bottom: 16px; }
+    .form-label { display: block; font-size: 13px; font-weight: 500; color: var(--text2); margin-bottom: 6px; }
+    .form-input { width: 100%; padding: 11px 14px; background: var(--bg3); border: 1px solid var(--border2); border-radius: 8px; color: var(--text); font-size: 14px; font-family: inherit; }
+    .form-input:focus { outline: none; border-color: var(--green); }
+    .type-sel { display: flex; gap: 10px; }
+    .type-btn { flex: 1; padding: 12px; background: var(--bg3); border: 2px solid var(--border2); border-radius: 10px; color: var(--text); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; font-family: inherit; }
+    .type-btn.active { border-color: var(--green); background: rgba(29,185,84,0.1); }
+    .type-btn .icon { font-size: 22px; }
+    .type-btn .label { font-size: 13px; font-weight: 500; }
+    .submit-btn { width: 100%; padding: 12px; background: var(--green); border: none; border-radius: 18px; color: #000; font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit; }
+    .submit-btn:disabled { background: var(--border2); color: var(--text3); cursor: not-allowed; }
+    
+    .toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); background: var(--bg4); color: var(--text); padding: 12px 24px; border-radius: 8px; font-size: 14px; z-index: 400; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+    .toast.show { opacity: 1; }
+    
+    .empty { display: flex; flex-direction: column; align-items: center; padding: 48px 24px; text-align: center; color: var(--text3); }
+    .empty-icon { font-size: 48px; margin-bottom: 12px; }
+    .empty-title { font-size: 16px; font-weight: 600; color: var(--text); }
+    
+    @media (max-width: 768px) {
+      .toggle-btn span:last-child { display: none; }
+      .search-box { display: none; }
+      .news-sidebar { display: none; }
+      .show-hero { flex-direction: column; align-items: center; text-align: center; padding: 20px; }
+      .show-hero-art { width: 160px; height: 160px; }
+      .show-hero-title { font-size: 26px; }
+      .player-info { display: none; }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <header class="header">
+    <div class="logo">📡 Feedr</div>
+    <div class="main-toggle">
+      <button class="toggle-btn active" data-view="news"><span>📰</span><span>News</span></button>
+      <button class="toggle-btn" data-view="podcasts"><span>🎧</span><span>Podcasts</span></button>
+    </div>
+    <div class="spacer"></div>
+    <div class="search-box">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="7" cy="7" r="5"/><path d="M12 12l3 3"/></svg>
+      <input type="text" id="searchInput" placeholder="Search...">
+    </div>
+    <button class="icon-btn" id="addBtn"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button>
+  </header>
+  
+  <div class="main">
+    <!-- NEWS VIEW -->
+    <div class="news-view active" id="newsView">
+      <aside class="news-sidebar">
+        <div class="sidebar-header"><h2>Sources</h2><button class="add-btn" id="addNewsBtn">+</button></div>
+        <div class="sidebar-content" id="newsSources"></div>
+      </aside>
+      <div class="news-content">
+        <div class="news-header">
+          <div class="news-title" id="newsTitle">All Articles</div>
+          <div class="category-chips" id="categoryChips"></div>
+        </div>
+        <div class="news-list" id="newsList"></div>
+      </div>
+    </div>
+    
+    <!-- PODCAST VIEW -->
+    <div class="podcast-view" id="podcastView">
+      <nav class="podcast-nav">
+        <button class="nav-btn active" data-tab="home">Home</button>
+        <button class="nav-btn" data-tab="shows">Shows</button>
+        <button class="nav-btn" data-tab="queue">Queue</button>
+        <button class="nav-btn" data-tab="downloads">Downloads</button>
+      </nav>
+      <div class="podcast-content" id="podcastContent"></div>
+      <div class="show-page" id="showPage"></div>
+    </div>
+  </div>
+  
+  <!-- PLAYER -->
+  <div class="player" id="player">
+    <div class="player-left">
+      <img class="player-art" id="playerArt" src="">
+      <div class="player-info">
+        <div class="player-title" id="playerTitle"></div>
+        <div class="player-show" id="playerShow"></div>
+      </div>
+    </div>
+    <div class="player-center">
+      <div class="player-controls">
+        <button class="player-skip" id="pSkipBack">-15</button>
+        <button class="player-play" id="pPlay"><svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24" id="pPlayIcon"><path d="M8 5v14l11-7z"/></svg></button>
+        <button class="player-skip" id="pSkipFwd">+30</button>
+      </div>
+      <div class="player-progress">
+        <span class="player-time" id="pCur">0:00</span>
+        <div class="player-bar" id="pBar"><div class="player-fill" id="pFill"></div></div>
+        <span class="player-time right" id="pDur">0:00</span>
+      </div>
+    </div>
+    <div class="player-right">
+      <button class="speed-btn" id="pSpeed">1x</button>
+      <button class="icon-btn" id="pExpand"><svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></button>
+    </div>
+  </div>
+  
+  <!-- EXPANDED PLAYER -->
+  <div class="expanded" id="expanded">
+    <div class="expanded-header">
+      <button class="icon-btn" id="expClose"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
+      <span class="expanded-label">Now Playing</span>
+      <div style="width:44px"></div>
+    </div>
+    <div class="expanded-body">
+      <img class="expanded-art" id="expArt" src="">
+      <div class="expanded-info">
+        <div class="expanded-title" id="expTitle"></div>
+        <div class="expanded-show" id="expShow"></div>
+      </div>
+      <div class="expanded-progress">
+        <div class="expanded-bar" id="expBar"><div class="expanded-fill" id="expFill"></div></div>
+        <div class="expanded-times"><span id="expCur">0:00</span><span id="expDur">0:00</span></div>
+      </div>
+      <div class="expanded-controls">
+        <button class="expanded-skip" id="expBack">-15</button>
+        <button class="expanded-play" id="expPlay"><svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24" id="expPlayIcon"><path d="M8 5v14l11-7z"/></svg></button>
+        <button class="expanded-skip" id="expFwd">+30</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal" id="modal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2>Add Feed</h2>
+      <button class="modal-close" id="modalClose"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 5L5 15M5 5l10 10"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group"><label class="form-label">Feed URL</label><input type="url" class="form-input" id="fUrl" placeholder="https://..."></div>
+      <div class="form-group"><label class="form-label">Name</label><input type="text" class="form-input" id="fName" placeholder="Feed name"></div>
+      <div class="form-group"><label class="form-label">Type</label>
+        <div class="type-sel">
+          <button class="type-btn active" id="tNews"><span class="icon">📰</span><span class="label">News</span></button>
+          <button class="type-btn" id="tPodcast"><span class="icon">🎙️</span><span class="label">Podcast</span></button>
+        </div>
+      </div>
+      <div class="form-group"><label class="form-label">Category</label><input type="text" class="form-input" id="fCat" placeholder="Tech, News..."></div>
+      <button class="submit-btn" id="fSubmit" disabled>Add Feed</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function() {
+  'use strict';
+  
+  // === MEMORY SYSTEM ===
+  const Mem = {
+    pending: [],
+    session: 's_' + Date.now(),
+    endpoint: null,
+    
+    log(action, target, data = {}) {
+      const m = { id: 'm_' + Date.now() + '_' + Math.random().toString(36).substr(2,4), ts: new Date().toISOString(), action, target, session: this.session, ctx: { view: state.view, tab: state.tab }, ...data };
+      this.pending.push(m);
+      try { const a = JSON.parse(localStorage.getItem('mem') || '[]'); a.push(m); if (a.length > 500) a.splice(0, a.length - 500); localStorage.setItem('mem', JSON.stringify(a)); } catch(e) {}
+      this.sync();
+    },
+    sync() {
+      if (!this.endpoint || !this.pending.length) return;
+      const t = [...this.pending]; this.pending = [];
+      fetch(this.endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ memories: t }) }).catch(() => this.pending = [...t, ...this.pending]);
+    },
+    setEndpoint(u) { this.endpoint = u; this.sync(); },
+    getLocal() { try { return JSON.parse(localStorage.getItem('mem') || '[]'); } catch(e) { return []; } }
+  };
+  window.Memory = Mem;
+  
+  // === FUZZY SEARCH ===
+  const fuzzy = (q, items, fields) => {
+    if (!q.trim()) return items;
+    const ql = q.toLowerCase();
+    return items.map(item => {
+      let score = 0;
+      for (const f of fields) {
+        const v = f.split('.').reduce((o, k) => o?.[k], item);
+        if (v && String(v).toLowerCase().includes(ql)) score = 1;
+      }
+      return { item, score };
+    }).filter(x => x.score > 0).map(x => x.item);
+  };
+  
+  // === STATE ===
+  const state = {
+    view: 'news',
+    tab: 'home',
+    feeds: [],
+    articles: [],
+    podcasts: [],
+    categories: new Set(['All']),
+    selectedSource: null,
+    selectedCat: 'All',
+    query: '',
+    feedType: 'news',
+    currentEp: null,
+    playing: false,
+    speed: 1,
+    progress: {}
+  };
+  
+  // === DOM ===
+  const $ = id => document.getElementById(id);
+  const el = {
+    newsView: $('newsView'), podcastView: $('podcastView'),
+    newsSources: $('newsSources'), newsTitle: $('newsTitle'),
+    categoryChips: $('categoryChips'), newsList: $('newsList'),
+    podcastContent: $('podcastContent'), showPage: $('showPage'),
+    player: $('player'), playerArt: $('playerArt'), playerTitle: $('playerTitle'),
+    playerShow: $('playerShow'), pPlay: $('pPlay'), pPlayIcon: $('pPlayIcon'),
+    pCur: $('pCur'), pDur: $('pDur'), pBar: $('pBar'), pFill: $('pFill'), pSpeed: $('pSpeed'),
+    expanded: $('expanded'), expArt: $('expArt'), expTitle: $('expTitle'),
+    expShow: $('expShow'), expPlay: $('expPlay'), expPlayIcon: $('expPlayIcon'),
+    expCur: $('expCur'), expDur: $('expDur'), expBar: $('expBar'), expFill: $('expFill'),
+    modal: $('modal'), fUrl: $('fUrl'), fName: $('fName'), fCat: $('fCat'), fSubmit: $('fSubmit'),
+    toast: $('toast'), searchInput: $('searchInput')
+  };
+  
+  // === UTILS ===
+  const fmt = s => { if (isNaN(s) || s < 0) return '0:00'; const m = Math.floor(s / 60), sec = Math.floor(s % 60); return m + ':' + String(sec).padStart(2, '0'); };
+  const toast = m => { el.toast.textContent = m; el.toast.classList.add('show'); setTimeout(() => el.toast.classList.remove('show'), 2500); };
+  const save = () => localStorage.setItem('feedr2', JSON.stringify({ feeds: state.feeds, articles: state.articles, podcasts: state.podcasts, progress: state.progress }));
+  
+  const load = () => {
+    try {
+      const d = JSON.parse(localStorage.getItem('feedr2'));
+      if (d) { state.feeds = d.feeds || []; state.articles = d.articles || []; state.podcasts = d.podcasts || []; state.progress = d.progress || {}; }
+      state.feeds.forEach(f => f.category && state.categories.add(f.category));
+      if (!state.feeds.length) loadDemo();
+    } catch(e) { loadDemo(); }
+  };
+  
+  const loadDemo = () => {
+    state.feeds = [
+      { id: 1, name: 'The Atlantic', type: 'news', category: 'News', image: 'https://picsum.photos/seed/atl/100', unread: 5 },
+      { id: 2, name: 'Hacker News', type: 'news', category: 'Tech', image: 'https://picsum.photos/seed/hn/100', unread: 12 },
+      { id: 3, name: 'Nashville Scene', type: 'news', category: 'Local', image: 'https://picsum.photos/seed/nash/100', unread: 3 },
+      { id: 10, name: 'Tech Talk Daily', type: 'podcast', category: 'Tech', image: 'https://picsum.photos/seed/ttpod/200', author: 'Tech Media' },
+      { id: 11, name: 'True Crime Weekly', type: 'podcast', category: 'Entertainment', image: 'https://picsum.photos/seed/tcpod/200', author: 'Crime Stories' },
+      { id: 12, name: 'Philosophy Bites', type: 'podcast', category: 'Education', image: 'https://picsum.photos/seed/philpod/200', author: 'Edmonds & Warburton' }
+    ];
+    state.articles = [
+      { id: 101, feedId: 1, title: 'The Future of Democracy in the Digital Age', summary: 'How social media and AI are reshaping political discourse.', time: '2h ago', image: 'https://picsum.photos/seed/dem/400/300', unread: true },
+      { id: 102, feedId: 2, title: 'Show HN: Open-source alternative to Notion', summary: 'After 2 years of development, sharing my project.', time: '4h ago', unread: true },
+      { id: 103, feedId: 3, title: 'Metro Council Approves New Transit Plan', summary: 'Rapid bus service coming to underserved neighborhoods.', time: '5h ago', image: 'https://picsum.photos/seed/transit/400/300', unread: true },
+      { id: 104, feedId: 1, title: 'Climate Summit Reaches Historic Agreement', summary: 'World leaders commit to unprecedented emissions targets.', time: '6h ago', image: 'https://picsum.photos/seed/climate/400/300', unread: false }
+    ];
+    state.podcasts = [
+      { id: 201, feedId: 10, title: 'The Future of AI Regulation', desc: 'Deep dive into AI regulations from EU and US.', duration: 3847, date: '2 days ago', image: 'https://picsum.photos/seed/aireg/400', downloaded: true },
+      { id: 202, feedId: 10, title: 'Quantum Computing Explained', desc: 'How quantum computers actually work.', duration: 2890, date: '5 days ago', image: 'https://picsum.photos/seed/quantum/400' },
+      { id: 203, feedId: 11, title: 'The Vanishing at Lake Tahoe', desc: 'A tech executive disappears during a retreat.', duration: 4521, date: '1 week ago', image: 'https://picsum.photos/seed/tahoe/400', downloaded: true },
+      { id: 204, feedId: 12, title: 'What is Consciousness?', desc: 'David Chalmers on the hard problem.', duration: 2100, date: '3 days ago', image: 'https://picsum.photos/seed/conscious/400' }
+    ];
+    state.progress = { 201: 1234, 203: 4521, 204: 800 };
+    state.feeds.forEach(f => state.categories.add(f.category));
+    save();
+  };
+  
+  // === RENDER NEWS ===
+  const renderNewsSources = () => {
+    const news = state.feeds.filter(f => f.type === 'news');
+    el.newsSources.innerHTML = `<div class="source-item ${!state.selectedSource ? 'active' : ''}" data-id="all"><div class="source-icon">📚</div><div class="source-name">All Sources</div></div>` +
+      news.map(f => `<div class="source-item ${state.selectedSource === f.id ? 'active' : ''}" data-id="${f.id}"><div class="source-icon">${f.image ? `<img src="${f.image}">` : '📰'}</div><div class="source-name">${f.name}</div>${f.unread ? `<span class="source-badge">${f.unread}</span>` : ''}</div>`).join('');
+  };
+  
+  const renderCategories = () => {
+    const cats = ['All', ...Array.from(state.categories).filter(c => c !== 'All')];
+    el.categoryChips.innerHTML = cats.map(c => `<button class="chip ${state.selectedCat === c ? 'active' : ''}" data-cat="${c}">${c}</button>`).join('');
+  };
+  
+  const renderNews = () => {
+    let items = state.articles.map(a => ({ ...a, feed: state.feeds.find(f => f.id === a.feedId) }));
+    if (state.selectedSource) items = items.filter(i => i.feedId === state.selectedSource);
+    if (state.selectedCat !== 'All') items = fuzzy(state.selectedCat, items, ['feed.category']);
+    if (state.query) items = fuzzy(state.query, items, ['title', 'summary', 'feed.name']);
+    
+    if (!items.length) { el.newsList.innerHTML = '<div class="empty"><div class="empty-icon">📭</div><div class="empty-title">No articles found</div></div>'; return; }
+    
+    el.newsList.innerHTML = items.map(i => `<div class="article ${i.unread ? 'unread' : ''}" data-id="${i.id}"><div class="article-icon">${i.feed?.image ? `<img src="${i.feed.image}">` : '📄'}</div><div class="article-body"><div class="article-meta"><span class="article-source">${i.feed?.name || ''}</span><span class="article-time">· ${i.time}</span>${i.unread ? '<span class="article-new">NEW</span>' : ''}</div><div class="article-title">${i.title}</div>${i.summary ? `<div class="article-summary">${i.summary}</div>` : ''}</div>${i.image ? `<img class="article-image" src="${i.image}">` : ''}</div>`).join('');
+  };
+  
+  // === RENDER PODCASTS ===
+  const renderPodcasts = () => {
+    el.showPage.classList.remove('active');
+    el.podcastContent.style.display = 'block';
+    
+    const shows = state.feeds.filter(f => f.type === 'podcast');
+    const inProgress = state.podcasts.filter(p => { const pr = state.progress[p.id] || 0; return pr > 0 && pr < p.duration * 0.95; });
+    const downloaded = state.podcasts.filter(p => p.downloaded);
+    
+    if (state.tab === 'home') {
+      el.podcastContent.innerHTML = `
+        ${inProgress.length ? `<div class="section"><div class="section-header"><div class="section-title">Continue Listening</div></div><div class="episode-list">${inProgress.map(renderEpisode).join('')}</div></div>` : ''}
+        <div class="section"><div class="section-header"><div class="section-title">Your Shows</div></div><div class="shows-grid">${shows.map(s => `<div class="show-card" data-show="${s.id}"><img class="show-art" src="${s.image}"><div class="show-name">${s.name}</div><div class="show-author">${s.author || ''}</div></div>`).join('')}</div></div>
+        <div class="section"><div class="section-header"><div class="section-title">Recent Episodes</div></div><div class="episode-list">${state.podcasts.slice(0, 6).map(renderEpisode).join('')}</div></div>`;
+    } else if (state.tab === 'shows') {
+      el.podcastContent.innerHTML = `<div class="section"><div class="section-header"><div class="section-title">All Shows</div><button class="add-btn" onclick="document.getElementById('tPodcast').click();document.getElementById('modal').classList.add('active')">+</button></div><div class="shows-grid">${shows.map(s => `<div class="show-card" data-show="${s.id}"><img class="show-art" src="${s.image}"><div class="show-name">${s.name}</div><div class="show-author">${s.author || ''}</div></div>`).join('')}</div></div>`;
+    } else if (state.tab === 'queue') {
+      el.podcastContent.innerHTML = `<div class="section"><div class="section-header"><div class="section-title">Up Next</div></div>${state.podcasts.length ? `<div class="episode-list">${state.podcasts.slice(0, 10).map(renderEpisode).join('')}</div>` : '<div class="empty"><div class="empty-icon">📋</div><div class="empty-title">Queue empty</div></div>'}</div>`;
+    } else if (state.tab === 'downloads') {
+      el.podcastContent.innerHTML = `<div class="section"><div class="section-header"><div class="section-title">Downloads</div></div>${downloaded.length ? `<div class="episode-list">${downloaded.map(renderEpisode).join('')}</div>` : '<div class="empty"><div class="empty-icon">⬇️</div><div class="empty-title">No downloads</div></div>'}</div>`;
+    }
+  };
+  
+  const renderEpisode = ep => {
+    const show = state.feeds.find(f => f.id === ep.feedId);
+    const pr = state.progress[ep.id] || 0;
+    const pct = ep.duration ? (pr / ep.duration) * 100 : 0;
+    const rem = ep.duration - pr;
+    const done = pr >= ep.duration * 0.95;
+    return `<div class="episode" data-ep="${ep.id}"><img class="episode-art" src="${ep.image || show?.image}"><div class="episode-body"><div class="episode-show">${show?.name || ''}</div><div class="episode-title">${ep.title}</div><div class="episode-footer"><button class="ep-play" data-ep="${ep.id}"><svg width="10" height="10" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button><div class="ep-progress"><div class="ep-bar"><div class="ep-fill" style="width:${pct}%"></div></div><span class="ep-time">${done ? 'Played' : pr > 0 ? fmt(rem) + ' left' : fmt(ep.duration)}</span></div><button class="ep-dl ${ep.downloaded ? 'active' : ''}" data-dl="${ep.id}"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg></button></div></div></div>`;
+  };
+  
+  const renderShowPage = id => {
+    const show = state.feeds.find(f => f.id === id);
+    if (!show) return;
+    Mem.log('feed_opened', 'source_' + id);
+    const eps = state.podcasts.filter(p => p.feedId === id);
+    el.podcastContent.style.display = 'none';
+    el.showPage.classList.add('active');
+    el.showPage.innerHTML = `<div class="show-hero"><img class="show-hero-art" src="${show.image}"><div class="show-hero-info"><div class="show-hero-type">Podcast</div><div class="show-hero-title">${show.name}</div><div class="show-hero-author">${show.author || ''}</div></div></div><div class="show-actions"><button class="show-play" data-show="${id}"><svg width="22" height="22" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button></div><div class="show-episodes"><div class="show-episodes-title">Episodes</div><div class="episode-list">${eps.map(renderEpisode).join('')}</div></div>`;
+  };
+  
+  // === PLAYER ===
+  const updatePlayer = () => {
+    if (!state.currentEp) { el.player.classList.remove('active'); return; }
+    const ep = state.currentEp, show = state.feeds.find(f => f.id === ep.feedId);
+    const pr = state.progress[ep.id] || 0, pct = ep.duration ? (pr / ep.duration) * 100 : 0;
+    el.player.classList.add('active');
+    el.playerArt.src = ep.image || show?.image || '';
+    el.expArt.src = ep.image || show?.image || '';
+    el.playerTitle.textContent = ep.title;
+    el.playerShow.textContent = show?.name || '';
+    el.expTitle.textContent = ep.title;
+    el.expShow.textContent = show?.name || '';
+    el.pCur.textContent = fmt(pr);
+    el.pDur.textContent = fmt(ep.duration);
+    el.expCur.textContent = fmt(pr);
+    el.expDur.textContent = fmt(ep.duration);
+    el.pFill.style.width = pct + '%';
+    el.expFill.style.width = pct + '%';
+    const icon = state.playing ? '<rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>' : '<path d="M8 5v14l11-7z"/>';
+    el.pPlayIcon.innerHTML = icon;
+    el.expPlayIcon.innerHTML = icon;
+    el.pSpeed.textContent = state.speed + 'x';
+  };
+  
+  let playInt = null, progStart = 0;
+  
+  const playEp = id => {
+    const ep = state.podcasts.find(p => p.id === id);
+    if (!ep) return;
+    if (state.currentEp && state.currentEp.id !== id) Mem.log('episode_exited', 'ep_' + state.currentEp.id, { pos: state.progress[state.currentEp.id] || 0 });
+    state.currentEp = ep;
+    state.playing = true;
+    const pr = state.progress[id] || 0;
+    if (pr > 0) Mem.log('returned_to_episode', 'ep_' + id, { prev_pos: pr });
+    Mem.log('play_pressed', 'ep_' + id, { pos: pr });
+    updatePlayer();
+    startPlay();
+  };
+  
+  const togglePlay = () => {
+    if (!state.currentEp) return;
+    state.playing = !state.playing;
+    const pr = state.progress[state.currentEp.id] || 0;
+    Mem.log(state.playing ? 'play_pressed' : 'pause_pressed', 'ep_' + state.currentEp.id, { pos: pr });
+    state.playing ? startPlay() : stopPlay();
+    updatePlayer();
+  };
+  
+  const seekTo = pos => {
+    if (!state.currentEp) return;
+    const prev = state.progress[state.currentEp.id] || 0;
+    const p = Math.max(0, Math.min(state.currentEp.duration, pos));
+    Mem.log('seek', 'ep_' + state.currentEp.id, { from: prev, to: p });
+    state.progress[state.currentEp.id] = p;
+    save(); updatePlayer();
+  };
+  
+  const skip = s => { if (state.currentEp) seekTo((state.progress[state.currentEp.id] || 0) + s); };
+  
+  const cycleSpeed = () => {
+    const sp = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
+    const i = sp.indexOf(state.speed);
+    const prev = state.speed;
+    state.speed = sp[(i + 1) % sp.length];
+    Mem.log('speed_changed', 'settings', { speed: state.speed, prev });
+    updatePlayer();
+  };
+  
+  const startPlay = () => {
+    stopPlay();
+    if (!state.currentEp) return;
+    progStart = state.progress[state.currentEp.id] || 0;
+    playInt = setInterval(() => {
+      if (!state.playing || !state.currentEp) { stopPlay(); return; }
+      const cur = state.progress[state.currentEp.id] || 0;
+      const next = Math.min(state.currentEp.duration, cur + state.speed);
+      state.progress[state.currentEp.id] = next;
+      if (next - progStart >= 30) { Mem.log('playback_progress', 'ep_' + state.currentEp.id, { from: progStart, to: next }); progStart = next; }
+      if (next >= state.currentEp.duration * 0.95) { Mem.log('episode_completed', 'ep_' + state.currentEp.id); state.playing = false; stopPlay(); }
+      updatePlayer(); save();
+    }, 1000);
+  };
+  
+  const stopPlay = () => { if (playInt) { clearInterval(playInt); playInt = null; } };
+  
+  // === EVENTS ===
+  document.querySelector('.main-toggle').onclick = e => {
+    const btn = e.target.closest('.toggle-btn');
+    if (!btn) return;
+    document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const prev = state.view;
+    state.view = btn.dataset.view;
+    Mem.log('view_changed', 'view_' + state.view, { prev });
+    el.newsView.classList.toggle('active', state.view === 'news');
+    el.podcastView.classList.toggle('active', state.view === 'podcasts');
+    if (state.view === 'podcasts') renderPodcasts();
+  };
+  
+  el.newsSources.onclick = e => {
+    const src = e.target.closest('.source-item');
+    if (!src) return;
+    const id = src.dataset.id;
+    state.selectedSource = id === 'all' ? null : parseInt(id);
+    el.newsTitle.textContent = id === 'all' ? 'All Articles' : state.feeds.find(f => f.id === state.selectedSource)?.name || '';
+    renderNewsSources(); renderNews();
+  };
+  
+  el.categoryChips.onclick = e => {
+    const chip = e.target.closest('.chip');
+    if (!chip) return;
+    const prev = state.selectedCat;
+    state.selectedCat = chip.dataset.cat;
+    Mem.log('category_changed', 'cat_' + state.selectedCat, { prev });
+    renderCategories(); renderNews();
+  };
+  
+  el.newsList.onclick = e => {
+    const item = e.target.closest('.article');
+    if (!item) return;
+    const id = parseInt(item.dataset.id);
+    const art = state.articles.find(a => a.id === id);
+    if (art) { Mem.log('article_opened', 'art_' + id, { source: art.feedId }); toast('Opening article...'); }
+  };
+  
+  document.querySelector('.podcast-nav').onclick = e => {
+    const btn = e.target.closest('.nav-btn');
+    if (!btn) return;
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    state.tab = btn.dataset.tab;
+    el.showPage.classList.remove('active');
+    renderPodcasts();
+  };
+  
+  el.podcastContent.onclick = e => {
+    const card = e.target.closest('.show-card');
+    if (card) { renderShowPage(parseInt(card.dataset.show)); return; }
+    const playBtn = e.target.closest('.ep-play');
+    if (playBtn) { playEp(parseInt(playBtn.dataset.ep)); return; }
+    const ep = e.target.closest('.episode');
+    if (ep && !e.target.closest('.ep-dl')) { playEp(parseInt(ep.dataset.ep)); return; }
+    const dl = e.target.closest('.ep-dl');
+    if (dl) { const id = parseInt(dl.dataset.dl); const p = state.podcasts.find(x => x.id === id); if (p) { p.downloaded = !p.downloaded; if (p.downloaded) Mem.log('download_requested', 'ep_' + id); save(); renderPodcasts(); toast(p.downloaded ? 'Downloaded' : 'Removed'); } }
+  };
+  
+  el.showPage.onclick = e => {
+    const playBtn = e.target.closest('.ep-play');
+    if (playBtn) { playEp(parseInt(playBtn.dataset.ep)); return; }
+    const showPlay = e.target.closest('.show-play');
+    if (showPlay) { const eps = state.podcasts.filter(p => p.feedId === parseInt(showPlay.dataset.show)); if (eps.length) playEp(eps[0].id); return; }
+    const ep = e.target.closest('.episode');
+    if (ep && !e.target.closest('.ep-dl')) { playEp(parseInt(ep.dataset.ep)); return; }
+    const dl = e.target.closest('.ep-dl');
+    if (dl) { const id = parseInt(dl.dataset.dl); const p = state.podcasts.find(x => x.id === id); if (p) { p.downloaded = !p.downloaded; save(); renderShowPage(p.feedId); toast(p.downloaded ? 'Downloaded' : 'Removed'); } }
+  };
+  
+  el.pPlay.onclick = togglePlay;
+  el.expPlay.onclick = togglePlay;
+  el.pSpeed.onclick = cycleSpeed;
+  $('pSkipBack').onclick = () => skip(-15);
+  $('pSkipFwd').onclick = () => skip(30);
+  $('expBack').onclick = () => skip(-15);
+  $('expFwd').onclick = () => skip(30);
+  el.pBar.onclick = e => { if (!state.currentEp) return; const r = el.pBar.getBoundingClientRect(); seekTo((e.clientX - r.left) / r.width * state.currentEp.duration); };
+  el.expBar.onclick = e => { if (!state.currentEp) return; const r = el.expBar.getBoundingClientRect(); seekTo((e.clientX - r.left) / r.width * state.currentEp.duration); };
+  $('pExpand').onclick = () => el.expanded.classList.add('active');
+  $('expClose').onclick = () => el.expanded.classList.remove('active');
+  el.playerArt.onclick = () => el.expanded.classList.add('active');
+  
+  $('addBtn').onclick = () => el.modal.classList.add('active');
+  $('addNewsBtn').onclick = () => { $('tNews').click(); el.modal.classList.add('active'); };
+  $('modalClose').onclick = () => el.modal.classList.remove('active');
+  el.modal.onclick = e => { if (e.target === el.modal) el.modal.classList.remove('active'); };
+  $('tNews').onclick = () => { state.feedType = 'news'; $('tNews').classList.add('active'); $('tPodcast').classList.remove('active'); };
+  $('tPodcast').onclick = () => { state.feedType = 'podcast'; $('tPodcast').classList.add('active'); $('tNews').classList.remove('active'); };
+  const validate = () => { el.fSubmit.disabled = !el.fUrl.value.trim() || !el.fName.value.trim(); };
+  el.fUrl.oninput = validate;
+  el.fName.oninput = validate;
+  el.fSubmit.onclick = () => {
+    const url = el.fUrl.value.trim(), name = el.fName.value.trim(), cat = el.fCat.value.trim() || 'Uncategorized';
+    if (!url || !name) return;
+    state.feeds.push({ id: Date.now(), url, name, type: state.feedType, category: cat, image: `https://picsum.photos/seed/${Date.now()}/200`, author: state.feedType === 'podcast' ? '' : undefined });
+    state.categories.add(cat); save();
+    el.fUrl.value = ''; el.fName.value = ''; el.fCat.value = '';
+    el.fSubmit.disabled = true; el.modal.classList.remove('active');
+    renderNewsSources(); renderCategories(); renderPodcasts();
+    toast('Feed added!');
+  };
+  
+  let searchTO;
+  el.searchInput.oninput = e => { clearTimeout(searchTO); searchTO = setTimeout(() => { state.query = e.target.value; if (state.view === 'news') renderNews(); }, 200); };
+  
+  document.onkeydown = e => { if (e.target.tagName === 'INPUT') return; if (e.code === 'Space') { e.preventDefault(); togglePlay(); } if (e.code === 'ArrowLeft') skip(-15); if (e.code === 'ArrowRight') skip(30); };
+  
+  // === INIT ===
+  load();
+  renderNewsSources();
+  renderCategories();
+  renderNews();
+  
+  console.log('Feedr loaded');
+  console.log('Memory API: Memory.setEndpoint(url), Memory.getLocal()');
+})();
+</script>
+</body>
+</html>
