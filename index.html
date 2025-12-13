@@ -441,13 +441,11 @@
   };
 
   // === RSS FEED FETCHING ===
+  // Simpler, more reliable CORS proxy configuration
   const CORS_PROXIES = [
-    // More reliable proxies first
-    url => ({ url: `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`, isJson: true }),
-    url => ({ url: `https://corsproxy.io/?url=${encodeURIComponent(url)}`, isJson: false }),
-    url => ({ url: `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`, isJson: false }),
-    url => ({ url: `https://thingproxy.freeboard.io/fetch/${url}`, isJson: false }),
-    url => ({ url: `https://cors.eu.org/${url}`, isJson: false })
+    url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+    url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+    url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`
   ];
 
   const fetchWithTimeout = (url, options = {}, timeout = 15000) => {
@@ -461,22 +459,34 @@
 
   const fetchWithProxy = async (url, proxyIndex = 0) => {
     if (proxyIndex >= CORS_PROXIES.length) {
-      throw new Error('All CORS proxies failed');
+      throw new Error(`All CORS proxies failed for: ${url}`);
     }
-    try {
-      const proxy = CORS_PROXIES[proxyIndex](url);
-      const response = await fetchWithTimeout(proxy.url, {
-        headers: { 'Accept': 'application/rss+xml, application/xml, text/xml, application/json, */*' }
-      }, 20000);
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
-      if (proxy.isJson) {
-        // allorigins.win/get returns JSON with contents property
-        const json = await response.json();
-        if (json.contents) return json.contents;
-        throw new Error('No contents in response');
+    const proxyUrl = CORS_PROXIES[proxyIndex](url);
+    console.log('Trying proxy:', proxyUrl);
+
+    try {
+      const response = await fetchWithTimeout(proxyUrl, {
+        headers: { 'Accept': 'application/rss+xml, application/xml, text/xml, */*' }
+      }, 20000);
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
       }
-      return await response.text();
+
+      const text = await response.text();
+
+      if (!text || text.trim().length === 0) {
+        throw new Error('Empty response');
+      }
+
+      // Basic validation that this looks like XML
+      if (!text.trim().startsWith('<?xml') && !text.trim().startsWith('<rss') && !text.trim().startsWith('<feed')) {
+        console.warn('Response does not look like XML:', text.substring(0, 100));
+        // Still try to use it, might be valid
+      }
+
+      return text;
     } catch (e) {
       console.warn(`Proxy ${proxyIndex} failed:`, e.message);
       return fetchWithProxy(url, proxyIndex + 1);
@@ -514,24 +524,40 @@
 
   // Helper to find elements with namespace support (handles itunes:*, media:*, etc.)
   const findElement = (parent, tag) => {
-    // Try querySelector first with escaped colon
-    let node = parent.querySelector(tag.replace(/:/g, '\\:'));
-    if (node) return node;
-
-    // Try getElementsByTagName (works better with namespaced elements)
-    const elements = parent.getElementsByTagName(tag);
+    // Try getElementsByTagName first (works best with namespaced elements)
+    let elements = parent.getElementsByTagName(tag);
     if (elements.length > 0) return elements[0];
 
-    // Try without namespace prefix
+    // Try without namespace prefix (for local names)
     const localName = tag.includes(':') ? tag.split(':')[1] : tag;
-    const localElements = parent.getElementsByTagName(localName);
-    if (localElements.length > 0) return localElements[0];
+    elements = parent.getElementsByTagName(localName);
+    if (elements.length > 0) return elements[0];
 
     // Try with wildcard namespace
     const nsElements = parent.getElementsByTagNameNS('*', localName);
     if (nsElements.length > 0) return nsElements[0];
 
+    // Fallback to querySelector (may not work with namespaced elements in all browsers)
+    try {
+      const node = parent.querySelector(tag);
+      if (node) return node;
+    } catch(e) {
+      // Selector may be invalid for namespaced tags
+    }
+
     return null;
+  };
+
+  // Find all elements matching a tag (for items/entries)
+  const findAllElements = (parent, tag) => {
+    let elements = parent.getElementsByTagName(tag);
+    if (elements.length > 0) return Array.from(elements);
+
+    const localName = tag.includes(':') ? tag.split(':')[1] : tag;
+    elements = parent.getElementsByTagName(localName);
+    if (elements.length > 0) return Array.from(elements);
+
+    return [];
   };
 
   const getNodeText = (parent, tag) => {
@@ -542,6 +568,25 @@
   const getNodeAttr = (parent, tag, attr) => {
     const node = findElement(parent, tag);
     return node ? node.getAttribute(attr) || '' : '';
+  };
+
+  // Get image from itunes:image element (has href attribute)
+  const getItunesImage = (parent) => {
+    // Try itunes:image first
+    let elements = parent.getElementsByTagName('itunes:image');
+    if (elements.length > 0) {
+      const href = elements[0].getAttribute('href');
+      if (href) return href;
+    }
+
+    // Try just 'image' with href attribute
+    elements = parent.getElementsByTagName('image');
+    for (let i = 0; i < elements.length; i++) {
+      const href = elements[i].getAttribute('href');
+      if (href) return href;
+    }
+
+    return '';
   };
 
   const extractImage = item => {
@@ -629,43 +674,108 @@
 
     const parserError = doc.querySelector('parsererror');
     if (parserError) {
+      console.error('XML parse error:', parserError.textContent);
       throw new Error('Invalid podcast feed XML');
     }
 
-    const items = doc.querySelectorAll('item');
+    // Get channel element for fallback image
+    const channel = doc.querySelector('channel') || doc.querySelector('feed');
+    let channelImage = '';
+    if (channel) {
+      channelImage = getItunesImage(channel);
+      if (!channelImage) {
+        // Try standard RSS image/url
+        const imageEl = channel.querySelector('image');
+        if (imageEl) {
+          const urlEl = imageEl.querySelector('url');
+          if (urlEl) channelImage = urlEl.textContent?.trim() || '';
+        }
+      }
+    }
+
+    // Find all items - use getElementsByTagName for better compatibility
+    const items = Array.from(doc.getElementsByTagName('item'));
+    if (items.length === 0) {
+      // Try Atom entry format
+      items.push(...Array.from(doc.getElementsByTagName('entry')));
+    }
+
+    console.log('Parsing podcast feed, found', items.length, 'items');
     const episodes = [];
 
     items.forEach((item, index) => {
       const title = getNodeText(item, 'title');
       if (!title) return;
 
-      // Get audio enclosure
-      const enclosure = findElement(item, 'enclosure');
-      const audioUrl = enclosure ? enclosure.getAttribute('url') || '' : '';
-      const audioType = enclosure ? enclosure.getAttribute('type') || '' : '';
+      // Get audio enclosure - try multiple methods
+      let audioUrl = '';
+      const enclosures = item.getElementsByTagName('enclosure');
+      for (let i = 0; i < enclosures.length; i++) {
+        const enc = enclosures[i];
+        const type = enc.getAttribute('type') || '';
+        const url = enc.getAttribute('url') || '';
+        if (url && (type.includes('audio') || type.includes('video') || !type)) {
+          audioUrl = url;
+          break;
+        }
+      }
+
+      // Fallback to link with enclosure rel for Atom
+      if (!audioUrl) {
+        const links = item.getElementsByTagName('link');
+        for (let i = 0; i < links.length; i++) {
+          const link = links[i];
+          if (link.getAttribute('rel') === 'enclosure') {
+            audioUrl = link.getAttribute('href') || '';
+            break;
+          }
+        }
+      }
 
       const pubDate = parseRSSDate(
         getNodeText(item, 'pubDate') ||
-        getNodeText(item, 'published')
+        getNodeText(item, 'published') ||
+        getNodeText(item, 'updated')
       );
 
-      // Get duration from itunes:duration
-      const durationStr = getNodeText(item, 'itunes:duration') || getNodeText(item, 'duration');
+      // Get duration from itunes:duration - try multiple approaches
+      let durationStr = '';
+      const durationEls = item.getElementsByTagName('itunes:duration');
+      if (durationEls.length > 0) {
+        durationStr = durationEls[0].textContent?.trim() || '';
+      }
+      if (!durationStr) {
+        const durEls = item.getElementsByTagName('duration');
+        if (durEls.length > 0) {
+          durationStr = durEls[0].textContent?.trim() || '';
+        }
+      }
       const duration = parseDuration(durationStr);
 
-      // Get description
-      let desc = getNodeText(item, 'itunes:summary') ||
-                 getNodeText(item, 'description') ||
-                 getNodeText(item, 'content:encoded') || '';
+      // Get description - try multiple fields
+      let desc = '';
+      const descFields = ['itunes:summary', 'itunes:subtitle', 'description', 'summary', 'content:encoded'];
+      for (const field of descFields) {
+        const els = item.getElementsByTagName(field);
+        if (els.length > 0 && els[0].textContent?.trim()) {
+          desc = els[0].textContent.trim();
+          break;
+        }
+      }
       // Strip HTML
       const tmp = document.createElement('div');
       tmp.innerHTML = desc;
       desc = tmp.textContent?.trim().slice(0, 300) || '';
 
-      // Get episode image or fallback to channel image
-      let image = getNodeAttr(item, 'itunes:image', 'href') ||
-                  getNodeAttr(item, 'image', 'href') ||
-                  extractImage(item);
+      // Get episode image - try multiple approaches
+      let image = getItunesImage(item);
+      if (!image) {
+        image = extractImage(item);
+      }
+      // Fallback to channel image
+      if (!image) {
+        image = channelImage;
+      }
 
       // Create unique ID using feed ID, hash of title, and index
       const titleHash = title.split('').reduce((a, c) => ((a << 5) - a + c.charCodeAt(0)) | 0, 0);
@@ -685,6 +795,7 @@
       });
     });
 
+    console.log('Parsed', episodes.length, 'episodes');
     return episodes;
   };
 
@@ -692,26 +803,49 @@
     const parser = new DOMParser();
     const doc = parser.parseFromString(xml, 'text/xml');
 
-    const channel = doc.querySelector('channel, feed');
+    const channel = doc.querySelector('channel') || doc.querySelector('feed');
     if (!channel) return {};
 
     // Get image - try multiple methods
-    let image = getNodeAttr(channel, 'itunes:image', 'href');
+    let image = getItunesImage(channel);
+
     if (!image) {
-      // Try standard RSS image element
-      const imageEl = findElement(channel, 'image');
+      // Try standard RSS image element with url child
+      const imageEl = channel.querySelector('image');
       if (imageEl) {
-        image = getNodeText(imageEl, 'url') || imageEl.getAttribute('href') || '';
+        const urlEl = imageEl.querySelector('url');
+        if (urlEl) {
+          image = urlEl.textContent?.trim() || '';
+        }
+        if (!image) {
+          image = imageEl.getAttribute('href') || '';
+        }
       }
     }
+
     if (!image) {
-      image = getNodeAttr(channel, 'logo', 'src') || getNodeText(channel, 'logo');
+      // Try Atom logo
+      const logoEl = channel.querySelector('logo');
+      if (logoEl) {
+        image = logoEl.textContent?.trim() || logoEl.getAttribute('src') || '';
+      }
+    }
+
+    // Get author - try multiple approaches
+    let author = '';
+    const authorFields = ['itunes:author', 'author', 'managingEditor', 'dc:creator'];
+    for (const field of authorFields) {
+      const els = channel.getElementsByTagName(field);
+      if (els.length > 0 && els[0].textContent?.trim()) {
+        author = els[0].textContent.trim();
+        break;
+      }
     }
 
     return {
       title: getNodeText(channel, 'title'),
       description: getNodeText(channel, 'description') || getNodeText(channel, 'subtitle'),
-      author: getNodeText(channel, 'itunes:author') || getNodeText(channel, 'author') || getNodeText(channel, 'managingEditor'),
+      author,
       image
     };
   };
