@@ -512,27 +512,49 @@
     return isNaN(num) ? 0 : num;
   };
 
+  // Helper to find elements with namespace support (handles itunes:*, media:*, etc.)
+  const findElement = (parent, tag) => {
+    // Try querySelector first with escaped colon
+    let node = parent.querySelector(tag.replace(/:/g, '\\:'));
+    if (node) return node;
+
+    // Try getElementsByTagName (works better with namespaced elements)
+    const elements = parent.getElementsByTagName(tag);
+    if (elements.length > 0) return elements[0];
+
+    // Try without namespace prefix
+    const localName = tag.includes(':') ? tag.split(':')[1] : tag;
+    const localElements = parent.getElementsByTagName(localName);
+    if (localElements.length > 0) return localElements[0];
+
+    // Try with wildcard namespace
+    const nsElements = parent.getElementsByTagNameNS('*', localName);
+    if (nsElements.length > 0) return nsElements[0];
+
+    return null;
+  };
+
   const getNodeText = (parent, tag) => {
-    const node = parent.querySelector(tag);
+    const node = findElement(parent, tag);
     return node ? node.textContent?.trim() || '' : '';
   };
 
   const getNodeAttr = (parent, tag, attr) => {
-    const node = parent.querySelector(tag);
+    const node = findElement(parent, tag);
     return node ? node.getAttribute(attr) || '' : '';
   };
 
   const extractImage = item => {
     // Try media:content
-    let img = getNodeAttr(item, 'media\\:content, content', 'url');
+    let img = getNodeAttr(item, 'media:content', 'url');
     if (img) return img;
 
     // Try media:thumbnail
-    img = getNodeAttr(item, 'media\\:thumbnail, thumbnail', 'url');
+    img = getNodeAttr(item, 'media:thumbnail', 'url');
     if (img) return img;
 
     // Try enclosure with image type
-    const enclosure = item.querySelector('enclosure');
+    const enclosure = findElement(item, 'enclosure');
     if (enclosure) {
       const type = enclosure.getAttribute('type') || '';
       if (type.startsWith('image/')) {
@@ -541,7 +563,7 @@
     }
 
     // Try to extract from description/content HTML
-    const desc = getNodeText(item, 'description') || getNodeText(item, 'content\\:encoded');
+    const desc = getNodeText(item, 'description') || getNodeText(item, 'content:encoded');
     const match = desc.match(/<img[^>]+src=["']([^"']+)["']/i);
     if (match) return match[1];
 
@@ -568,11 +590,11 @@
         getNodeText(item, 'pubDate') ||
         getNodeText(item, 'published') ||
         getNodeText(item, 'updated') ||
-        getNodeText(item, 'dc\\:date')
+        getNodeText(item, 'dc:date')
       );
 
       // Get description and clean HTML
-      let summary = getNodeText(item, 'description') || getNodeText(item, 'summary') || getNodeText(item, 'content\\:encoded') || '';
+      let summary = getNodeText(item, 'description') || getNodeText(item, 'summary') || getNodeText(item, 'content:encoded') || '';
       // Strip HTML tags for summary
       const tmp = document.createElement('div');
       tmp.innerHTML = summary;
@@ -581,8 +603,12 @@
       const link = getNodeText(item, 'link') || getNodeAttr(item, 'link', 'href');
       const image = extractImage(item);
 
+      // Create unique ID using feed ID, hash of title, and index
+      const titleHash = title.split('').reduce((a, c) => ((a << 5) - a + c.charCodeAt(0)) | 0, 0);
+      const uniqueId = Math.abs(feedId * 100000 + titleHash + index);
+
       articles.push({
-        id: feedId * 10000 + index + Date.now() % 10000,
+        id: uniqueId,
         feedId,
         title,
         summary,
@@ -614,14 +640,9 @@
       if (!title) return;
 
       // Get audio enclosure
-      const enclosure = item.querySelector('enclosure');
+      const enclosure = findElement(item, 'enclosure');
       const audioUrl = enclosure ? enclosure.getAttribute('url') || '' : '';
       const audioType = enclosure ? enclosure.getAttribute('type') || '' : '';
-
-      // Skip if no audio enclosure for podcasts
-      if (!audioUrl && !audioType.includes('audio')) {
-        // Still allow items without audio - might be video or just info
-      }
 
       const pubDate = parseRSSDate(
         getNodeText(item, 'pubDate') ||
@@ -629,25 +650,29 @@
       );
 
       // Get duration from itunes:duration
-      const durationStr = getNodeText(item, 'itunes\\:duration') || getNodeText(item, 'duration');
+      const durationStr = getNodeText(item, 'itunes:duration') || getNodeText(item, 'duration');
       const duration = parseDuration(durationStr);
 
       // Get description
-      let desc = getNodeText(item, 'itunes\\:summary') ||
+      let desc = getNodeText(item, 'itunes:summary') ||
                  getNodeText(item, 'description') ||
-                 getNodeText(item, 'content\\:encoded') || '';
+                 getNodeText(item, 'content:encoded') || '';
       // Strip HTML
       const tmp = document.createElement('div');
       tmp.innerHTML = desc;
       desc = tmp.textContent?.trim().slice(0, 300) || '';
 
       // Get episode image or fallback to channel image
-      let image = getNodeAttr(item, 'itunes\\:image', 'href') ||
+      let image = getNodeAttr(item, 'itunes:image', 'href') ||
                   getNodeAttr(item, 'image', 'href') ||
                   extractImage(item);
 
+      // Create unique ID using feed ID, hash of title, and index
+      const titleHash = title.split('').reduce((a, c) => ((a << 5) - a + c.charCodeAt(0)) | 0, 0);
+      const uniqueId = Math.abs(feedId * 100000 + titleHash + index);
+
       episodes.push({
-        id: feedId * 10000 + index + Date.now() % 10000,
+        id: uniqueId,
         feedId,
         title,
         desc,
@@ -670,15 +695,24 @@
     const channel = doc.querySelector('channel, feed');
     if (!channel) return {};
 
+    // Get image - try multiple methods
+    let image = getNodeAttr(channel, 'itunes:image', 'href');
+    if (!image) {
+      // Try standard RSS image element
+      const imageEl = findElement(channel, 'image');
+      if (imageEl) {
+        image = getNodeText(imageEl, 'url') || imageEl.getAttribute('href') || '';
+      }
+    }
+    if (!image) {
+      image = getNodeAttr(channel, 'logo', 'src') || getNodeText(channel, 'logo');
+    }
+
     return {
       title: getNodeText(channel, 'title'),
       description: getNodeText(channel, 'description') || getNodeText(channel, 'subtitle'),
-      author: getNodeText(channel, 'itunes\\:author') || getNodeText(channel, 'author name') || getNodeText(channel, 'managingEditor'),
-      image: getNodeAttr(channel, 'itunes\\:image', 'href') ||
-             getNodeAttr(channel, 'image url', 'src') ||
-             getNodeText(channel, 'image url') ||
-             getNodeAttr(channel, 'logo', 'src') ||
-             getNodeText(channel, 'logo')
+      author: getNodeText(channel, 'itunes:author') || getNodeText(channel, 'author') || getNodeText(channel, 'managingEditor'),
+      image
     };
   };
 
