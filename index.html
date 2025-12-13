@@ -337,7 +337,36 @@
     .empty { display: flex; flex-direction: column; align-items: center; padding: 48px 24px; text-align: center; color: var(--text3); }
     .empty-icon { font-size: 48px; margin-bottom: 12px; }
     .empty-title { font-size: 16px; font-weight: 600; color: var(--text); }
-    
+
+    /* === BROWSER VIEW === */
+    .browser-view { display: none; height: 100%; flex-direction: column; position: relative; }
+    .browser-view.active { display: flex; }
+    .browser-toolbar { display: flex; align-items: center; gap: 12px; padding: 10px 16px; background: var(--bg2); border-bottom: 1px solid var(--border); }
+    .browser-back-btn { background: none; border: none; color: var(--text); cursor: pointer; padding: 8px 14px; border-radius: 8px; display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 500; font-family: inherit; transition: all 0.15s; }
+    .browser-back-btn:hover { background: var(--bg3); color: var(--green); }
+    .browser-back-btn svg { width: 18px; height: 18px; }
+    .browser-url { flex: 1; font-size: 13px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: var(--bg3); padding: 8px 14px; border-radius: 20px; }
+    .browser-actions { display: flex; gap: 4px; }
+    .browser-action-btn { background: none; border: none; color: var(--text2); cursor: pointer; padding: 8px; border-radius: 6px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+    .browser-action-btn:hover { background: var(--bg3); color: var(--text); }
+    .browser-frame-container { flex: 1; position: relative; overflow: hidden; }
+    .browser-frame { width: 100%; height: 100%; border: none; background: #fff; }
+    .browser-swipe-edge { position: absolute; left: 0; top: 0; bottom: 0; width: 20px; z-index: 10; }
+    .browser-swipe-indicator { position: absolute; left: 0; top: 0; bottom: 0; width: 60px; background: linear-gradient(90deg, var(--green) 0%, transparent 100%); opacity: 0; pointer-events: none; transition: opacity 0.15s; display: flex; align-items: center; padding-left: 12px; }
+    .browser-swipe-indicator.active { opacity: 0.9; }
+    .browser-swipe-indicator svg { color: #fff; width: 24px; height: 24px; }
+    .browser-loading { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--bg); }
+    .browser-loading-spinner { width: 40px; height: 40px; border: 3px solid var(--border2); border-top-color: var(--green); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 12px; }
+    .browser-loading-text { color: var(--text2); font-size: 14px; }
+    .browser-error { position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; background: var(--bg); padding: 24px; text-align: center; }
+    .browser-error.active { display: flex; }
+    .browser-error-icon { font-size: 48px; margin-bottom: 12px; }
+    .browser-error-title { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+    .browser-error-msg { font-size: 14px; color: var(--text2); margin-bottom: 20px; max-width: 300px; }
+    .browser-error-btn { padding: 12px 24px; background: var(--green); border: none; border-radius: 20px; color: #000; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; }
+    .browser-error-btn:hover { background: var(--green2); }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
     @media (max-width: 768px) {
       .toggle-btn span:last-child { display: none; }
       .search-box { display: none; }
@@ -399,6 +428,42 @@
     <!-- ALL VIEW -->
     <div class="all-view" id="allView">
       <div class="all-content" id="allContent"></div>
+    </div>
+
+    <!-- BROWSER VIEW -->
+    <div class="browser-view" id="browserView">
+      <div class="browser-toolbar">
+        <button class="browser-back-btn" id="browserBackBtn">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          Back
+        </button>
+        <div class="browser-url" id="browserUrl"></div>
+        <div class="browser-actions">
+          <button class="browser-action-btn" id="browserRefreshBtn" title="Refresh">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 4v6h6M23 20v-6h-6"/><path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15"/></svg>
+          </button>
+          <button class="browser-action-btn" id="browserExternalBtn" title="Open in browser">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="browser-frame-container">
+        <div class="browser-swipe-edge" id="browserSwipeEdge"></div>
+        <div class="browser-swipe-indicator" id="browserSwipeIndicator">
+          <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        </div>
+        <iframe class="browser-frame" id="browserFrame" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
+        <div class="browser-loading" id="browserLoading">
+          <div class="browser-loading-spinner"></div>
+          <div class="browser-loading-text">Loading article...</div>
+        </div>
+        <div class="browser-error" id="browserError">
+          <div class="browser-error-icon">🔒</div>
+          <div class="browser-error-title">Can't load in app</div>
+          <div class="browser-error-msg">This site doesn't allow embedding. Opening in your browser instead.</div>
+          <button class="browser-error-btn" id="browserErrorBtn">Open in Browser</button>
+        </div>
+      </div>
     </div>
   </div>
   
@@ -556,7 +621,10 @@
     progress: {},
     viewPrefs: {}, // { sourceId: 'list'|'table'|'cards'|'masonry' }
     currentSourcePage: null, // Currently viewing source page (news)
-    currentShowPage: null // Currently viewing show page (podcasts)
+    currentShowPage: null, // Currently viewing show page (podcasts)
+    browserUrl: null, // Current URL in browser view
+    browserTitle: null, // Current article title in browser
+    previousView: null // View to return to when closing browser
   };
   
   // === DOM ===
@@ -579,7 +647,13 @@
     modal: $('modal'), fUrl: $('fUrl'), fName: $('fName'), fAuthor: $('fAuthor'), fCat: $('fCat'),
     fFetch: $('fFetch'), fStatus: $('fStatus'), fSubmit: $('fSubmit'),
     toast: $('toast'), searchInput: $('searchInput'),
-    audio: $('audioPlayer')
+    audio: $('audioPlayer'),
+    // Browser view elements
+    browserView: $('browserView'), browserFrame: $('browserFrame'), browserUrl: $('browserUrl'),
+    browserBackBtn: $('browserBackBtn'), browserRefreshBtn: $('browserRefreshBtn'),
+    browserExternalBtn: $('browserExternalBtn'), browserLoading: $('browserLoading'),
+    browserError: $('browserError'), browserErrorBtn: $('browserErrorBtn'),
+    browserSwipeEdge: $('browserSwipeEdge'), browserSwipeIndicator: $('browserSwipeIndicator')
   };
   
   // === UTILS ===
@@ -607,6 +681,150 @@
     state.podcasts = [];
     state.progress = {};
     save();
+  };
+
+  // === IN-APP BROWSER ===
+  const openInAppBrowser = (url, title = '') => {
+    if (!url) return;
+
+    // Store current view to return to
+    state.previousView = state.view;
+    state.browserUrl = url;
+    state.browserTitle = title;
+
+    // Show browser view
+    state.view = 'browser';
+    updateViews();
+
+    // Show loading, hide error
+    el.browserLoading.style.display = 'flex';
+    el.browserError.classList.remove('active');
+    el.browserUrl.textContent = url;
+
+    // Set up iframe load detection
+    el.browserFrame.onload = () => {
+      el.browserLoading.style.display = 'none';
+    };
+
+    // Set up error detection - if iframe fails to load due to X-Frame-Options
+    el.browserFrame.onerror = () => {
+      showBrowserError(url);
+    };
+
+    // Try to load the URL in iframe
+    el.browserFrame.src = url;
+
+    // Fallback timeout - if iframe hasn't loaded content, show error
+    setTimeout(() => {
+      try {
+        // Try to access iframe content - will fail if blocked by CORS/X-Frame-Options
+        const iframeDoc = el.browserFrame.contentDocument || el.browserFrame.contentWindow?.document;
+        if (!iframeDoc || !iframeDoc.body || iframeDoc.body.innerHTML.length < 100) {
+          // Content seems empty or inaccessible, might be blocked
+          // Don't auto-show error, let user decide
+        }
+      } catch (e) {
+        // Cross-origin error - site loaded but we can't access it (which is fine)
+        el.browserLoading.style.display = 'none';
+      }
+    }, 3000);
+
+    Mem.log('browser_opened', 'url_' + url.substring(0, 50), { title });
+  };
+
+  const showBrowserError = (url) => {
+    el.browserLoading.style.display = 'none';
+    el.browserError.classList.add('active');
+    el.browserFrame.src = 'about:blank';
+  };
+
+  const closeBrowser = () => {
+    // Clear iframe
+    el.browserFrame.src = 'about:blank';
+    el.browserLoading.style.display = 'none';
+    el.browserError.classList.remove('active');
+
+    // Return to previous view
+    state.view = state.previousView || 'news';
+    state.browserUrl = null;
+    state.browserTitle = null;
+    state.previousView = null;
+    updateViews();
+
+    Mem.log('browser_closed', 'back');
+  };
+
+  const openInExternalBrowser = (url) => {
+    if (url) window.open(url, '_blank');
+  };
+
+  // Browser swipe-to-go-back gesture
+  let browserSwipeStartX = 0;
+  let browserSwipeStartY = 0;
+  let browserSwiping = false;
+
+  const initBrowserSwipe = () => {
+    const edge = el.browserSwipeEdge;
+    const indicator = el.browserSwipeIndicator;
+
+    edge.addEventListener('touchstart', (e) => {
+      browserSwipeStartX = e.touches[0].clientX;
+      browserSwipeStartY = e.touches[0].clientY;
+      browserSwiping = true;
+    }, { passive: true });
+
+    edge.addEventListener('touchmove', (e) => {
+      if (!browserSwiping) return;
+      const dx = e.touches[0].clientX - browserSwipeStartX;
+      const dy = Math.abs(e.touches[0].clientY - browserSwipeStartY);
+
+      // If swiping more horizontally than vertically and to the right
+      if (dx > 20 && dx > dy) {
+        indicator.classList.add('active');
+      } else {
+        indicator.classList.remove('active');
+      }
+    }, { passive: true });
+
+    edge.addEventListener('touchend', (e) => {
+      if (!browserSwiping) return;
+      const dx = e.changedTouches[0].clientX - browserSwipeStartX;
+      const dy = Math.abs(e.changedTouches[0].clientY - browserSwipeStartY);
+
+      indicator.classList.remove('active');
+      browserSwiping = false;
+
+      // If swiped right far enough, go back
+      if (dx > 80 && dx > dy * 2) {
+        closeBrowser();
+      }
+    }, { passive: true });
+
+    // Also support mouse for desktop testing
+    edge.addEventListener('mousedown', (e) => {
+      browserSwipeStartX = e.clientX;
+      browserSwiping = true;
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (!browserSwiping || state.view !== 'browser') return;
+      const dx = e.clientX - browserSwipeStartX;
+      if (dx > 20) {
+        indicator.classList.add('active');
+      } else {
+        indicator.classList.remove('active');
+      }
+    });
+
+    document.addEventListener('mouseup', (e) => {
+      if (!browserSwiping || state.view !== 'browser') return;
+      const dx = e.clientX - browserSwipeStartX;
+      indicator.classList.remove('active');
+      browserSwiping = false;
+      if (dx > 80) {
+        closeBrowser();
+      }
+    });
   };
 
   // === RSS FEED FETCHING ===
@@ -1526,7 +1744,7 @@
       const art = state.articles.find(a => a.id === id);
       if (art) {
         Mem.log('article_opened', 'art_' + id, { source: art.feedId });
-        if (art.link) window.open(art.link, '_blank');
+        if (art.link) openInAppBrowser(art.link, art.title);
       }
     }
   };
@@ -1835,6 +2053,7 @@
     el.newsView.classList.toggle('active', state.view === 'news');
     el.podcastView.classList.toggle('active', state.view === 'podcasts');
     el.allView.classList.toggle('active', state.view === 'all');
+    el.browserView.classList.toggle('active', state.view === 'browser');
     if (state.view === 'podcasts') renderPodcasts();
     if (state.view === 'all') renderAll();
     save();
@@ -1872,7 +2091,7 @@
       Mem.log('article_opened', 'art_' + id, { source: art.feedId });
       art.unread = false;
       save();
-      if (art.link) window.open(art.link, '_blank');
+      if (art.link) openInAppBrowser(art.link, art.title);
       renderNews();
     }
   };
@@ -1905,7 +2124,7 @@
         Mem.log('article_opened', 'art_' + id, { source: art.feedId });
         art.unread = false;
         save();
-        if (art.link) window.open(art.link, '_blank');
+        if (art.link) openInAppBrowser(art.link, art.title);
         if (state.currentSourcePage) renderSourcePage(state.currentSourcePage);
       }
       return;
@@ -1920,7 +2139,7 @@
         Mem.log('article_opened', 'art_' + id, { source: art.feedId });
         art.unread = false;
         save();
-        if (art.link) window.open(art.link, '_blank');
+        if (art.link) openInAppBrowser(art.link, art.title);
         if (state.currentSourcePage) renderSourcePage(state.currentSourcePage);
       }
     }
@@ -2147,11 +2366,34 @@
   el.searchInput.oninput = e => { clearTimeout(searchTO); searchTO = setTimeout(() => { state.query = e.target.value; if (state.view === 'news') renderNews(); if (state.view === 'all') renderAll(); }, 200); };
   
   document.onkeydown = e => { if (e.target.tagName === 'INPUT') return; if (e.code === 'Space') { e.preventDefault(); togglePlay(); } if (e.code === 'ArrowLeft') skip(-15); if (e.code === 'ArrowRight') skip(30); };
-  
+
+  // Browser view event listeners
+  el.browserBackBtn.onclick = () => closeBrowser();
+  el.browserRefreshBtn.onclick = () => {
+    if (state.browserUrl) {
+      el.browserLoading.style.display = 'flex';
+      el.browserFrame.src = state.browserUrl;
+    }
+  };
+  el.browserExternalBtn.onclick = () => {
+    if (state.browserUrl) {
+      openInExternalBrowser(state.browserUrl);
+    }
+  };
+  el.browserErrorBtn.onclick = () => {
+    if (state.browserUrl) {
+      openInExternalBrowser(state.browserUrl);
+      closeBrowser();
+    }
+  };
+
+  // Initialize browser swipe gesture
+  initBrowserSwipe();
+
   // === INIT ===
   load();
 
-  // Apply saved view state
+  // Apply saved view state / update views
   const applyView = () => {
     // Update toggle buttons
     document.querySelectorAll('.toggle-btn').forEach(b => {
@@ -2161,7 +2403,9 @@
     el.newsView.classList.toggle('active', state.view === 'news');
     el.podcastView.classList.toggle('active', state.view === 'podcasts');
     el.allView.classList.toggle('active', state.view === 'all');
+    el.browserView.classList.toggle('active', state.view === 'browser');
   };
+  const updateViews = applyView; // Alias for browser functions
 
   applyView();
   renderNewsSources();
