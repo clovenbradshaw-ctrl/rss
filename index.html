@@ -2,7 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#0a0a0a">
   <title>BURSST</title>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
@@ -20,6 +24,44 @@
       --blue: #3b82f6; --blue2: #60a5fa;
       /* Legacy compatibility */
       --green: var(--orange); --green2: var(--orange2);
+
+      /* Mobile-specific spacing scale */
+      --mobile-space-xs: 8px;
+      --mobile-space-sm: 12px;
+      --mobile-space-md: 16px;
+      --mobile-space-lg: 20px;
+      --mobile-space-xl: 24px;
+      --mobile-space-2xl: 32px;
+
+      /* Mobile touch targets */
+      --mobile-touch-min: 44px;
+      --mobile-touch-comfortable: 48px;
+      --mobile-touch-large: 56px;
+
+      /* Mobile typography scale */
+      --mobile-text-xs: 12px;
+      --mobile-text-sm: 13px;
+      --mobile-text-base: 15px;
+      --mobile-text-md: 16px;
+      --mobile-text-lg: 17px;
+      --mobile-text-xl: 18px;
+      --mobile-text-2xl: 20px;
+      --mobile-text-3xl: 24px;
+      --mobile-text-4xl: 28px;
+
+      /* Safe area insets (iOS notch/home indicator) */
+      --sat: env(safe-area-inset-top);
+      --sar: env(safe-area-inset-right);
+      --sab: env(safe-area-inset-bottom);
+      --sal: env(safe-area-inset-left);
+
+      /* Mobile-specific z-index layers */
+      --z-mobile-header: 100;
+      --z-mobile-nav: 90;
+      --z-mobile-player: 95;
+      --z-mobile-drawer: 150;
+      --z-mobile-modal: 200;
+      --z-mobile-toast: 300;
     }
     html, body { height: 100%; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: var(--bg); color: var(--text); overflow: hidden; }
@@ -594,6 +636,1105 @@
       .player { padding: 12px 16px; }
       .player-art { width: 48px; height: 48px; }
       .player-play { width: 44px; height: 44px; }
+    }
+
+    /* ============================================
+       MOBILE OPTIMIZATION
+       ============================================ */
+
+    /* Breakpoint Strategy:
+       - 640px and below: Phone portrait/landscape
+       - 641px to 1024px: Tablet
+       - 1025px+: Desktop (existing styles)
+    */
+
+    @media (max-width: 1024px) {
+      /* Tablet adjustments - moderate changes */
+      html {
+        font-size: 15px;
+      }
+
+      .header {
+        padding: 14px 20px;
+      }
+
+      .main-toggle {
+        gap: 8px;
+      }
+
+      .toggle-btn {
+        padding: 10px 16px;
+        font-size: 14px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      /* ==================
+         PHASE 1: FOUNDATION
+         ================== */
+
+      /* Reset box model for consistent sizing */
+      * {
+        -webkit-tap-highlight-color: transparent;
+        -webkit-touch-callout: none;
+      }
+
+      html {
+        /* Base font size affects all rem units */
+        font-size: 16px;
+        /* Prevent zoom on input focus in iOS Safari */
+        -webkit-text-size-adjust: 100%;
+      }
+
+      body {
+        /* Ensure body doesn't overflow horizontally */
+        overflow-x: hidden;
+        /* Smoother scrolling on iOS */
+        -webkit-overflow-scrolling: touch;
+      }
+
+      /* ==================
+         PHASE 2: TYPOGRAPHY
+         ================== */
+
+      /* Headers */
+      .logo {
+        font-size: 20px;
+      }
+
+      .news-title,
+      .section-title,
+      .all-section-title {
+        font-size: var(--mobile-text-3xl);
+        letter-spacing: -0.03em;
+        line-height: 1.2;
+      }
+
+      .section-header h2,
+      .sidebar-header h2 {
+        font-size: var(--mobile-text-xs);
+      }
+
+      /* Article/Episode Titles */
+      .article-title {
+        font-size: var(--mobile-text-xl);
+        line-height: 1.4;
+        -webkit-line-clamp: 3;
+      }
+
+      .episode-title {
+        font-size: var(--mobile-text-lg);
+        line-height: 1.4;
+      }
+
+      .article-card-title,
+      .episode-card-title,
+      .all-card-title {
+        font-size: var(--mobile-text-lg);
+        line-height: 1.4;
+      }
+
+      /* Body Text */
+      .article-summary,
+      .episode-desc,
+      .article-card-summary {
+        font-size: var(--mobile-text-base);
+        line-height: 1.6;
+        -webkit-line-clamp: 3;
+      }
+
+      /* Meta Text */
+      .article-meta,
+      .episode-card-meta,
+      .all-item-meta {
+        font-size: var(--mobile-text-sm);
+      }
+
+      .article-source,
+      .episode-show {
+        font-size: var(--mobile-text-sm);
+      }
+
+      .article-time {
+        font-size: var(--mobile-text-xs);
+      }
+
+      /* ==================
+         PHASE 3: TOUCH TARGETS
+         ================== */
+
+      /* All interactive elements must meet 44x44px minimum */
+
+      .toggle-btn {
+        min-height: var(--mobile-touch-min);
+        padding: 12px 20px;
+        font-size: var(--mobile-text-base);
+        gap: 6px;
+      }
+
+      .chip,
+      .tag-chip {
+        min-height: var(--mobile-touch-min);
+        padding: 12px 20px;
+        font-size: var(--mobile-text-base);
+      }
+
+      .tag-chip {
+        padding: 10px 16px;
+      }
+
+      .icon-btn {
+        min-width: var(--mobile-touch-min);
+        min-height: var(--mobile-touch-min);
+        padding: 12px;
+      }
+
+      .add-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 20px;
+      }
+
+      .back-btn {
+        min-height: var(--mobile-touch-min);
+        padding: 12px 20px;
+        font-size: var(--mobile-text-base);
+      }
+
+      /* Source/Show items in sidebar/drawer */
+      .source-item,
+      .drawer-item {
+        min-height: var(--mobile-touch-comfortable);
+        padding: 12px 16px;
+      }
+
+      .source-icon,
+      .drawer-item-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 20px;
+      }
+
+      .source-name,
+      .drawer-item-name {
+        font-size: var(--mobile-text-base);
+      }
+
+      /* ==================
+         PHASE 4: SPACING & LAYOUT
+         ================== */
+
+      /* Header */
+      .header {
+        padding: var(--mobile-space-md) var(--mobile-space-md);
+        padding-top: max(var(--mobile-space-md), var(--sat));
+        gap: var(--mobile-space-sm);
+        /* Make header fixed and add padding to content */
+        position: sticky;
+        top: 0;
+        z-index: var(--z-mobile-header);
+        backdrop-filter: blur(12px);
+        background: rgba(26, 26, 26, 0.95);
+      }
+
+      .main {
+        /* Add top padding to account for sticky header */
+        padding-top: 0;
+      }
+
+      /* Toggle moved to bottom navigation */
+      .main-toggle {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: var(--bg2);
+        border-top: 1px solid var(--border2);
+        border-radius: 0;
+        padding: 8px;
+        padding-bottom: max(8px, var(--sab));
+        z-index: var(--z-mobile-nav);
+        justify-content: space-around;
+        /* Shadow for elevation */
+        box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.3);
+      }
+
+      .toggle-btn {
+        flex: 1;
+        flex-direction: column;
+        gap: 4px;
+        padding: 8px 4px;
+        border-radius: 12px;
+      }
+
+      .toggle-btn span:first-child {
+        font-size: 24px;
+        line-height: 1;
+      }
+
+      .toggle-btn span:last-child {
+        display: block !important;
+        font-size: 11px;
+        font-weight: 600;
+      }
+
+      /* Content areas need bottom padding for nav */
+      .news-list,
+      .podcast-content,
+      .all-content {
+        padding: var(--mobile-space-md);
+        padding-bottom: calc(80px + var(--sab));
+      }
+
+      /* Articles */
+      .article {
+        padding: var(--mobile-space-lg);
+        gap: var(--mobile-space-md);
+        margin-bottom: var(--mobile-space-md);
+        border-radius: 16px;
+      }
+
+      .article-icon {
+        width: 52px;
+        height: 52px;
+        font-size: 24px;
+      }
+
+      .article-meta {
+        gap: 6px;
+        margin-bottom: 8px;
+      }
+
+      .article-title {
+        margin-bottom: 8px;
+      }
+
+      .article-image {
+        width: 100px;
+        height: 80px;
+      }
+
+      /* Episodes */
+      .episode {
+        padding: var(--mobile-space-lg);
+        gap: var(--mobile-space-md);
+        margin-bottom: var(--mobile-space-md);
+      }
+
+      .episode-art {
+        width: 72px;
+        height: 72px;
+      }
+
+      .ep-play {
+        width: var(--mobile-touch-min);
+        height: var(--mobile-touch-min);
+      }
+
+      .ep-play svg {
+        width: 14px;
+        height: 14px;
+      }
+
+      /* Cards */
+      .articles-cards,
+      .episodes-cards,
+      .all-cards {
+        grid-template-columns: 1fr;
+        gap: var(--mobile-space-md);
+      }
+
+      .article-card-image,
+      .episode-card-art,
+      .all-card-image {
+        height: 200px;
+      }
+
+      .article-card-body,
+      .episode-card-body,
+      .all-card-body {
+        padding: var(--mobile-space-lg);
+      }
+
+      /* Masonry - single column */
+      .articles-masonry,
+      .episodes-masonry,
+      .all-masonry {
+        column-count: 1;
+        gap: var(--mobile-space-md);
+      }
+
+      /* Section spacing */
+      .section {
+        margin-bottom: var(--mobile-space-2xl);
+      }
+
+      .section-header {
+        margin-bottom: var(--mobile-space-lg);
+      }
+
+      /* ==================
+         PHASE 5: PLAYER REDESIGN
+         ================== */
+
+      .player {
+        position: fixed;
+        bottom: calc(70px + var(--sab));
+        left: 0;
+        right: 0;
+        padding: var(--mobile-space-lg) var(--mobile-space-md);
+        border-radius: 20px 20px 0 0;
+        z-index: var(--z-mobile-player);
+        /* Enhanced shadow for elevation */
+        box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.5);
+      }
+
+      .player-main {
+        gap: var(--mobile-space-md);
+        margin-bottom: var(--mobile-space-sm);
+      }
+
+      .player-art {
+        width: 64px;
+        height: 64px;
+        border-radius: 12px;
+        /* Prevent tiny tap area */
+        cursor: pointer;
+      }
+
+      .player-info {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .player-title {
+        font-size: var(--mobile-text-base);
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+
+      .player-show {
+        font-size: var(--mobile-text-sm);
+      }
+
+      .player-controls {
+        gap: var(--mobile-space-md);
+      }
+
+      .player-skip {
+        min-width: var(--mobile-touch-min);
+        min-height: var(--mobile-touch-min);
+        padding: 10px 14px;
+        font-size: var(--mobile-text-base);
+        font-weight: 700;
+      }
+
+      .player-play {
+        width: var(--mobile-touch-large);
+        height: var(--mobile-touch-large);
+      }
+
+      .player-play svg {
+        width: 20px;
+        height: 20px;
+      }
+
+      .player-progress {
+        margin-top: var(--mobile-space-sm);
+      }
+
+      .player-bar {
+        height: 8px;
+        border-radius: 4px;
+        /* Increase tap area with padding */
+        padding: 8px 0;
+        margin: -8px 0;
+      }
+
+      .player-bar:active {
+        height: 10px;
+      }
+
+      .player-fill {
+        border-radius: 4px;
+      }
+
+      .player-time {
+        font-size: var(--mobile-text-sm);
+        font-weight: 500;
+      }
+
+      .player-right {
+        gap: 6px;
+      }
+
+      .player-btn {
+        min-width: var(--mobile-touch-min);
+        min-height: var(--mobile-touch-min);
+        padding: 12px;
+      }
+
+      .speed-btn {
+        min-width: var(--mobile-touch-min);
+        min-height: var(--mobile-touch-min);
+        padding: 10px 14px;
+        font-size: var(--mobile-text-sm);
+        font-weight: 700;
+      }
+
+      /* ==================
+         PHASE 6: EXPANDED PLAYER
+         ================== */
+
+      .expanded-header {
+        padding: var(--mobile-space-lg) var(--mobile-space-md);
+        padding-top: max(var(--mobile-space-lg), var(--sat));
+      }
+
+      .expanded-body {
+        padding: var(--mobile-space-2xl) var(--mobile-space-lg);
+      }
+
+      .expanded-art {
+        width: min(320px, 80vw);
+        height: min(320px, 80vw);
+        margin-bottom: var(--mobile-space-2xl);
+      }
+
+      .expanded-info {
+        margin-bottom: var(--mobile-space-2xl);
+      }
+
+      .expanded-title {
+        font-size: var(--mobile-text-3xl);
+        line-height: 1.3;
+        margin-bottom: var(--mobile-space-sm);
+      }
+
+      .expanded-show {
+        font-size: var(--mobile-text-lg);
+      }
+
+      .expanded-progress {
+        max-width: 100%;
+        margin-bottom: var(--mobile-space-2xl);
+      }
+
+      .expanded-bar {
+        height: 8px;
+        margin-bottom: var(--mobile-space-sm);
+      }
+
+      .expanded-times {
+        font-size: var(--mobile-text-sm);
+      }
+
+      .expanded-controls {
+        gap: var(--mobile-space-2xl);
+      }
+
+      .expanded-skip {
+        width: 56px;
+        height: 56px;
+        font-size: var(--mobile-text-base);
+      }
+
+      .expanded-play {
+        width: 72px;
+        height: 72px;
+      }
+
+      .expanded-play svg {
+        width: 28px;
+        height: 28px;
+      }
+
+      /* ==================
+         PHASE 7: PANELS & MODALS
+         ================== */
+
+      .speed-panel,
+      .bookmarks-panel {
+        /* Make panels full-width bottom sheets on mobile */
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        top: auto;
+        transform: translateY(100%);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        width: 100%;
+        max-height: 60vh;
+        border-radius: 20px 20px 0 0;
+        padding: var(--mobile-space-xl) var(--mobile-space-lg);
+        padding-bottom: max(var(--mobile-space-xl), var(--sab));
+        overflow-y: auto;
+      }
+
+      .speed-panel.active,
+      .bookmarks-panel.active {
+        display: block;
+        transform: translateY(0);
+      }
+
+      .speed-panel-title,
+      .bookmarks-title {
+        font-size: var(--mobile-text-2xl);
+        margin-bottom: var(--mobile-space-lg);
+      }
+
+      .speed-value {
+        font-size: 48px;
+        margin-bottom: var(--mobile-space-md);
+      }
+
+      .speed-slider {
+        height: 8px;
+      }
+
+      .speed-slider::-webkit-slider-thumb {
+        width: 28px;
+        height: 28px;
+      }
+
+      .speed-slider::-moz-range-thumb {
+        width: 28px;
+        height: 28px;
+      }
+
+      .speed-preset-btn {
+        min-height: var(--mobile-touch-min);
+        padding: 12px 16px;
+        font-size: var(--mobile-text-base);
+      }
+
+      .bookmark-item {
+        min-height: var(--mobile-touch-comfortable);
+        padding: var(--mobile-space-md);
+        margin-bottom: var(--mobile-space-sm);
+      }
+
+      .bookmark-time {
+        font-size: var(--mobile-text-base);
+      }
+
+      .bookmark-note {
+        font-size: var(--mobile-text-sm);
+      }
+
+      .bookmark-delete {
+        min-width: var(--mobile-touch-min);
+        min-height: var(--mobile-touch-min);
+        padding: 12px;
+        opacity: 1;
+      }
+
+      /* Modal */
+      .modal-box {
+        width: calc(100% - 32px);
+        max-width: none;
+        margin: var(--mobile-space-md);
+      }
+
+      .modal-header {
+        padding: var(--mobile-space-lg) var(--mobile-space-lg);
+      }
+
+      .modal-header h2 {
+        font-size: var(--mobile-text-2xl);
+      }
+
+      .modal-body {
+        padding: var(--mobile-space-lg);
+      }
+
+      .form-input {
+        min-height: var(--mobile-touch-comfortable);
+        padding: 14px 16px;
+        font-size: var(--mobile-text-md);
+      }
+
+      .type-btn {
+        min-height: 80px;
+        padding: var(--mobile-space-lg);
+      }
+
+      .type-btn .icon {
+        font-size: 32px;
+      }
+
+      .type-btn .label {
+        font-size: var(--mobile-text-base);
+      }
+
+      .submit-btn,
+      .fetch-btn {
+        min-height: var(--mobile-touch-comfortable);
+        padding: 14px 20px;
+        font-size: var(--mobile-text-md);
+      }
+
+      /* Sleep Timer Modal */
+      .sleep-timer-box {
+        width: calc(100% - 32px);
+        padding: var(--mobile-space-xl) var(--mobile-space-lg);
+        padding-bottom: max(var(--mobile-space-xl), var(--sab));
+      }
+
+      .sleep-timer-title {
+        font-size: var(--mobile-text-2xl);
+        margin-bottom: var(--mobile-space-lg);
+      }
+
+      .sleep-preset {
+        min-height: var(--mobile-touch-comfortable);
+        padding: 14px;
+        font-size: var(--mobile-text-base);
+      }
+
+      .sleep-custom input {
+        min-height: var(--mobile-touch-comfortable);
+        padding: 14px 16px;
+        font-size: var(--mobile-text-md);
+      }
+
+      .sleep-custom button {
+        min-height: var(--mobile-touch-comfortable);
+        padding: 14px 24px;
+      }
+
+      /* ==================
+         PHASE 8: DRAWER
+         ================== */
+
+      .drawer {
+        width: 85vw;
+        max-width: 320px;
+      }
+
+      .drawer-header {
+        padding: var(--mobile-space-lg);
+        padding-top: max(var(--mobile-space-lg), var(--sat));
+      }
+
+      .drawer-content {
+        padding: var(--mobile-space-md);
+      }
+
+      .drawer-section {
+        margin-bottom: var(--mobile-space-lg);
+      }
+
+      .drawer-section-title {
+        padding: var(--mobile-space-sm) var(--mobile-space-md);
+      }
+
+      /* ==================
+         PHASE 9: SHOW/SOURCE PAGES
+         ================== */
+
+      .show-hero,
+      .source-hero {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        padding: var(--mobile-space-xl) var(--mobile-space-lg);
+      }
+
+      .show-hero-art,
+      .source-hero-art {
+        width: 180px;
+        height: 180px;
+        margin-bottom: var(--mobile-space-lg);
+      }
+
+      .show-hero-title,
+      .source-hero-title {
+        font-size: var(--mobile-text-4xl);
+        line-height: 1.2;
+        margin-bottom: var(--mobile-space-sm);
+      }
+
+      .show-hero-author,
+      .source-hero-author {
+        font-size: var(--mobile-text-base);
+      }
+
+      .show-actions,
+      .source-actions {
+        padding: var(--mobile-space-lg) var(--mobile-space-md);
+        flex-wrap: wrap;
+      }
+
+      .show-play {
+        width: 60px;
+        height: 60px;
+      }
+
+      .show-play svg {
+        width: 24px;
+        height: 24px;
+      }
+
+      .show-episodes,
+      .source-articles {
+        padding: 0 var(--mobile-space-md);
+        padding-bottom: calc(150px + var(--sab));
+      }
+
+      .show-episodes-title,
+      .source-articles-title {
+        font-size: var(--mobile-text-2xl);
+        margin-bottom: var(--mobile-space-lg);
+      }
+
+      /* ==================
+         PHASE 10: SHOWS GRID
+         ================== */
+
+      .shows-grid {
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: var(--mobile-space-lg);
+      }
+
+      .show-card {
+        max-width: none;
+      }
+
+      .show-art {
+        margin-bottom: var(--mobile-space-md);
+      }
+
+      .show-name {
+        font-size: var(--mobile-text-base);
+        line-height: 1.3;
+      }
+
+      .show-author {
+        font-size: var(--mobile-text-sm);
+      }
+
+      /* ==================
+         PHASE 11: TAG FILTERS
+         ================== */
+
+      .tag-filter-section {
+        padding: var(--mobile-space-md);
+      }
+
+      .tag-filter-header {
+        margin-bottom: var(--mobile-space-sm);
+      }
+
+      .tag-chips {
+        gap: 8px;
+        padding-bottom: 8px;
+      }
+
+      /* ==================
+         PHASE 12: CATEGORY CHIPS
+         ================== */
+
+      .category-chips {
+        gap: 8px;
+      }
+
+      .news-header {
+        padding: var(--mobile-space-lg) var(--mobile-space-md);
+        flex-wrap: wrap;
+      }
+
+      .news-title {
+        flex: 1 0 100%;
+        margin-bottom: var(--mobile-space-sm);
+      }
+
+      /* ==================
+         PHASE 13: TABLE VIEWS
+         ================== */
+
+      /* Tables are problematic on mobile - consider hiding or using cards instead */
+      .articles-table,
+      .episodes-table,
+      .all-table {
+        display: none;
+      }
+
+      /* Or alternatively, make tables scroll horizontally */
+      .table-wrapper {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      /* ==================
+         PHASE 14: TOAST
+         ================== */
+
+      .toast {
+        bottom: calc(80px + var(--sab));
+        padding: var(--mobile-space-md) var(--mobile-space-xl);
+        font-size: var(--mobile-text-base);
+        max-width: calc(100% - 32px);
+      }
+
+      /* ==================
+         PHASE 15: SEARCH
+         ================== */
+
+      .search-box {
+        display: block;
+        max-width: none;
+        flex: 1;
+      }
+
+      .search-box input {
+        font-size: var(--mobile-text-md);
+        padding: 10px 16px 10px 38px;
+      }
+
+      /* ==================
+         PHASE 16: EMPTY STATES
+         ================== */
+
+      .empty {
+        padding: calc(var(--mobile-space-2xl) * 2) var(--mobile-space-lg);
+      }
+
+      .empty-icon {
+        font-size: 72px;
+        margin-bottom: var(--mobile-space-lg);
+      }
+
+      .empty-title {
+        font-size: var(--mobile-text-2xl);
+        margin-bottom: var(--mobile-space-sm);
+      }
+
+      /* ==================
+         PHASE 17: PERFORMANCE
+         ================== */
+
+      /* Reduce animations on mobile for better performance */
+      @media (prefers-reduced-motion: no-preference) {
+        .article:active,
+        .episode:active,
+        .show-card:active {
+          /* Instant feedback on tap */
+          transform: scale(0.98);
+          transition-duration: 0.1s;
+        }
+      }
+
+      /* Reduce motion for accessibility */
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+          scroll-behavior: auto !important;
+        }
+      }
+
+      /* ==================
+         PHASE 18: SWIPE IMPROVEMENTS
+         ================== */
+
+      .swipe-indicator {
+        border-radius: 20px;
+      }
+
+      .swipe-indicator-icon {
+        font-size: 48px;
+      }
+
+      .swipe-indicator-text {
+        font-size: 40px;
+      }
+
+      .swipe-indicator-label {
+        font-size: var(--mobile-text-sm);
+      }
+
+      /* ==================
+         PHASE 19: FEED VIEW
+         ================== */
+
+      .feed-container {
+        padding-bottom: calc(80px + var(--sab));
+      }
+
+      .feed-scroll {
+        padding-bottom: calc(80px + var(--sab));
+      }
+
+      .feed-nav {
+        padding: 0 var(--mobile-space-sm);
+      }
+
+      .feed-nav-btn {
+        padding: var(--mobile-space-sm) var(--mobile-space-md);
+        min-height: var(--mobile-touch-min);
+      }
+
+      .feed-post-inner {
+        padding: var(--mobile-space-md);
+      }
+
+      .feed-post-avatar {
+        width: 44px;
+        height: 44px;
+      }
+
+      .feed-post-body {
+        padding-left: 56px;
+      }
+
+      .feed-post-title {
+        font-size: var(--mobile-text-lg);
+      }
+
+      .feed-post-summary {
+        font-size: var(--mobile-text-base);
+      }
+
+      .feed-post-play {
+        min-height: var(--mobile-touch-min);
+        padding: 12px 24px;
+      }
+    }
+
+    /* ==================
+       LANDSCAPE MOBILE ADJUSTMENTS
+       ================== */
+
+    @media (max-width: 896px) and (orientation: landscape) {
+      /* Optimize for landscape phone viewing */
+
+      .expanded-art {
+        width: 200px;
+        height: 200px;
+        margin-bottom: var(--mobile-space-lg);
+      }
+
+      .expanded-body {
+        padding: var(--mobile-space-lg);
+      }
+
+      .expanded-controls {
+        gap: var(--mobile-space-lg);
+      }
+
+      .expanded-skip {
+        width: 48px;
+        height: 48px;
+      }
+
+      .expanded-play {
+        width: 60px;
+        height: 60px;
+      }
+
+      /* Make show grid denser */
+      .shows-grid {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: var(--mobile-space-md);
+      }
+    }
+
+    /* Skeleton loading animation */
+    .skeleton {
+      background: linear-gradient(
+        90deg,
+        var(--bg3) 25%,
+        var(--bg4) 50%,
+        var(--bg3) 75%
+      );
+      background-size: 200% 100%;
+      animation: shimmer 1.5s ease-in-out infinite;
+      border-radius: 8px;
+    }
+
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    .skeleton-wrapper {
+      opacity: 0.6;
+    }
+
+    /* Ripple animation */
+    @keyframes ripple {
+      to {
+        transform: scale(2.5);
+        opacity: 0;
+      }
+    }
+
+    /* Pull to refresh indicator */
+    .pull-to-refresh-indicator {
+      position: fixed;
+      top: -80px;
+      left: 0;
+      right: 0;
+      height: 80px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: var(--bg2);
+      z-index: 99;
+      transition: transform 0.2s ease-out;
+      color: var(--text2);
+    }
+
+    .pull-spinner {
+      animation: spin 1s linear infinite;
+    }
+
+    .pull-spinner.ready {
+      animation: none;
+      transform: rotate(180deg);
+    }
+
+    .pull-text {
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Swipe delete button */
+    .swipe-delete-btn {
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 80px;
+      background: #ef4444;
+      border: none;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    /* Bottom sheet backdrop */
+    .bottom-sheet-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease-out;
+      z-index: 109;
+      backdrop-filter: blur(4px);
     }
   </style>
 </head>
@@ -3928,6 +5069,534 @@
     }
   };
 
+  // ==========================================
+  // MOBILE TOUCH ENHANCEMENTS
+  // ==========================================
+
+  /**
+   * Enhanced Touch Feedback System
+   * Provides visual and haptic feedback for all interactions
+   */
+  const TouchFeedback = {
+    /**
+     * Haptic feedback wrapper with intensity levels
+     * @param {string} intensity - 'light' | 'medium' | 'heavy' | 'success' | 'error'
+     */
+    haptic(intensity = 'light') {
+      if (!('vibrate' in navigator)) return;
+
+      const patterns = {
+        light: 10,
+        medium: 20,
+        heavy: 40,
+        success: [10, 50, 10],
+        error: [20, 100, 20],
+        selection: 5
+      };
+
+      navigator.vibrate(patterns[intensity] || patterns.light);
+    },
+
+    /**
+     * Visual press feedback for elements
+     * @param {HTMLElement} element - Element to apply feedback to
+     */
+    press(element) {
+      if (!element) return;
+
+      element.style.transform = 'scale(0.96)';
+      element.style.opacity = '0.8';
+      element.style.transition = 'transform 0.1s ease-out, opacity 0.1s ease-out';
+
+      setTimeout(() => {
+        element.style.transform = '';
+        element.style.opacity = '';
+      }, 100);
+    },
+
+    /**
+     * Ripple effect on tap
+     * @param {Event} e - Touch/click event
+     */
+    ripple(e) {
+      const button = e.currentTarget;
+      const ripple = document.createElement('span');
+      const rect = button.getBoundingClientRect();
+      const size = Math.max(rect.width, rect.height);
+      const x = e.clientX - rect.left - size / 2;
+      const y = e.clientY - rect.top - size / 2;
+
+      ripple.style.cssText = `
+        position: absolute;
+        width: ${size}px;
+        height: ${size}px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.3);
+        left: ${x}px;
+        top: ${y}px;
+        transform: scale(0);
+        pointer-events: none;
+        animation: ripple 0.6s ease-out;
+      `;
+
+      button.style.position = 'relative';
+      button.style.overflow = 'hidden';
+      button.appendChild(ripple);
+
+      setTimeout(() => ripple.remove(), 600);
+    }
+  };
+
+  /**
+   * Apply touch feedback to all interactive elements
+   */
+  const initTouchFeedback = () => {
+    // Primary buttons get haptic + visual feedback
+    const primaryButtons = document.querySelectorAll(`
+      .toggle-btn,
+      .ep-play,
+      .player-play,
+      .expanded-play,
+      .show-play,
+      .add-btn,
+      .submit-btn
+    `);
+
+    primaryButtons.forEach(btn => {
+      btn.addEventListener('touchstart', (e) => {
+        TouchFeedback.haptic('medium');
+        TouchFeedback.press(e.currentTarget);
+      }, { passive: true });
+
+      btn.addEventListener('click', (e) => {
+        TouchFeedback.ripple(e);
+      });
+    });
+
+    // Secondary buttons get lighter feedback
+    const secondaryButtons = document.querySelectorAll(`
+      .icon-btn,
+      .chip,
+      .tag-chip,
+      .speed-btn,
+      .player-btn,
+      .back-btn
+    `);
+
+    secondaryButtons.forEach(btn => {
+      btn.addEventListener('touchstart', () => {
+        TouchFeedback.haptic('light');
+      }, { passive: true });
+    });
+
+    // List items get selection feedback
+    const listItems = document.querySelectorAll(`
+      .article,
+      .episode,
+      .source-item,
+      .show-card,
+      .drawer-item
+    `);
+
+    listItems.forEach(item => {
+      item.addEventListener('touchstart', () => {
+        TouchFeedback.haptic('selection');
+      }, { passive: true });
+    });
+  };
+
+  /**
+   * Pull-to-Refresh Implementation
+   */
+  const PullToRefresh = {
+    enabled: false,
+    pulling: false,
+    startY: 0,
+    currentY: 0,
+    threshold: 100,
+    maxPull: 150,
+    indicator: null,
+
+    init() {
+      // Only enable on mobile
+      if (window.innerWidth > 640) return;
+
+      this.enabled = true;
+      this.createIndicator();
+      this.attachListeners();
+    },
+
+    createIndicator() {
+      this.indicator = document.createElement('div');
+      this.indicator.className = 'pull-to-refresh-indicator';
+      this.indicator.innerHTML = `
+        <div class="pull-spinner">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0118.8-4.3M22 12.5a10 10 0 01-18.8 4.2"/>
+          </svg>
+        </div>
+        <div class="pull-text">Pull to refresh</div>
+      `;
+
+      document.body.appendChild(this.indicator);
+    },
+
+    attachListeners() {
+      let scrollable;
+
+      document.addEventListener('touchstart', (e) => {
+        // Only activate at top of scroll
+        scrollable = e.target.closest('.news-list, .podcast-content, .all-content, .feed-scroll');
+        if (!scrollable || scrollable.scrollTop > 5) return;
+
+        this.startY = e.touches[0].clientY;
+        this.pulling = false;
+      }, { passive: true });
+
+      document.addEventListener('touchmove', (e) => {
+        if (!scrollable || scrollable.scrollTop > 5) return;
+
+        this.currentY = e.touches[0].clientY;
+        const pullDistance = this.currentY - this.startY;
+
+        if (pullDistance > 0 && this.indicator) {
+          const pull = Math.min(pullDistance * 0.5, this.maxPull);
+          this.indicator.style.transform = `translateY(${pull}px)`;
+
+          if (pull >= this.threshold && !this.pulling) {
+            this.pulling = true;
+            this.indicator.querySelector('.pull-spinner').classList.add('ready');
+            this.indicator.querySelector('.pull-text').textContent = 'Release to refresh';
+            TouchFeedback.haptic('medium');
+          } else if (pull < this.threshold && this.pulling) {
+            this.pulling = false;
+            this.indicator.querySelector('.pull-spinner').classList.remove('ready');
+            this.indicator.querySelector('.pull-text').textContent = 'Pull to refresh';
+          }
+        }
+      }, { passive: true });
+
+      document.addEventListener('touchend', async () => {
+        if (this.pulling && this.indicator) {
+          TouchFeedback.haptic('success');
+          this.indicator.querySelector('.pull-text').textContent = 'Refreshing...';
+
+          // Perform refresh
+          await refreshAllFeeds();
+
+          // Reset
+          setTimeout(() => {
+            if (this.indicator) {
+              this.indicator.style.transform = '';
+              this.pulling = false;
+              this.indicator.querySelector('.pull-spinner').classList.remove('ready');
+              this.indicator.querySelector('.pull-text').textContent = 'Pull to refresh';
+            }
+          }, 300);
+        } else if (this.indicator) {
+          this.indicator.style.transform = '';
+        }
+
+        scrollable = null;
+      }, { passive: true });
+    }
+  };
+
+  /**
+   * Bottom Sheet Panel Behavior
+   * Makes speed panel and bookmarks panel slide up from bottom
+   */
+  const BottomSheet = {
+    backdrop: null,
+
+    init() {
+      if (window.innerWidth > 640) return;
+
+      // Add backdrop
+      this.backdrop = document.createElement('div');
+      this.backdrop.className = 'bottom-sheet-backdrop';
+      document.body.appendChild(this.backdrop);
+
+      // Override panel open/close
+      const originalToggleSpeed = window.toggleSpeedPanel;
+      if (originalToggleSpeed) {
+        window.toggleSpeedPanel = () => {
+          originalToggleSpeed();
+          this.updateBackdrop(el.speedPanel?.classList.contains('active'));
+        };
+      }
+
+      const originalToggleBookmarks = window.toggleBookmarksPanel;
+      if (originalToggleBookmarks) {
+        window.toggleBookmarksPanel = () => {
+          originalToggleBookmarks();
+          this.updateBackdrop(el.bookmarksPanel?.classList.contains('active'));
+        };
+      }
+
+      // Close on swipe down
+      [el.speedPanel, el.bookmarksPanel].forEach(panel => {
+        if (!panel) return;
+
+        let startY = 0;
+        panel.addEventListener('touchstart', (e) => {
+          if (panel.scrollTop === 0) {
+            startY = e.touches[0].clientY;
+          }
+        }, { passive: true });
+
+        panel.addEventListener('touchmove', (e) => {
+          if (panel.scrollTop === 0) {
+            const currentY = e.touches[0].clientY;
+            const diff = currentY - startY;
+
+            if (diff > 0) {
+              panel.style.transform = `translateY(${diff}px)`;
+            }
+          }
+        }, { passive: true });
+
+        panel.addEventListener('touchend', (e) => {
+          const currentY = e.changedTouches[0].clientY;
+          const diff = currentY - startY;
+
+          if (diff > 100) {
+            closeAllPanels();
+            this.updateBackdrop(false);
+          }
+
+          panel.style.transform = '';
+        }, { passive: true });
+      });
+    },
+
+    updateBackdrop(isOpen) {
+      if (!this.backdrop) return;
+
+      if (isOpen) {
+        this.backdrop.style.opacity = '1';
+        this.backdrop.style.pointerEvents = 'auto';
+        this.backdrop.onclick = () => {
+          closeAllPanels();
+          this.updateBackdrop(false);
+        };
+      } else {
+        this.backdrop.style.opacity = '0';
+        this.backdrop.style.pointerEvents = 'none';
+      }
+    }
+  };
+
+  /**
+   * Smart Scroll Behavior
+   * Hide header on scroll down, show on scroll up
+   */
+  const SmartScroll = {
+    lastScroll: 0,
+    scrollThreshold: 10,
+
+    init() {
+      if (window.innerWidth > 640) return;
+
+      let ticking = false;
+
+      window.addEventListener('scroll', () => {
+        if (!ticking) {
+          window.requestAnimationFrame(() => {
+            this.handleScroll();
+            ticking = false;
+          });
+          ticking = true;
+        }
+      }, { passive: true });
+    },
+
+    handleScroll() {
+      const currentScroll = window.pageYOffset;
+
+      if (Math.abs(currentScroll - this.lastScroll) < this.scrollThreshold) {
+        return;
+      }
+
+      const header = document.querySelector('.header');
+      if (!header) return;
+
+      if (currentScroll > this.lastScroll && currentScroll > 100) {
+        // Scrolling down & past threshold
+        header.style.transform = 'translateY(-100%)';
+      } else {
+        // Scrolling up or at top
+        header.style.transform = 'translateY(0)';
+      }
+
+      this.lastScroll = currentScroll;
+    }
+  };
+
+  /**
+   * Viewport Height Fix for Mobile Browsers
+   * Fixes vh units on mobile (address bar hiding)
+   */
+  const ViewportFix = {
+    init() {
+      const setVH = () => {
+        const vh = window.innerHeight * 0.01;
+        document.documentElement.style.setProperty('--vh', `${vh}px`);
+      };
+
+      setVH();
+      window.addEventListener('resize', setVH);
+      window.addEventListener('orientationchange', setVH);
+    }
+  };
+
+  /**
+   * Prevent Overscroll Bounce (iOS)
+   */
+  const PreventOverscroll = {
+    init() {
+      document.body.style.overscrollBehavior = 'none';
+
+      // Allow scrolling only within designated scroll containers
+      const scrollContainers = document.querySelectorAll(`
+        .news-list,
+        .podcast-content,
+        .all-content,
+        .speed-panel,
+        .bookmarks-panel,
+        .drawer-content,
+        .feed-scroll
+      `);
+
+      scrollContainers.forEach(container => {
+        container.style.overscrollBehavior = 'contain';
+      });
+    }
+  };
+
+  /**
+   * iOS Input Focus Fix
+   * Prevents page zoom on input focus
+   */
+  const IOSInputFix = {
+    init() {
+      const inputs = document.querySelectorAll('input, textarea');
+
+      inputs.forEach(input => {
+        // Ensure font-size is at least 16px to prevent zoom
+        const fontSize = window.getComputedStyle(input).fontSize;
+        if (parseInt(fontSize) < 16) {
+          input.style.fontSize = '16px';
+        }
+
+        // Scroll into view on focus
+        input.addEventListener('focus', (e) => {
+          setTimeout(() => {
+            e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }, 300);
+        });
+      });
+    }
+  };
+
+  /**
+   * Enhanced Loading States
+   */
+  const LoadingStates = {
+    createSkeleton(type) {
+      const skeletons = {
+        article: `
+          <div class="article skeleton-wrapper" style="pointer-events:none">
+            <div class="skeleton" style="width:48px;height:48px;border-radius:12px"></div>
+            <div style="flex:1">
+              <div class="skeleton" style="width:60%;height:14px;margin-bottom:8px"></div>
+              <div class="skeleton" style="width:100%;height:18px;margin-bottom:6px"></div>
+              <div class="skeleton" style="width:90%;height:14px"></div>
+            </div>
+          </div>
+        `,
+        episode: `
+          <div class="episode skeleton-wrapper" style="pointer-events:none">
+            <div class="skeleton" style="width:64px;height:64px;border-radius:12px"></div>
+            <div style="flex:1">
+              <div class="skeleton" style="width:40%;height:13px;margin-bottom:6px"></div>
+              <div class="skeleton" style="width:80%;height:15px;margin-bottom:8px"></div>
+              <div class="skeleton" style="width:100%;height:8px;border-radius:4px"></div>
+            </div>
+          </div>
+        `,
+        card: `
+          <div class="article-card skeleton-wrapper" style="pointer-events:none">
+            <div class="skeleton" style="width:100%;height:200px;border-radius:16px 16px 0 0"></div>
+            <div style="padding:18px">
+              <div class="skeleton" style="width:60%;height:13px;margin-bottom:10px"></div>
+              <div class="skeleton" style="width:100%;height:16px;margin-bottom:6px"></div>
+              <div class="skeleton" style="width:90%;height:14px"></div>
+            </div>
+          </div>
+        `
+      };
+
+      return skeletons[type] || skeletons.article;
+    },
+
+    show(container, type, count = 5) {
+      if (container) {
+        container.innerHTML = Array(count).fill(this.createSkeleton(type)).join('');
+      }
+    }
+  };
+
+  /**
+   * Initialize all mobile enhancements
+   * Call this in the main init() function
+   */
+  const initMobileEnhancements = () => {
+    // Check if mobile
+    const isMobile = window.innerWidth <= 640;
+    const isTablet = window.innerWidth > 640 && window.innerWidth <= 1024;
+
+    if (isMobile) {
+      console.log('📱 Initializing mobile enhancements...');
+
+      ViewportFix.init();
+      initTouchFeedback();
+      PullToRefresh.init();
+      BottomSheet.init();
+      SmartScroll.init();
+      PreventOverscroll.init();
+      IOSInputFix.init();
+
+      console.log('✅ Mobile enhancements initialized');
+    } else if (isTablet) {
+      console.log('📱 Initializing tablet enhancements...');
+
+      ViewportFix.init();
+      initTouchFeedback();
+      PullToRefresh.init();
+
+      console.log('✅ Tablet enhancements initialized');
+    }
+
+    // Re-initialize on resize
+    let resizeTimer;
+    let wasMobile = isMobile;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        const nowMobile = window.innerWidth <= 640;
+        if (nowMobile !== wasMobile) {
+          // Significant layout change - reinitialize
+          wasMobile = nowMobile;
+          if (nowMobile) {
+            ViewportFix.init();
+            PreventOverscroll.init();
+          }
+        }
+      }, 250);
+    });
+  };
+
   // === INIT ===
   const init = async () => {
     load();
@@ -3968,6 +5637,16 @@
     };
 
     applyView();
+
+    // Show loading skeletons while rendering (mobile only)
+    if (window.innerWidth <= 640) {
+      if (state.view === 'news') {
+        LoadingStates.show(el.newsList, 'article', 5);
+      } else if (state.view === 'podcasts') {
+        LoadingStates.show(el.podcastContent, 'episode', 5);
+      }
+    }
+
     renderNewsSources();
     renderCategories();
     renderTagFilters();
@@ -3975,7 +5654,11 @@
     if (state.view === 'podcasts') renderPodcasts();
     if (state.view === 'all') renderAll();
 
+    // Initialize mobile enhancements AFTER initial render
+    initMobileEnhancements();
+
     console.log('BURSST loaded');
+    console.log('[Mobile] Mobile optimizations active:', window.innerWidth <= 640);
     console.log('[API] User Behavior API:');
     console.log('  Memory.setEndpoint(url) - Set API endpoint for behavior sync');
     console.log('  Memory.getLocal() - Get all local behavior logs');
