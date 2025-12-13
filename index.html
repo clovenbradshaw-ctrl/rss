@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>BURSST</title>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -602,9 +603,9 @@
     <button class="hamburger" id="hamburgerBtn"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
     <div class="logo">BU<span class="logo-rss">RSS</span>T</div>
     <div class="main-toggle">
-      <button class="toggle-btn" data-view="all"><span>📚</span><span>All</span></button>
-      <button class="toggle-btn" data-view="news"><span>📰</span><span>News</span></button>
-      <button class="toggle-btn active" data-view="podcasts"><span>🎧</span><span>Podcasts</span></button>
+      <button class="toggle-btn" data-view="all"><span><i class="ph ph-books"></i></span><span>All</span></button>
+      <button class="toggle-btn" data-view="news"><span><i class="ph ph-newspaper"></i></span><span>News</span></button>
+      <button class="toggle-btn active" data-view="podcasts"><span><i class="ph ph-headphones"></i></span><span>Podcasts</span></button>
     </div>
     <div class="spacer"></div>
     <div class="search-box">
@@ -654,17 +655,17 @@
     <div class="all-view" id="allView">
       <nav class="feed-nav" id="feedNav">
         <button class="feed-nav-btn active" data-filter="all">
-          <span class="feed-nav-icon">📚</span>
+          <span class="feed-nav-icon"><i class="ph ph-books"></i></span>
           <span>All</span>
           <span class="feed-nav-count" id="feedCountAll">0</span>
         </button>
         <button class="feed-nav-btn" data-filter="news">
-          <span class="feed-nav-icon">📰</span>
+          <span class="feed-nav-icon"><i class="ph ph-newspaper"></i></span>
           <span>News</span>
           <span class="feed-nav-count" id="feedCountNews">0</span>
         </button>
         <button class="feed-nav-btn" data-filter="podcast">
-          <span class="feed-nav-icon">🎧</span>
+          <span class="feed-nav-icon"><i class="ph ph-headphones"></i></span>
           <span>Podcasts</span>
           <span class="feed-nav-count" id="feedCountPodcast">0</span>
         </button>
@@ -743,7 +744,7 @@
         <img class="expanded-art" id="expArt" src="">
         <div class="swipe-indicator" id="swipeIndicator">
           <div class="swipe-indicator-content">
-            <div class="swipe-indicator-icon" id="swipeIcon">⏪</div>
+            <div class="swipe-indicator-icon" id="swipeIcon"><i class="ph ph-rewind"></i></div>
             <div class="swipe-indicator-text" id="swipeText">-15s</div>
             <div class="swipe-indicator-label" id="swipeLabel">Rewind</div>
           </div>
@@ -786,8 +787,8 @@
       <div class="form-group"><label class="form-label">Creator / Author</label><input type="text" class="form-input" id="fAuthor" placeholder="Auto-detected from feed..."></div>
       <div class="form-group"><label class="form-label">Type</label>
         <div class="type-sel">
-          <button class="type-btn active" id="tNews"><span class="icon">📰</span><span class="label">News</span></button>
-          <button class="type-btn" id="tPodcast"><span class="icon">🎙️</span><span class="label">Podcast</span></button>
+          <button class="type-btn active" id="tNews"><span class="icon"><i class="ph ph-newspaper"></i></span><span class="label">News</span></button>
+          <button class="type-btn" id="tPodcast"><span class="icon"><i class="ph ph-microphone-stage"></i></span><span class="label">Podcast</span></button>
         </div>
       </div>
       <div class="form-group"><label class="form-label">Category</label><input type="text" class="form-input" id="fCat" placeholder="Tech, News..."></div>
@@ -1034,104 +1035,104 @@
     // News Categories
     technology: {
       label: 'Technology',
-      icon: '💻',
+      icon: '<i class="ph ph-desktop"></i>',
       keywords: ['tech', 'technology', 'software', 'hardware', 'programming', 'code', 'developer', 'app', 'startup', 'silicon valley', 'ai', 'artificial intelligence', 'machine learning', 'robotics', 'cyber', 'digital', 'computer', 'internet', 'web', 'mobile', 'gadget', 'innovation', 'blockchain', 'crypto', 'cloud', 'data', 'algorithm', 'api', 'devops', 'saas', 'fintech', 'techcrunch', 'wired', 'verge', 'ars technica', 'hacker', 'github', 'open source']
     },
     business: {
       label: 'Business',
-      icon: '💼',
+      icon: '<i class="ph ph-briefcase"></i>',
       keywords: ['business', 'economy', 'market', 'stock', 'invest', 'finance', 'entrepreneur', 'startup', 'company', 'corporate', 'trade', 'commerce', 'industry', 'ceo', 'executive', 'revenue', 'profit', 'wall street', 'nasdaq', 'dow', 'earnings', 'merger', 'acquisition', 'ipo', 'venture capital', 'forbes', 'bloomberg', 'wsj', 'financial times', 'economist']
     },
     politics: {
       label: 'Politics',
-      icon: '🏛️',
+      icon: '<i class="ph ph-bank"></i>',
       keywords: ['politics', 'political', 'government', 'election', 'congress', 'senate', 'parliament', 'president', 'minister', 'democrat', 'republican', 'liberal', 'conservative', 'policy', 'legislation', 'vote', 'campaign', 'poll', 'diplomacy', 'foreign policy', 'washington', 'capitol', 'white house', 'politico', 'axios']
     },
     science: {
       label: 'Science',
-      icon: '🔬',
+      icon: '<i class="ph ph-flask"></i>',
       keywords: ['science', 'research', 'study', 'scientist', 'discovery', 'experiment', 'physics', 'chemistry', 'biology', 'astronomy', 'space', 'nasa', 'climate', 'environment', 'nature', 'evolution', 'genetics', 'quantum', 'laboratory', 'scientific american', 'new scientist', 'phys.org']
     },
     health: {
       label: 'Health',
-      icon: '🏥',
+      icon: '<i class="ph ph-first-aid-kit"></i>',
       keywords: ['health', 'medical', 'medicine', 'doctor', 'hospital', 'disease', 'treatment', 'therapy', 'wellness', 'fitness', 'nutrition', 'diet', 'mental health', 'psychology', 'vaccine', 'pharmaceutical', 'fda', 'cdc', 'healthcare', 'patient', 'diagnosis', 'symptom']
     },
     entertainment: {
       label: 'Entertainment',
-      icon: '🎬',
+      icon: '<i class="ph ph-film-strip"></i>',
       keywords: ['entertainment', 'movie', 'film', 'tv', 'television', 'show', 'series', 'celebrity', 'actor', 'actress', 'music', 'album', 'concert', 'streaming', 'netflix', 'disney', 'hollywood', 'box office', 'award', 'oscar', 'emmy', 'grammy', 'variety', 'deadline', 'ign', 'gamespot']
     },
     sports: {
       label: 'Sports',
-      icon: '⚽',
+      icon: '<i class="ph ph-soccer-ball"></i>',
       keywords: ['sports', 'football', 'soccer', 'basketball', 'baseball', 'hockey', 'tennis', 'golf', 'olympics', 'nfl', 'nba', 'mlb', 'nhl', 'fifa', 'espn', 'athlete', 'team', 'league', 'championship', 'tournament', 'game', 'score', 'player', 'coach']
     },
     gaming: {
       label: 'Gaming',
-      icon: '🎮',
+      icon: '<i class="ph ph-game-controller"></i>',
       keywords: ['gaming', 'game', 'video game', 'playstation', 'xbox', 'nintendo', 'steam', 'pc gaming', 'esports', 'twitch', 'streamer', 'fps', 'rpg', 'mmorpg', 'indie game', 'gamer', 'console', 'gameplay', 'kotaku', 'polygon', 'ign']
     },
     world: {
       label: 'World News',
-      icon: '🌍',
+      icon: '<i class="ph ph-globe"></i>',
       keywords: ['world', 'international', 'global', 'foreign', 'abroad', 'overseas', 'europe', 'asia', 'africa', 'middle east', 'latin america', 'united nations', 'un', 'eu', 'nato', 'bbc', 'reuters', 'ap news', 'afp', 'al jazeera']
     },
     finance: {
       label: 'Finance',
-      icon: '📈',
+      icon: '<i class="ph ph-chart-line-up"></i>',
       keywords: ['finance', 'money', 'banking', 'investment', 'trading', 'forex', 'cryptocurrency', 'bitcoin', 'ethereum', 'defi', 'personal finance', 'savings', 'retirement', 'mortgage', 'loan', 'credit', 'portfolio', 'dividend', 'bond', 'mutual fund', 'etf']
     },
     education: {
       label: 'Education',
-      icon: '📚',
+      icon: '<i class="ph ph-books"></i>',
       keywords: ['education', 'learning', 'school', 'university', 'college', 'student', 'teacher', 'course', 'curriculum', 'academic', 'research', 'study', 'degree', 'scholarship', 'online learning', 'mooc', 'tutorial', 'lecture']
     },
     lifestyle: {
       label: 'Lifestyle',
-      icon: '✨',
+      icon: '<i class="ph ph-sparkle"></i>',
       keywords: ['lifestyle', 'fashion', 'travel', 'food', 'cooking', 'recipe', 'home', 'interior', 'design', 'beauty', 'style', 'wellness', 'self-care', 'hobby', 'diy', 'craft', 'garden', 'pet']
     },
 
     // Podcast Categories
     truecrime: {
       label: 'True Crime',
-      icon: '🔍',
+      icon: '<i class="ph ph-magnifying-glass"></i>',
       keywords: ['true crime', 'murder', 'mystery', 'investigation', 'detective', 'crime', 'serial killer', 'cold case', 'forensic', 'criminal', 'unsolved', 'case file', 'dateline', 'criminal podcast']
     },
     comedy: {
       label: 'Comedy',
-      icon: '😂',
+      icon: '<i class="ph ph-smiley"></i>',
       keywords: ['comedy', 'funny', 'humor', 'joke', 'laugh', 'comedian', 'standup', 'improv', 'sketch', 'satire', 'parody', 'hilarious']
     },
     interview: {
       label: 'Interviews',
-      icon: '🎤',
+      icon: '<i class="ph ph-microphone"></i>',
       keywords: ['interview', 'conversation', 'talk', 'chat', 'discussion', 'guest', 'host', 'q&a', 'dialogue', 'joe rogan', 'lex fridman', 'marc maron', 'tim ferriss']
     },
     history: {
       label: 'History',
-      icon: '📜',
+      icon: '<i class="ph ph-scroll"></i>',
       keywords: ['history', 'historical', 'ancient', 'medieval', 'war', 'civilization', 'empire', 'revolution', 'documentary', 'dan carlin', 'hardcore history']
     },
     selfhelp: {
       label: 'Self-Help',
-      icon: '🧘',
+      icon: '<i class="ph ph-flower-lotus"></i>',
       keywords: ['self-help', 'self help', 'improvement', 'motivation', 'productivity', 'mindfulness', 'meditation', 'habits', 'success', 'mindset', 'growth', 'personal development', 'life coaching']
     },
     storytelling: {
       label: 'Storytelling',
-      icon: '📖',
+      icon: '<i class="ph ph-book-open"></i>',
       keywords: ['story', 'storytelling', 'narrative', 'fiction', 'audio drama', 'serial', 'this american life', 'radiolab', 'moth', 'tale', 'anthology']
     },
     news_daily: {
       label: 'Daily News',
-      icon: '📰',
+      icon: '<i class="ph ph-newspaper"></i>',
       keywords: ['daily', 'news', 'briefing', 'morning', 'update', 'headlines', 'today', 'current events', 'the daily', 'up first', 'news roundup']
     },
     culture: {
       label: 'Culture',
-      icon: '🎭',
+      icon: '<i class="ph ph-masks-theater"></i>',
       keywords: ['culture', 'society', 'social', 'cultural', 'art', 'literature', 'philosophy', 'ideas', 'think', 'debate', 'discourse', 'cultural commentary']
     }
   };
@@ -1217,7 +1218,7 @@
   };
 
   // Get tag info by key
-  const getTagInfo = (tagKey) => CONTENT_TAGS[tagKey] || { label: tagKey, icon: '🏷️', keywords: [] };
+  const getTagInfo = (tagKey) => CONTENT_TAGS[tagKey] || { label: tagKey, icon: '<i class="ph ph-tag"></i>', keywords: [] };
 
   // === FUZZY SEARCH ===
   const fuzzy = (q, items, fields) => {
@@ -2206,8 +2207,8 @@
   // === RENDER NEWS ===
   const renderNewsSources = () => {
     const news = state.feeds.filter(f => f.type === 'news');
-    el.newsSources.innerHTML = `<div class="source-item ${!state.selectedSource && !state.currentSourcePage ? 'active' : ''}" data-id="all"><div class="source-icon">📚</div><div class="source-name">All Sources</div></div>` +
-      news.map(f => `<div class="source-item ${state.currentSourcePage === f.id ? 'active' : ''}" data-id="${f.id}"><div class="source-icon">${f.image ? `<img src="${f.image}">` : '📰'}</div><div class="source-name">${f.name}</div>${f.unread ? `<span class="source-badge">${f.unread}</span>` : ''}<span class="source-arrow">→</span></div>`).join('');
+    el.newsSources.innerHTML = `<div class="source-item ${!state.selectedSource && !state.currentSourcePage ? 'active' : ''}" data-id="all"><div class="source-icon"><i class="ph ph-books"></i></div><div class="source-name">All Sources</div></div>` +
+      news.map(f => `<div class="source-item ${state.currentSourcePage === f.id ? 'active' : ''}" data-id="${f.id}"><div class="source-icon">${f.image ? `<img src="${f.image}">` : '<i class="ph ph-newspaper"></i>'}</div><div class="source-name">${f.name}</div>${f.unread ? `<span class="source-badge">${f.unread}</span>` : ''}<span class="source-arrow">→</span></div>`).join('');
   };
   
   const renderCategories = () => {
@@ -2250,7 +2251,7 @@
     el.tagFilterSection.style.display = 'block';
     el.tagChips.innerHTML = `
       <button class="tag-chip ${state.selectedTag === 'all' ? 'active' : ''}" data-tag="all">
-        <span class="tag-icon">🏷️</span>All
+        <span class="tag-icon"><i class="ph ph-tag"></i></span>All
       </button>
       ${sortedTags.map(([tag, count]) => {
         const info = getTagInfo(tag);
@@ -2284,12 +2285,12 @@
       const hasFeeds = state.feeds.filter(f => f.type === 'news').length > 0;
       const hasTagFilter = state.selectedTag && state.selectedTag !== 'all';
       el.newsList.innerHTML = hasFeeds
-        ? `<div class="empty"><div class="empty-icon">📭</div><div class="empty-title">No articles found</div><div style="color:var(--text3);margin-top:8px">${hasTagFilter ? 'Try selecting a different topic' : 'Try refreshing your feeds'}</div></div>`
-        : '<div class="empty"><div class="empty-icon">📡</div><div class="empty-title">No news feeds yet</div><div style="color:var(--text3);margin-top:8px">Click + to add your first RSS feed</div></div>';
+        ? `<div class="empty"><div class="empty-icon"><i class="ph ph-tray"></i></div><div class="empty-title">No articles found</div><div style="color:var(--text3);margin-top:8px">${hasTagFilter ? 'Try selecting a different topic' : 'Try refreshing your feeds'}</div></div>`
+        : '<div class="empty"><div class="empty-icon"><i class="ph ph-broadcast"></i></div><div class="empty-title">No news feeds yet</div><div style="color:var(--text3);margin-top:8px">Click + to add your first RSS feed</div></div>';
       return;
     }
 
-    el.newsList.innerHTML = items.map(i => `<div class="article ${i.unread ? 'unread' : ''}" data-id="${i.id}"><div class="article-icon">${i.feed?.image ? `<img src="${i.feed.image}">` : '📄'}</div><div class="article-body"><div class="article-meta"><span class="article-source">${i.feed?.name || ''}</span><span class="article-time">· ${i.time}</span>${i.unread ? '<span class="article-new">NEW</span>' : ''}</div><div class="article-title">${i.title}</div>${i.summary ? `<div class="article-summary">${i.summary}</div>` : ''}${renderItemTags(i.tags)}</div>${i.image ? `<img class="article-image" src="${i.image}">` : ''}</div>`).join('');
+    el.newsList.innerHTML = items.map(i => `<div class="article ${i.unread ? 'unread' : ''}" data-id="${i.id}"><div class="article-icon">${i.feed?.image ? `<img src="${i.feed.image}">` : '<i class="ph ph-article"></i>'}</div><div class="article-body"><div class="article-meta"><span class="article-source">${i.feed?.name || ''}</span><span class="article-time">· ${i.time}</span>${i.unread ? '<span class="article-new">NEW</span>' : ''}</div><div class="article-title">${i.title}</div>${i.summary ? `<div class="article-summary">${i.summary}</div>` : ''}${renderItemTags(i.tags)}</div>${i.image ? `<img class="article-image" src="${i.image}">` : ''}</div>`).join('');
   };
   
   // === RENDER PODCASTS ===
@@ -2303,7 +2304,7 @@
     
     if (state.tab === 'home') {
       if (!shows.length) {
-        el.podcastContent.innerHTML = '<div class="empty" style="padding-top:80px"><div class="empty-icon">🎙️</div><div class="empty-title">No podcasts yet</div><div style="color:var(--text3);margin-top:8px">Click + to add your first podcast feed</div></div>';
+        el.podcastContent.innerHTML = '<div class="empty" style="padding-top:80px"><div class="empty-icon"><i class="ph ph-microphone-stage"></i></div><div class="empty-title">No podcasts yet</div><div style="color:var(--text3);margin-top:8px">Click + to add your first podcast feed</div></div>';
         return;
       }
       el.podcastContent.innerHTML = `
@@ -2313,14 +2314,14 @@
     } else if (state.tab === 'shows') {
       el.podcastContent.innerHTML = `<div class="section"><div class="section-header"><div class="section-title">All Shows</div><button class="add-btn" onclick="document.getElementById('tPodcast').click();document.getElementById('modal').classList.add('active')">+</button></div><div class="shows-grid">${shows.map(s => `<div class="show-card" data-show="${s.id}"><img class="show-art" src="${s.image || placeholderImg}" onerror="this.src='${placeholderImg}'"><div class="show-name">${s.name}</div><div class="show-author">${s.author || ''}</div></div>`).join('')}</div></div>`;
     } else if (state.tab === 'queue') {
-      el.podcastContent.innerHTML = `<div class="section"><div class="section-header"><div class="section-title">Up Next</div></div>${state.podcasts.length ? `<div class="episode-list">${state.podcasts.slice(0, 10).map(renderEpisode).join('')}</div>` : '<div class="empty"><div class="empty-icon">📋</div><div class="empty-title">Queue empty</div></div>'}</div>`;
+      el.podcastContent.innerHTML = `<div class="section"><div class="section-header"><div class="section-title">Up Next</div></div>${state.podcasts.length ? `<div class="episode-list">${state.podcasts.slice(0, 10).map(renderEpisode).join('')}</div>` : '<div class="empty"><div class="empty-icon"><i class="ph ph-queue"></i></div><div class="empty-title">Queue empty</div></div>'}</div>`;
     } else if (state.tab === 'downloads') {
-      el.podcastContent.innerHTML = `<div class="section"><div class="section-header"><div class="section-title">Downloads</div></div>${downloaded.length ? `<div class="episode-list">${downloaded.map(renderEpisode).join('')}</div>` : '<div class="empty"><div class="empty-icon">⬇️</div><div class="empty-title">No downloads</div></div>'}</div>`;
+      el.podcastContent.innerHTML = `<div class="section"><div class="section-header"><div class="section-title">Downloads</div></div>${downloaded.length ? `<div class="episode-list">${downloaded.map(renderEpisode).join('')}</div>` : '<div class="empty"><div class="empty-icon"><i class="ph ph-download-simple"></i></div><div class="empty-title">No downloads</div></div>'}</div>`;
     }
   };
   
   // Placeholder SVG for broken images
-  const placeholderImg = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="#1a1a1a" width="100" height="100"/><text x="50" y="60" text-anchor="middle" font-size="40">🎙️</text></svg>');
+  const placeholderImg = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="#1a1a1a" width="100" height="100"/><path d="M50 20c-5.5 0-10 4.5-10 10v20c0 5.5 4.5 10 10 10s10-4.5 10-10V30c0-5.5-4.5-10-10-10zm20 30c0 11-9 20-20 20s-20-9-20-20h-5c0 13.3 10.1 24.2 23 25.7V85h4V75.7c12.9-1.5 23-12.4 23-25.7h-5z" fill="#666" transform="translate(0,5)"/></svg>');
 
   const renderEpisode = ep => {
     const show = state.feeds.find(f => f.id === ep.feedId);
@@ -2365,7 +2366,7 @@
   // Render article in different view modes
   const renderArticleCard = (article, feed) => `
     <div class="article-card ${article.unread ? 'unread' : ''}" data-id="${article.id}">
-      ${article.image ? `<img class="article-card-image" src="${article.image}" onerror="this.style.display='none'">` : '<div class="article-card-image" style="background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:32px">📄</div>'}
+      ${article.image ? `<img class="article-card-image" src="${article.image}" onerror="this.style.display='none'">` : '<div class="article-card-image" style="background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:32px"><i class="ph ph-article"></i></div>'}
       <div class="article-card-body">
         <div class="article-card-meta">
           <span class="article-card-source">${feed?.name || ''}</span>
@@ -2439,7 +2440,7 @@
 
   // Render articles content based on view mode
   const renderArticlesContent = (articles, viewMode, sourceId) => {
-    if (!articles.length) return '<div class="empty"><div class="empty-icon">📭</div><div class="empty-title">No articles found</div></div>';
+    if (!articles.length) return '<div class="empty"><div class="empty-icon"><i class="ph ph-tray"></i></div><div class="empty-title">No articles found</div></div>';
 
     switch (viewMode) {
       case 'cards':
@@ -2451,14 +2452,14 @@
       default: // list
         return `<div class="news-list-view">${articles.map(a => {
           const feed = state.feeds.find(f => f.id === a.feedId);
-          return `<div class="article ${a.unread ? 'unread' : ''}" data-id="${a.id}"><div class="article-icon">${feed?.image ? `<img src="${feed.image}">` : '📄'}</div><div class="article-body"><div class="article-meta"><span class="article-source">${feed?.name || ''}</span><span class="article-time">· ${a.time}</span>${a.unread ? '<span class="article-new">NEW</span>' : ''}</div><div class="article-title">${a.title}</div>${a.summary ? `<div class="article-summary">${a.summary}</div>` : ''}</div>${a.image ? `<img class="article-image" src="${a.image}">` : ''}</div>`;
+          return `<div class="article ${a.unread ? 'unread' : ''}" data-id="${a.id}"><div class="article-icon">${feed?.image ? `<img src="${feed.image}">` : '<i class="ph ph-article"></i>'}</div><div class="article-body"><div class="article-meta"><span class="article-source">${feed?.name || ''}</span><span class="article-time">· ${a.time}</span>${a.unread ? '<span class="article-new">NEW</span>' : ''}</div><div class="article-title">${a.title}</div>${a.summary ? `<div class="article-summary">${a.summary}</div>` : ''}</div>${a.image ? `<img class="article-image" src="${a.image}">` : ''}</div>`;
         }).join('')}</div>`;
     }
   };
 
   // Render episodes content based on view mode
   const renderEpisodesContent = (episodes, viewMode) => {
-    if (!episodes.length) return '<div class="empty"><div class="empty-icon">🎧</div><div class="empty-title">No episodes found</div></div>';
+    if (!episodes.length) return '<div class="empty"><div class="empty-icon"><i class="ph ph-headphones"></i></div><div class="empty-title">No episodes found</div></div>';
 
     switch (viewMode) {
       case 'cards':
@@ -2565,9 +2566,11 @@
     const duration = type === 'podcast' && item.duration ? fmtLong(item.duration) : '';
 
     // Generate avatar
+    const podcastIcon = '<i class="ph ph-headphones"></i>';
+    const newsIcon = '<i class="ph ph-newspaper"></i>';
     const avatar = feedImage
-      ? `<img src="${feedImage}" onerror="this.parentElement.innerHTML='${type === 'podcast' ? '🎧' : '📰'}'">`
-      : (type === 'podcast' ? '🎧' : '📰');
+      ? `<img src="${feedImage}" onerror="this.parentElement.innerHTML=\`${type === 'podcast' ? podcastIcon : newsIcon}\`">`
+      : (type === 'podcast' ? podcastIcon : newsIcon);
 
     // Generate tags HTML
     const tagsHtml = item.tags && item.tags.length > 0
@@ -2668,14 +2671,15 @@
       const hasFeeds = state.feeds.length > 0;
       const filterLabel = state.feedFilter === 'news' ? 'news articles' :
                           state.feedFilter === 'podcast' ? 'podcasts' : 'content';
+      const emptyIcon = state.feedFilter === 'podcast' ? '<i class="ph ph-headphones"></i>' : state.feedFilter === 'news' ? '<i class="ph ph-newspaper"></i>' : '<i class="ph ph-tray"></i>';
       el.feedScroll.innerHTML = hasFeeds
         ? `<div class="feed-empty">
-            <div class="feed-empty-icon">${state.feedFilter === 'podcast' ? '🎧' : state.feedFilter === 'news' ? '📰' : '📭'}</div>
+            <div class="feed-empty-icon">${emptyIcon}</div>
             <div class="feed-empty-title">No ${filterLabel} found</div>
             <div class="feed-empty-desc">Try refreshing your feeds or changing the filter</div>
           </div>`
         : `<div class="feed-empty">
-            <div class="feed-empty-icon">📡</div>
+            <div class="feed-empty-icon"><i class="ph ph-broadcast"></i></div>
             <div class="feed-empty-title">No feeds yet</div>
             <div class="feed-empty-desc">Click + to add your first feed</div>
           </div>`;
@@ -2963,7 +2967,7 @@
     el.swipeIndicator.classList.toggle('forward', !isRewind);
 
     if (seekAmount > 0) {
-      el.swipeIcon.textContent = isRewind ? '⏪' : '⏩';
+      el.swipeIcon.innerHTML = isRewind ? '<i class="ph ph-rewind"></i>' : '<i class="ph ph-fast-forward"></i>';
       el.swipeText.textContent = (isRewind ? '-' : '+') + seekAmount + 's';
       el.swipeLabel.textContent = isRewind ? 'Rewind' : 'Forward';
     }
@@ -3339,7 +3343,7 @@
           <div class="drawer-section-title">Podcasts</div>
           ${podcasts.map(f => `
             <div class="drawer-item" data-type="podcast" data-id="${f.id}">
-              <div class="drawer-item-icon">${f.image ? `<img src="${f.image}">` : '🎙️'}</div>
+              <div class="drawer-item-icon">${f.image ? `<img src="${f.image}">` : '<i class="ph ph-microphone-stage"></i>'}</div>
               <span class="drawer-item-name">${f.name}</span>
             </div>
           `).join('')}
@@ -3350,7 +3354,7 @@
           <div class="drawer-section-title">News Sources</div>
           ${news.map(f => `
             <div class="drawer-item" data-type="news" data-id="${f.id}">
-              <div class="drawer-item-icon">${f.image ? `<img src="${f.image}">` : '📰'}</div>
+              <div class="drawer-item-icon">${f.image ? `<img src="${f.image}">` : '<i class="ph ph-newspaper"></i>'}</div>
               <span class="drawer-item-name">${f.name}</span>
               ${f.unread ? `<span class="drawer-item-badge">${f.unread}</span>` : ''}
             </div>
@@ -3360,11 +3364,11 @@
       <div class="drawer-section">
         <div class="drawer-section-title">Quick Actions</div>
         <div class="drawer-item" id="drawerAddFeed">
-          <div class="drawer-item-icon">➕</div>
+          <div class="drawer-item-icon"><i class="ph ph-plus"></i></div>
           <span class="drawer-item-name">Add Feed</span>
         </div>
         <div class="drawer-item" id="drawerRefresh">
-          <div class="drawer-item-icon">🔄</div>
+          <div class="drawer-item-icon"><i class="ph ph-arrows-clockwise"></i></div>
           <span class="drawer-item-name">Refresh All</span>
         </div>
       </div>
@@ -3972,14 +3976,14 @@
     if (state.view === 'all') renderAll();
 
     console.log('BURSST loaded');
-    console.log('📊 User Behavior API:');
+    console.log('[API] User Behavior API:');
     console.log('  Memory.setEndpoint(url) - Set API endpoint for behavior sync');
     console.log('  Memory.getLocal() - Get all local behavior logs');
     console.log('  Memory.getStats() - Get aggregated behavior statistics');
     console.log('  Memory.exportForSync() - Export all data for API sync');
     console.log('  Memory.clear() - Clear local behavior logs');
-    console.log('🏷️ Content Tags:', Object.keys(CONTENT_TAGS).length, 'categories available for auto-tagging');
-    console.log('📦 Archived:', state.archivedArticles.length, 'articles,', state.archivedPodcasts.length, 'episodes preserved');
+    console.log('[Tags] Content Tags:', Object.keys(CONTENT_TAGS).length, 'categories available for auto-tagging');
+    console.log('[Archive] Archived:', state.archivedArticles.length, 'articles,', state.archivedPodcasts.length, 'episodes preserved');
   };
 
   init();
