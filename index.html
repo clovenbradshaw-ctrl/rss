@@ -233,6 +233,7 @@
       <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="7" cy="7" r="5"/><path d="M12 12l3 3"/></svg>
       <input type="text" id="searchInput" placeholder="Search...">
     </div>
+    <button class="icon-btn" id="refreshBtn" title="Refresh feeds"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 4v6h6M23 20v-6h-6"/><path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15"/></svg></button>
     <button class="icon-btn" id="addBtn"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button>
   </header>
   
@@ -431,29 +432,335 @@
   };
   
   const loadDemo = () => {
-    state.feeds = [
-      { id: 1, name: 'The Atlantic', type: 'news', category: 'News', image: 'https://picsum.photos/seed/atl/100', unread: 5 },
-      { id: 2, name: 'Hacker News', type: 'news', category: 'Tech', image: 'https://picsum.photos/seed/hn/100', unread: 12 },
-      { id: 3, name: 'Nashville Scene', type: 'news', category: 'Local', image: 'https://picsum.photos/seed/nash/100', unread: 3 },
-      { id: 10, name: 'Tech Talk Daily', type: 'podcast', category: 'Tech', image: 'https://picsum.photos/seed/ttpod/200', author: 'Tech Media' },
-      { id: 11, name: 'True Crime Weekly', type: 'podcast', category: 'Entertainment', image: 'https://picsum.photos/seed/tcpod/200', author: 'Crime Stories' },
-      { id: 12, name: 'Philosophy Bites', type: 'podcast', category: 'Education', image: 'https://picsum.photos/seed/philpod/200', author: 'Edmonds & Warburton' }
-    ];
-    state.articles = [
-      { id: 101, feedId: 1, title: 'The Future of Democracy in the Digital Age', summary: 'How social media and AI are reshaping political discourse.', time: '2h ago', image: 'https://picsum.photos/seed/dem/400/300', unread: true },
-      { id: 102, feedId: 2, title: 'Show HN: Open-source alternative to Notion', summary: 'After 2 years of development, sharing my project.', time: '4h ago', unread: true },
-      { id: 103, feedId: 3, title: 'Metro Council Approves New Transit Plan', summary: 'Rapid bus service coming to underserved neighborhoods.', time: '5h ago', image: 'https://picsum.photos/seed/transit/400/300', unread: true },
-      { id: 104, feedId: 1, title: 'Climate Summit Reaches Historic Agreement', summary: 'World leaders commit to unprecedented emissions targets.', time: '6h ago', image: 'https://picsum.photos/seed/climate/400/300', unread: false }
-    ];
-    state.podcasts = [
-      { id: 201, feedId: 10, title: 'The Future of AI Regulation', desc: 'Deep dive into AI regulations from EU and US.', duration: 3847, date: '2 days ago', image: 'https://picsum.photos/seed/aireg/400', downloaded: true },
-      { id: 202, feedId: 10, title: 'Quantum Computing Explained', desc: 'How quantum computers actually work.', duration: 2890, date: '5 days ago', image: 'https://picsum.photos/seed/quantum/400' },
-      { id: 203, feedId: 11, title: 'The Vanishing at Lake Tahoe', desc: 'A tech executive disappears during a retreat.', duration: 4521, date: '1 week ago', image: 'https://picsum.photos/seed/tahoe/400', downloaded: true },
-      { id: 204, feedId: 12, title: 'What is Consciousness?', desc: 'David Chalmers on the hard problem.', duration: 2100, date: '3 days ago', image: 'https://picsum.photos/seed/conscious/400' }
-    ];
-    state.progress = { 201: 1234, 203: 4521, 204: 800 };
-    state.feeds.forEach(f => state.categories.add(f.category));
+    // No sample data - users add their own feeds
+    state.feeds = [];
+    state.articles = [];
+    state.podcasts = [];
+    state.progress = {};
     save();
+  };
+
+  // === RSS FEED FETCHING ===
+  const CORS_PROXIES = [
+    url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+    url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+    url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`
+  ];
+
+  const fetchWithProxy = async (url, proxyIndex = 0) => {
+    if (proxyIndex >= CORS_PROXIES.length) {
+      throw new Error('All CORS proxies failed');
+    }
+    try {
+      const proxyUrl = CORS_PROXIES[proxyIndex](url);
+      const response = await fetch(proxyUrl, {
+        headers: { 'Accept': 'application/rss+xml, application/xml, text/xml, */*' }
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return await response.text();
+    } catch (e) {
+      console.warn(`Proxy ${proxyIndex} failed:`, e.message);
+      return fetchWithProxy(url, proxyIndex + 1);
+    }
+  };
+
+  const parseRSSDate = dateStr => {
+    if (!dateStr) return new Date();
+    const d = new Date(dateStr);
+    return isNaN(d.getTime()) ? new Date() : d;
+  };
+
+  const formatTimeAgo = date => {
+    const now = new Date();
+    const diff = Math.floor((now - date) / 1000);
+    if (diff < 60) return 'just now';
+    if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+    if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+    if (diff < 604800) return Math.floor(diff / 86400) + 'd ago';
+    return Math.floor(diff / 604800) + 'w ago';
+  };
+
+  const parseDuration = dur => {
+    if (!dur) return 0;
+    // Handle HH:MM:SS or MM:SS format
+    if (dur.includes(':')) {
+      const parts = dur.split(':').map(Number);
+      if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+      if (parts.length === 2) return parts[0] * 60 + parts[1];
+    }
+    // Handle seconds as number
+    const num = parseInt(dur, 10);
+    return isNaN(num) ? 0 : num;
+  };
+
+  const getNodeText = (parent, tag) => {
+    const node = parent.querySelector(tag);
+    return node ? node.textContent?.trim() || '' : '';
+  };
+
+  const getNodeAttr = (parent, tag, attr) => {
+    const node = parent.querySelector(tag);
+    return node ? node.getAttribute(attr) || '' : '';
+  };
+
+  const extractImage = item => {
+    // Try media:content
+    let img = getNodeAttr(item, 'media\\:content, content', 'url');
+    if (img) return img;
+
+    // Try media:thumbnail
+    img = getNodeAttr(item, 'media\\:thumbnail, thumbnail', 'url');
+    if (img) return img;
+
+    // Try enclosure with image type
+    const enclosure = item.querySelector('enclosure');
+    if (enclosure) {
+      const type = enclosure.getAttribute('type') || '';
+      if (type.startsWith('image/')) {
+        return enclosure.getAttribute('url') || '';
+      }
+    }
+
+    // Try to extract from description/content HTML
+    const desc = getNodeText(item, 'description') || getNodeText(item, 'content\\:encoded');
+    const match = desc.match(/<img[^>]+src=["']([^"']+)["']/i);
+    if (match) return match[1];
+
+    return '';
+  };
+
+  const parseNewsFeed = (xml, feedId) => {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(xml, 'text/xml');
+
+    const parserError = doc.querySelector('parsererror');
+    if (parserError) {
+      throw new Error('Invalid RSS feed XML');
+    }
+
+    const items = doc.querySelectorAll('item, entry');
+    const articles = [];
+
+    items.forEach((item, index) => {
+      const title = getNodeText(item, 'title');
+      if (!title) return;
+
+      const pubDate = parseRSSDate(
+        getNodeText(item, 'pubDate') ||
+        getNodeText(item, 'published') ||
+        getNodeText(item, 'updated') ||
+        getNodeText(item, 'dc\\:date')
+      );
+
+      // Get description and clean HTML
+      let summary = getNodeText(item, 'description') || getNodeText(item, 'summary') || getNodeText(item, 'content\\:encoded') || '';
+      // Strip HTML tags for summary
+      const tmp = document.createElement('div');
+      tmp.innerHTML = summary;
+      summary = tmp.textContent?.trim().slice(0, 300) || '';
+
+      const link = getNodeText(item, 'link') || getNodeAttr(item, 'link', 'href');
+      const image = extractImage(item);
+
+      articles.push({
+        id: feedId * 10000 + index + Date.now() % 10000,
+        feedId,
+        title,
+        summary,
+        link,
+        time: formatTimeAgo(pubDate),
+        pubDate: pubDate.toISOString(),
+        image,
+        unread: true
+      });
+    });
+
+    return articles;
+  };
+
+  const parsePodcastFeed = (xml, feedId) => {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(xml, 'text/xml');
+
+    const parserError = doc.querySelector('parsererror');
+    if (parserError) {
+      throw new Error('Invalid podcast feed XML');
+    }
+
+    const items = doc.querySelectorAll('item');
+    const episodes = [];
+
+    items.forEach((item, index) => {
+      const title = getNodeText(item, 'title');
+      if (!title) return;
+
+      // Get audio enclosure
+      const enclosure = item.querySelector('enclosure');
+      const audioUrl = enclosure ? enclosure.getAttribute('url') || '' : '';
+      const audioType = enclosure ? enclosure.getAttribute('type') || '' : '';
+
+      // Skip if no audio enclosure for podcasts
+      if (!audioUrl && !audioType.includes('audio')) {
+        // Still allow items without audio - might be video or just info
+      }
+
+      const pubDate = parseRSSDate(
+        getNodeText(item, 'pubDate') ||
+        getNodeText(item, 'published')
+      );
+
+      // Get duration from itunes:duration
+      const durationStr = getNodeText(item, 'itunes\\:duration') || getNodeText(item, 'duration');
+      const duration = parseDuration(durationStr);
+
+      // Get description
+      let desc = getNodeText(item, 'itunes\\:summary') ||
+                 getNodeText(item, 'description') ||
+                 getNodeText(item, 'content\\:encoded') || '';
+      // Strip HTML
+      const tmp = document.createElement('div');
+      tmp.innerHTML = desc;
+      desc = tmp.textContent?.trim().slice(0, 300) || '';
+
+      // Get episode image or fallback to channel image
+      let image = getNodeAttr(item, 'itunes\\:image', 'href') ||
+                  getNodeAttr(item, 'image', 'href') ||
+                  extractImage(item);
+
+      episodes.push({
+        id: feedId * 10000 + index + Date.now() % 10000,
+        feedId,
+        title,
+        desc,
+        duration: duration || 1800, // Default 30 min if no duration
+        date: formatTimeAgo(pubDate),
+        pubDate: pubDate.toISOString(),
+        image,
+        audioUrl,
+        downloaded: false
+      });
+    });
+
+    return episodes;
+  };
+
+  const extractFeedMeta = xml => {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(xml, 'text/xml');
+
+    const channel = doc.querySelector('channel, feed');
+    if (!channel) return {};
+
+    return {
+      title: getNodeText(channel, 'title'),
+      description: getNodeText(channel, 'description') || getNodeText(channel, 'subtitle'),
+      author: getNodeText(channel, 'itunes\\:author') || getNodeText(channel, 'author name') || getNodeText(channel, 'managingEditor'),
+      image: getNodeAttr(channel, 'itunes\\:image', 'href') ||
+             getNodeAttr(channel, 'image url', 'src') ||
+             getNodeText(channel, 'image url') ||
+             getNodeAttr(channel, 'logo', 'src') ||
+             getNodeText(channel, 'logo')
+    };
+  };
+
+  const fetchAndParseFeed = async feed => {
+    try {
+      const xml = await fetchWithProxy(feed.url);
+      const meta = extractFeedMeta(xml);
+
+      // Update feed metadata if available
+      if (meta.title && !feed.name) feed.name = meta.title;
+      if (meta.image && !feed.image) feed.image = meta.image;
+      if (meta.author && !feed.author) feed.author = meta.author;
+
+      if (feed.type === 'news') {
+        const articles = parseNewsFeed(xml, feed.id);
+        // Merge with existing, avoiding duplicates by title
+        const existingTitles = new Set(state.articles.filter(a => a.feedId === feed.id).map(a => a.title));
+        const newArticles = articles.filter(a => !existingTitles.has(a.title));
+        state.articles = [...newArticles, ...state.articles.filter(a => a.feedId !== feed.id || existingTitles.has(a.title))];
+        // Sort by date
+        state.articles.sort((a, b) => new Date(b.pubDate || 0) - new Date(a.pubDate || 0));
+        // Update unread count
+        feed.unread = state.articles.filter(a => a.feedId === feed.id && a.unread).length;
+      } else {
+        const episodes = parsePodcastFeed(xml, feed.id);
+        const existingTitles = new Set(state.podcasts.filter(p => p.feedId === feed.id).map(p => p.title));
+        const newEpisodes = episodes.filter(e => !existingTitles.has(e.title));
+        state.podcasts = [...newEpisodes, ...state.podcasts.filter(p => p.feedId !== feed.id || existingTitles.has(p.title))];
+        // Sort by date
+        state.podcasts.sort((a, b) => new Date(b.pubDate || 0) - new Date(a.pubDate || 0));
+      }
+
+      feed.lastFetched = new Date().toISOString();
+      feed.error = null;
+      return true;
+    } catch (e) {
+      console.error(`Failed to fetch feed ${feed.name}:`, e);
+      feed.error = e.message;
+      return false;
+    }
+  };
+
+  const refreshAllFeeds = async () => {
+    if (state.refreshing) return;
+    state.refreshing = true;
+    toast('Refreshing feeds...');
+
+    const results = await Promise.allSettled(
+      state.feeds.map(feed => fetchAndParseFeed(feed))
+    );
+
+    const success = results.filter(r => r.status === 'fulfilled' && r.value).length;
+    const failed = results.length - success;
+
+    state.refreshing = false;
+    save();
+    renderNewsSources();
+    renderCategories();
+    renderNews();
+    if (state.view === 'podcasts') renderPodcasts();
+
+    if (failed > 0) {
+      toast(`Refreshed ${success} feeds, ${failed} failed`);
+    } else if (success > 0) {
+      toast(`Refreshed ${success} feeds`);
+    }
+  };
+
+  const addFeed = async (url, name, type, category) => {
+    const id = Date.now();
+    const feed = {
+      id,
+      url,
+      name: name || 'Loading...',
+      type,
+      category: category || 'Uncategorized',
+      image: '',
+      author: type === 'podcast' ? '' : undefined,
+      unread: 0
+    };
+
+    state.feeds.push(feed);
+    state.categories.add(feed.category);
+    save();
+
+    toast('Adding feed...');
+    const success = await fetchAndParseFeed(feed);
+
+    if (success) {
+      save();
+      renderNewsSources();
+      renderCategories();
+      renderNews();
+      if (state.view === 'podcasts') renderPodcasts();
+      toast(`Added: ${feed.name}`);
+    } else {
+      // Keep the feed but show error
+      toast(`Added ${feed.name} (fetch failed)`);
+    }
+
+    return success;
   };
   
   // === RENDER NEWS ===
@@ -474,7 +781,13 @@
     if (state.selectedCat !== 'All') items = fuzzy(state.selectedCat, items, ['feed.category']);
     if (state.query) items = fuzzy(state.query, items, ['title', 'summary', 'feed.name']);
     
-    if (!items.length) { el.newsList.innerHTML = '<div class="empty"><div class="empty-icon">📭</div><div class="empty-title">No articles found</div></div>'; return; }
+    if (!items.length) {
+      const hasFeeds = state.feeds.filter(f => f.type === 'news').length > 0;
+      el.newsList.innerHTML = hasFeeds
+        ? '<div class="empty"><div class="empty-icon">📭</div><div class="empty-title">No articles found</div><div style="color:var(--text3);margin-top:8px">Try refreshing your feeds</div></div>'
+        : '<div class="empty"><div class="empty-icon">📡</div><div class="empty-title">No news feeds yet</div><div style="color:var(--text3);margin-top:8px">Click + to add your first RSS feed</div></div>';
+      return;
+    }
     
     el.newsList.innerHTML = items.map(i => `<div class="article ${i.unread ? 'unread' : ''}" data-id="${i.id}"><div class="article-icon">${i.feed?.image ? `<img src="${i.feed.image}">` : '📄'}</div><div class="article-body"><div class="article-meta"><span class="article-source">${i.feed?.name || ''}</span><span class="article-time">· ${i.time}</span>${i.unread ? '<span class="article-new">NEW</span>' : ''}</div><div class="article-title">${i.title}</div>${i.summary ? `<div class="article-summary">${i.summary}</div>` : ''}</div>${i.image ? `<img class="article-image" src="${i.image}">` : ''}</div>`).join('');
   };
@@ -489,10 +802,14 @@
     const downloaded = state.podcasts.filter(p => p.downloaded);
     
     if (state.tab === 'home') {
+      if (!shows.length) {
+        el.podcastContent.innerHTML = '<div class="empty" style="padding-top:80px"><div class="empty-icon">🎙️</div><div class="empty-title">No podcasts yet</div><div style="color:var(--text3);margin-top:8px">Click + to add your first podcast feed</div></div>';
+        return;
+      }
       el.podcastContent.innerHTML = `
         ${inProgress.length ? `<div class="section"><div class="section-header"><div class="section-title">Continue Listening</div></div><div class="episode-list">${inProgress.map(renderEpisode).join('')}</div></div>` : ''}
-        <div class="section"><div class="section-header"><div class="section-title">Your Shows</div></div><div class="shows-grid">${shows.map(s => `<div class="show-card" data-show="${s.id}"><img class="show-art" src="${s.image}"><div class="show-name">${s.name}</div><div class="show-author">${s.author || ''}</div></div>`).join('')}</div></div>
-        <div class="section"><div class="section-header"><div class="section-title">Recent Episodes</div></div><div class="episode-list">${state.podcasts.slice(0, 6).map(renderEpisode).join('')}</div></div>`;
+        <div class="section"><div class="section-header"><div class="section-title">Your Shows</div></div><div class="shows-grid">${shows.map(s => `<div class="show-card" data-show="${s.id}"><img class="show-art" src="${s.image || 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22%231a1a1a%22 width=%22100%22 height=%22100%22/><text x=%2250%22 y=%2260%22 text-anchor=%22middle%22 font-size=%2240%22>🎙️</text></svg>'}"><div class="show-name">${s.name}</div><div class="show-author">${s.author || ''}</div></div>`).join('')}</div></div>
+        ${state.podcasts.length ? `<div class="section"><div class="section-header"><div class="section-title">Recent Episodes</div></div><div class="episode-list">${state.podcasts.slice(0, 6).map(renderEpisode).join('')}</div></div>` : ''}`;
     } else if (state.tab === 'shows') {
       el.podcastContent.innerHTML = `<div class="section"><div class="section-header"><div class="section-title">All Shows</div><button class="add-btn" onclick="document.getElementById('tPodcast').click();document.getElementById('modal').classList.add('active')">+</button></div><div class="shows-grid">${shows.map(s => `<div class="show-card" data-show="${s.id}"><img class="show-art" src="${s.image}"><div class="show-name">${s.name}</div><div class="show-author">${s.author || ''}</div></div>`).join('')}</div></div>`;
     } else if (state.tab === 'queue') {
@@ -691,24 +1008,37 @@
   $('expClose').onclick = () => el.expanded.classList.remove('active');
   el.playerArt.onclick = () => el.expanded.classList.add('active');
   
+  $('refreshBtn').onclick = () => refreshAllFeeds();
   $('addBtn').onclick = () => el.modal.classList.add('active');
   $('addNewsBtn').onclick = () => { $('tNews').click(); el.modal.classList.add('active'); };
   $('modalClose').onclick = () => el.modal.classList.remove('active');
   el.modal.onclick = e => { if (e.target === el.modal) el.modal.classList.remove('active'); };
   $('tNews').onclick = () => { state.feedType = 'news'; $('tNews').classList.add('active'); $('tPodcast').classList.remove('active'); };
   $('tPodcast').onclick = () => { state.feedType = 'podcast'; $('tPodcast').classList.add('active'); $('tNews').classList.remove('active'); };
-  const validate = () => { el.fSubmit.disabled = !el.fUrl.value.trim() || !el.fName.value.trim(); };
+  const validate = () => { el.fSubmit.disabled = !el.fUrl.value.trim(); }; // Name is optional, will be fetched from feed
   el.fUrl.oninput = validate;
   el.fName.oninput = validate;
-  el.fSubmit.onclick = () => {
+  el.fSubmit.onclick = async () => {
     const url = el.fUrl.value.trim(), name = el.fName.value.trim(), cat = el.fCat.value.trim() || 'Uncategorized';
-    if (!url || !name) return;
-    state.feeds.push({ id: Date.now(), url, name, type: state.feedType, category: cat, image: `https://picsum.photos/seed/${Date.now()}/200`, author: state.feedType === 'podcast' ? '' : undefined });
-    state.categories.add(cat); save();
+    if (!url) return;
+
+    // Disable form while adding
+    el.fSubmit.disabled = true;
+    el.fSubmit.textContent = 'Adding...';
+    el.fUrl.disabled = true;
+    el.fName.disabled = true;
+    el.fCat.disabled = true;
+
+    await addFeed(url, name, state.feedType, cat);
+
+    // Reset form
     el.fUrl.value = ''; el.fName.value = ''; el.fCat.value = '';
-    el.fSubmit.disabled = true; el.modal.classList.remove('active');
-    renderNewsSources(); renderCategories(); renderPodcasts();
-    toast('Feed added!');
+    el.fSubmit.textContent = 'Add Feed';
+    el.fSubmit.disabled = true;
+    el.fUrl.disabled = false;
+    el.fName.disabled = false;
+    el.fCat.disabled = false;
+    el.modal.classList.remove('active');
   };
   
   let searchTO;
