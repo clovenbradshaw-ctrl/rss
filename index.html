@@ -201,6 +201,14 @@
     .type-btn .label { font-size: 13px; font-weight: 500; }
     .submit-btn { width: 100%; padding: 12px; background: var(--green); border: none; border-radius: 18px; color: #000; font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit; }
     .submit-btn:disabled { background: var(--border2); color: var(--text3); cursor: not-allowed; }
+    .fetch-btn { padding: 11px 16px; background: var(--bg4); border: 1px solid var(--border2); border-radius: 8px; color: var(--text); font-size: 13px; font-weight: 500; cursor: pointer; font-family: inherit; white-space: nowrap; transition: all 0.15s; }
+    .fetch-btn:hover:not(:disabled) { background: var(--green); color: #000; border-color: var(--green); }
+    .fetch-btn:disabled { background: var(--bg3); color: var(--text3); cursor: not-allowed; }
+    .fetch-btn.loading { background: var(--bg3); color: var(--text2); }
+    .fetch-status { font-size: 12px; margin-top: 6px; min-height: 16px; }
+    .fetch-status.success { color: var(--green); }
+    .fetch-status.error { color: #e74c3c; }
+    .fetch-status.loading { color: var(--text2); }
     
     .toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); background: var(--bg4); color: var(--text); padding: 12px 24px; border-radius: 8px; font-size: 14px; z-index: 400; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
     .toast.show { opacity: 1; }
@@ -327,8 +335,16 @@
       <button class="modal-close" id="modalClose"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 5L5 15M5 5l10 10"/></svg></button>
     </div>
     <div class="modal-body">
-      <div class="form-group"><label class="form-label">Feed URL</label><input type="url" class="form-input" id="fUrl" placeholder="https://..."></div>
-      <div class="form-group"><label class="form-label">Name</label><input type="text" class="form-input" id="fName" placeholder="Feed name"></div>
+      <div class="form-group">
+        <label class="form-label">Feed URL</label>
+        <div style="display:flex;gap:8px">
+          <input type="url" class="form-input" id="fUrl" placeholder="https://..." style="flex:1">
+          <button class="fetch-btn" id="fFetch" disabled>Fetch</button>
+        </div>
+        <div class="fetch-status" id="fStatus"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Name</label><input type="text" class="form-input" id="fName" placeholder="Auto-detected from feed..."></div>
+      <div class="form-group"><label class="form-label">Creator / Author</label><input type="text" class="form-input" id="fAuthor" placeholder="Auto-detected from feed..."></div>
       <div class="form-group"><label class="form-label">Type</label>
         <div class="type-sel">
           <button class="type-btn active" id="tNews"><span class="icon">📰</span><span class="label">News</span></button>
@@ -416,7 +432,8 @@
     expanded: $('expanded'), expArt: $('expArt'), expTitle: $('expTitle'),
     expShow: $('expShow'), expPlay: $('expPlay'), expPlayIcon: $('expPlayIcon'),
     expCur: $('expCur'), expDur: $('expDur'), expBar: $('expBar'), expFill: $('expFill'),
-    modal: $('modal'), fUrl: $('fUrl'), fName: $('fName'), fCat: $('fCat'), fSubmit: $('fSubmit'),
+    modal: $('modal'), fUrl: $('fUrl'), fName: $('fName'), fAuthor: $('fAuthor'), fCat: $('fCat'),
+    fFetch: $('fFetch'), fStatus: $('fStatus'), fSubmit: $('fSubmit'),
     toast: $('toast'), searchInput: $('searchInput'),
     audio: $('audioPlayer')
   };
@@ -895,13 +912,43 @@
     };
   };
 
+  // Fetch feed metadata without adding it - for preview/auto-detect
+  const fetchFeedMetadata = async (url) => {
+    try {
+      const xml = await fetchWithProxy(url);
+      const meta = extractFeedMeta(xml);
+
+      // Also try to detect feed type based on content
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(xml, 'text/xml');
+      const hasEnclosure = doc.querySelector('enclosure[type^="audio"], enclosure[type^="video"]');
+      const hasItunesNs = xml.includes('xmlns:itunes') || xml.includes('itunes:');
+      const suggestedType = (hasEnclosure || hasItunesNs) ? 'podcast' : 'news';
+
+      return {
+        success: true,
+        title: meta.title || '',
+        author: meta.author || '',
+        description: meta.description || '',
+        image: meta.image || '',
+        suggestedType
+      };
+    } catch (e) {
+      console.error('Failed to fetch feed metadata:', e);
+      return {
+        success: false,
+        error: e.message
+      };
+    }
+  };
+
   const fetchAndParseFeed = async feed => {
     try {
       const xml = await fetchWithProxy(feed.url);
       const meta = extractFeedMeta(xml);
 
-      // Update feed metadata if available
-      if (meta.title && !feed.name) feed.name = meta.title;
+      // Update feed metadata if available (only if user hasn't provided values)
+      if (meta.title && (!feed.name || feed.name === 'Loading...')) feed.name = meta.title;
       if (meta.image && !feed.image) feed.image = meta.image;
       if (meta.author && !feed.author) feed.author = meta.author;
 
@@ -960,7 +1007,7 @@
     }
   };
 
-  const addFeed = async (url, name, type, category) => {
+  const addFeed = async (url, name, type, category, author) => {
     const id = Date.now();
     const feed = {
       id,
@@ -969,7 +1016,7 @@
       type,
       category: category || 'Uncategorized',
       image: '',
-      author: type === 'podcast' ? '' : undefined,
+      author: author || '',
       unread: 0
     };
 
@@ -1336,29 +1383,112 @@
   el.modal.onclick = e => { if (e.target === el.modal) el.modal.classList.remove('active'); };
   $('tNews').onclick = () => { state.feedType = 'news'; $('tNews').classList.add('active'); $('tPodcast').classList.remove('active'); };
   $('tPodcast').onclick = () => { state.feedType = 'podcast'; $('tPodcast').classList.add('active'); $('tNews').classList.remove('active'); };
-  const validate = () => { el.fSubmit.disabled = !el.fUrl.value.trim(); }; // Name is optional, will be fetched from feed
-  el.fUrl.oninput = validate;
-  el.fName.oninput = validate;
+
+  // Form validation and state
+  let metadataFetched = false;
+  const validateForm = () => {
+    const hasUrl = el.fUrl.value.trim().length > 0;
+    el.fFetch.disabled = !hasUrl;
+    el.fSubmit.disabled = !hasUrl;
+  };
+
+  const setFetchStatus = (message, type) => {
+    el.fStatus.textContent = message;
+    el.fStatus.className = 'fetch-status ' + (type || '');
+  };
+
+  const setFormDisabled = (disabled) => {
+    el.fUrl.disabled = disabled;
+    el.fName.disabled = disabled;
+    el.fAuthor.disabled = disabled;
+    el.fCat.disabled = disabled;
+    el.fFetch.disabled = disabled;
+  };
+
+  // Fetch metadata when button is clicked
+  el.fFetch.onclick = async () => {
+    const url = el.fUrl.value.trim();
+    if (!url) return;
+
+    // Show loading state
+    el.fFetch.disabled = true;
+    el.fFetch.textContent = 'Fetching...';
+    el.fFetch.classList.add('loading');
+    setFetchStatus('Fetching feed metadata...', 'loading');
+
+    const result = await fetchFeedMetadata(url);
+
+    el.fFetch.textContent = 'Fetch';
+    el.fFetch.classList.remove('loading');
+    el.fFetch.disabled = false;
+
+    if (result.success) {
+      // Pre-populate form fields with fetched metadata
+      if (result.title && !el.fName.value.trim()) {
+        el.fName.value = result.title;
+      }
+      if (result.author && !el.fAuthor.value.trim()) {
+        el.fAuthor.value = result.author;
+      }
+
+      // Auto-select feed type based on content
+      if (result.suggestedType === 'podcast') {
+        state.feedType = 'podcast';
+        $('tPodcast').classList.add('active');
+        $('tNews').classList.remove('active');
+      } else {
+        state.feedType = 'news';
+        $('tNews').classList.add('active');
+        $('tPodcast').classList.remove('active');
+      }
+
+      metadataFetched = true;
+      setFetchStatus('Metadata loaded! You can edit the fields below.', 'success');
+    } else {
+      setFetchStatus('Failed to fetch: ' + (result.error || 'Unknown error'), 'error');
+    }
+  };
+
+  // Also fetch on URL blur if we haven't fetched yet
+  el.fUrl.onblur = () => {
+    const url = el.fUrl.value.trim();
+    if (url && !metadataFetched && url.startsWith('http')) {
+      el.fFetch.click();
+    }
+  };
+
+  el.fUrl.oninput = () => {
+    metadataFetched = false; // Reset when URL changes
+    setFetchStatus('', '');
+    validateForm();
+  };
+  el.fName.oninput = validateForm;
+  el.fAuthor.oninput = validateForm;
+
   el.fSubmit.onclick = async () => {
-    const url = el.fUrl.value.trim(), name = el.fName.value.trim(), cat = el.fCat.value.trim() || 'Uncategorized';
+    const url = el.fUrl.value.trim();
+    const name = el.fName.value.trim();
+    const author = el.fAuthor.value.trim();
+    const cat = el.fCat.value.trim() || 'Uncategorized';
     if (!url) return;
 
     // Disable form while adding
     el.fSubmit.disabled = true;
     el.fSubmit.textContent = 'Adding...';
-    el.fUrl.disabled = true;
-    el.fName.disabled = true;
-    el.fCat.disabled = true;
+    setFormDisabled(true);
 
-    await addFeed(url, name, state.feedType, cat);
+    await addFeed(url, name, state.feedType, cat, author);
 
     // Reset form
-    el.fUrl.value = ''; el.fName.value = ''; el.fCat.value = '';
+    el.fUrl.value = '';
+    el.fName.value = '';
+    el.fAuthor.value = '';
+    el.fCat.value = '';
     el.fSubmit.textContent = 'Add Feed';
     el.fSubmit.disabled = true;
-    el.fUrl.disabled = false;
-    el.fName.disabled = false;
-    el.fCat.disabled = false;
+    setFormDisabled(false);
+    setFetchStatus('', '');
+    metadataFetched = false;
     el.modal.classList.remove('active');
   };
   
