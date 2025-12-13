@@ -184,6 +184,76 @@
       .all-cards { grid-template-columns: 1fr; }
     }
 
+    /* Social Media Feed Styles */
+    .feed-nav { display: flex; background: var(--bg2); border-bottom: 1px solid var(--border2); padding: 0 24px; gap: 4px; }
+    .feed-nav-btn { padding: 14px 20px; background: none; border: none; border-bottom: 3px solid transparent; color: var(--text2); font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.2s; display: flex; align-items: center; gap: 8px; }
+    .feed-nav-btn:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+    .feed-nav-btn.active { color: var(--text); border-bottom-color: var(--blue); }
+    .feed-nav-btn .feed-nav-icon { font-size: 16px; }
+    .feed-nav-btn .feed-nav-count { font-size: 11px; background: var(--bg4); padding: 2px 8px; border-radius: 10px; color: var(--text3); }
+    .feed-nav-btn.active .feed-nav-count { background: rgba(59,130,246,0.2); color: var(--blue); }
+
+    .feed-container { flex: 1; overflow-y: auto; display: flex; justify-content: center; background: var(--bg); }
+    .feed-scroll { max-width: 600px; width: 100%; padding: 0; padding-bottom: 140px; }
+
+    /* Social Media Post Card */
+    .feed-post { background: var(--bg2); border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.15s; }
+    .feed-post:hover { background: var(--bg3); }
+    .feed-post-inner { padding: 16px 20px; }
+    .feed-post-header { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 10px; }
+    .feed-post-avatar { width: 48px; height: 48px; border-radius: 50%; background: var(--bg4); display: flex; align-items: center; justify-content: center; font-size: 22px; overflow: hidden; flex-shrink: 0; }
+    .feed-post-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .feed-post-meta { flex: 1; min-width: 0; }
+    .feed-post-source { font-weight: 600; font-size: 15px; color: var(--text); display: flex; align-items: center; gap: 6px; }
+    .feed-post-source-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .feed-post-type-badge { font-size: 10px; padding: 2px 8px; border-radius: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .feed-post-type-badge.podcast { background: rgba(139, 92, 246, 0.2); color: #a78bfa; }
+    .feed-post-type-badge.news { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+    .feed-post-handle { font-size: 13px; color: var(--text3); display: flex; align-items: center; gap: 4px; margin-top: 2px; }
+    .feed-post-handle span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .feed-post-dot { color: var(--text3); }
+    .feed-post-time { white-space: nowrap; }
+    .feed-post-body { padding-left: 60px; }
+    .feed-post-title { font-size: 16px; font-weight: 600; line-height: 1.4; margin-bottom: 8px; color: var(--text); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    .feed-post-summary { font-size: 15px; color: var(--text2); line-height: 1.5; margin-bottom: 12px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    .feed-post-media { border-radius: 16px; overflow: hidden; border: 1px solid var(--border); margin-bottom: 12px; }
+    .feed-post-media img { width: 100%; max-height: 300px; object-fit: cover; display: block; }
+    .feed-post-actions { display: flex; align-items: center; gap: 24px; padding-top: 8px; }
+    .feed-post-action { display: flex; align-items: center; gap: 6px; color: var(--text3); font-size: 13px; transition: color 0.15s; padding: 6px 0; }
+    .feed-post-action:hover { color: var(--blue); }
+    .feed-post-action svg { width: 18px; height: 18px; }
+    .feed-post-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+    .feed-post-tag { font-size: 13px; color: var(--blue); }
+    .feed-post-tag:hover { text-decoration: underline; }
+
+    /* Podcast-specific post elements */
+    .feed-post-duration { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text3); margin-top: 8px; }
+    .feed-post-duration svg { width: 16px; height: 16px; }
+    .feed-post-play { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; background: var(--blue); border-radius: 24px; color: #fff; font-size: 14px; font-weight: 600; margin-top: 12px; transition: all 0.15s; }
+    .feed-post-play:hover { background: var(--blue2); transform: scale(1.02); }
+    .feed-post-play svg { width: 16px; height: 16px; }
+
+    /* Unread indicator */
+    .feed-post.unread .feed-post-source::after { content: ''; width: 8px; height: 8px; background: var(--orange); border-radius: 50%; flex-shrink: 0; }
+
+    /* Empty feed state */
+    .feed-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 80px 32px; text-align: center; color: var(--text3); }
+    .feed-empty-icon { font-size: 56px; margin-bottom: 16px; }
+    .feed-empty-title { font-size: 18px; font-weight: 600; color: var(--text); margin-bottom: 8px; }
+    .feed-empty-desc { font-size: 14px; color: var(--text3); }
+
+    @media (max-width: 768px) {
+      .feed-nav { padding: 0 12px; overflow-x: auto; }
+      .feed-nav-btn { padding: 12px 16px; font-size: 13px; }
+      .feed-nav-btn span:not(.feed-nav-icon):not(.feed-nav-count) { display: none; }
+      .feed-scroll { padding: 0; }
+      .feed-post-inner { padding: 14px 16px; }
+      .feed-post-avatar { width: 40px; height: 40px; font-size: 18px; }
+      .feed-post-body { padding-left: 52px; }
+      .feed-post-title { font-size: 15px; }
+      .feed-post-summary { font-size: 14px; }
+    }
+
     .podcast-nav { display: flex; background: var(--bg2); border-bottom: 1px solid var(--border2); padding: 0 24px; }
     .nav-btn { padding: 16px 20px; background: none; border: none; border-bottom: 2px solid transparent; color: var(--text2); font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit; transition: all 0.15s; }
     .nav-btn:hover { color: var(--text); }
@@ -582,7 +652,26 @@
 
     <!-- ALL VIEW -->
     <div class="all-view" id="allView">
-      <div class="all-content" id="allContent"></div>
+      <nav class="feed-nav" id="feedNav">
+        <button class="feed-nav-btn active" data-filter="all">
+          <span class="feed-nav-icon">📚</span>
+          <span>All</span>
+          <span class="feed-nav-count" id="feedCountAll">0</span>
+        </button>
+        <button class="feed-nav-btn" data-filter="news">
+          <span class="feed-nav-icon">📰</span>
+          <span>News</span>
+          <span class="feed-nav-count" id="feedCountNews">0</span>
+        </button>
+        <button class="feed-nav-btn" data-filter="podcast">
+          <span class="feed-nav-icon">🎧</span>
+          <span>Podcasts</span>
+          <span class="feed-nav-count" id="feedCountPodcast">0</span>
+        </button>
+      </nav>
+      <div class="feed-container">
+        <div class="feed-scroll" id="feedScroll"></div>
+      </div>
     </div>
   </div>
   
@@ -1163,6 +1252,7 @@
     selectedSource: null,
     selectedCat: 'All',
     selectedTag: 'all', // Selected tag filter
+    feedFilter: 'all', // Feed filter: 'all', 'news', 'podcast'
     query: '',
     feedType: 'news',
     currentEp: null,
@@ -1188,7 +1278,8 @@
   const $ = id => document.getElementById(id);
   const el = {
     newsView: $('newsView'), podcastView: $('podcastView'), allView: $('allView'),
-    allContent: $('allContent'),
+    feedNav: $('feedNav'), feedScroll: $('feedScroll'),
+    feedCountAll: $('feedCountAll'), feedCountNews: $('feedCountNews'), feedCountPodcast: $('feedCountPodcast'),
     newsSources: $('newsSources'), newsTitle: $('newsTitle'),
     categoryChips: $('categoryChips'), newsList: $('newsList'),
     newsContent: $('newsContent'), sourcePage: $('sourcePage'),
@@ -2461,96 +2552,112 @@
     el.podcastContent.style.display = 'block';
   };
 
-  // === RENDER ALL ===
-  const renderAllItem = (item, type) => {
+  // === RENDER ALL - Social Media Feed Style ===
+
+  // Render a single feed post in social media style
+  const renderFeedPost = (item, type) => {
     const feed = state.feeds.find(f => f.id === item.feedId);
-    const icon = feed?.image ? `<img src="${feed.image}">` : (type === 'podcast' ? '🎧' : '📰');
+    const feedName = feed?.name || 'Unknown Source';
+    const feedImage = feed?.image;
     const summary = type === 'podcast' ? item.desc : item.summary;
     const image = item.image || feed?.image;
-    return `<div class="all-item" data-type="${type}" data-id="${item.id}">
-      <div class="all-item-icon">${icon}</div>
-      <div class="all-item-body">
-        <div class="all-item-meta">
-          <span class="all-item-type">${type}</span>
-          <span>${feed?.name || ''}</span>
-          <span class="all-item-time">· ${item.time || item.date}</span>
-        </div>
-        <div class="all-item-title">${item.title}</div>
-        ${summary ? `<div class="all-item-summary">${summary}</div>` : ''}
-        ${renderItemTags(item.tags)}
+    const isUnread = type === 'news' && item.unread;
+    const duration = type === 'podcast' && item.duration ? fmtLong(item.duration) : '';
+
+    // Generate avatar
+    const avatar = feedImage
+      ? `<img src="${feedImage}" onerror="this.parentElement.innerHTML='${type === 'podcast' ? '🎧' : '📰'}'">`
+      : (type === 'podcast' ? '🎧' : '📰');
+
+    // Generate tags HTML
+    const tagsHtml = item.tags && item.tags.length > 0
+      ? `<div class="feed-post-tags">${item.tags.slice(0, 3).map(tag => {
+          const tagInfo = getTagInfo(tag);
+          return `<span class="feed-post-tag">#${tagInfo.label.toLowerCase().replace(/\s+/g, '')}</span>`;
+        }).join('')}</div>`
+      : '';
+
+    // Podcast-specific elements
+    const podcastMeta = type === 'podcast' ? `
+      <div class="feed-post-duration">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        ${duration}
       </div>
-      ${image ? `<img class="all-item-image" src="${image}" onerror="this.style.display='none'">` : ''}
-    </div>`;
-  };
-
-  const renderAllCard = (item, type) => {
-    const feed = state.feeds.find(f => f.id === item.feedId);
-    const summary = type === 'podcast' ? item.desc : item.summary;
-    const image = item.image || feed?.image;
-    const icon = type === 'podcast' ? '🎧' : '📰';
-    return `<div class="all-card" data-type="${type}" data-id="${item.id}">
-      <div class="all-card-image">${image ? `<img src="${image}" onerror="this.parentElement.innerHTML='${icon}'">` : icon}</div>
-      <div class="all-card-body">
-        <div class="all-card-meta">
-          <span class="all-card-type">${type}</span>
-          <span class="all-card-source">${feed?.name || ''}</span>
-          <span class="all-card-time">· ${item.time || item.date}</span>
-        </div>
-        <div class="all-card-title">${item.title}</div>
-        ${summary ? `<div class="all-card-summary">${summary}</div>` : ''}
-        ${renderItemTags(item.tags)}
+      <div class="feed-post-play" data-action="play">
+        <svg fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        Play Episode
       </div>
-    </div>`;
-  };
+    ` : '';
 
-  const renderAllMasonry = (item, type) => {
-    const feed = state.feeds.find(f => f.id === item.feedId);
-    const summary = type === 'podcast' ? item.desc : item.summary;
-    const image = item.image || feed?.image;
-    return `<div class="all-masonry-item" data-type="${type}" data-id="${item.id}">
-      ${image ? `<img class="all-masonry-image" src="${image}" onerror="this.style.display='none'">` : ''}
-      <div class="all-masonry-body">
-        <div class="all-masonry-meta">
-          <span class="all-masonry-type">${type}</span>
-          <span class="all-masonry-source">${feed?.name || ''}</span>
-          <span class="all-masonry-time">· ${item.time || item.date}</span>
-        </div>
-        <div class="all-masonry-title">${item.title}</div>
-        ${summary ? `<div class="all-masonry-summary">${summary}</div>` : ''}
+    // Action buttons for news
+    const newsActions = type === 'news' ? `
+      <div class="feed-post-actions">
+        <span class="feed-post-action" data-action="open" title="Open article">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>
+          Read
+        </span>
       </div>
-    </div>`;
+    ` : '';
+
+    return `<article class="feed-post${isUnread ? ' unread' : ''}" data-type="${type}" data-id="${item.id}">
+      <div class="feed-post-inner">
+        <div class="feed-post-header">
+          <div class="feed-post-avatar">${avatar}</div>
+          <div class="feed-post-meta">
+            <div class="feed-post-source">
+              <span class="feed-post-source-name">${feedName}</span>
+              <span class="feed-post-type-badge ${type}">${type === 'podcast' ? 'Podcast' : 'News'}</span>
+            </div>
+            <div class="feed-post-handle">
+              <span>${feed?.author || ''}</span>
+              <span class="feed-post-dot">·</span>
+              <span class="feed-post-time">${item.time || item.date}</span>
+            </div>
+          </div>
+        </div>
+        <div class="feed-post-body">
+          <div class="feed-post-title">${item.title}</div>
+          ${summary ? `<div class="feed-post-summary">${summary}</div>` : ''}
+          ${image ? `<div class="feed-post-media"><img src="${image}" onerror="this.parentElement.style.display='none'" alt=""></div>` : ''}
+          ${tagsHtml}
+          ${podcastMeta}
+          ${newsActions}
+        </div>
+      </div>
+    </article>`;
   };
 
-  const renderAllTable = (item, type) => {
-    const feed = state.feeds.find(f => f.id === item.feedId);
-    return `<tr data-type="${type}" data-id="${item.id}">
-      <td><span class="table-type">${type}</span></td>
-      <td class="table-title">${item.title}</td>
-      <td class="table-source">${feed?.name || ''}</td>
-      <td class="table-time">${item.time || item.date}</td>
-    </tr>`;
-  };
+  // Update feed filter nav buttons
+  const updateFeedNav = (newsCount, podcastCount) => {
+    const totalCount = newsCount + podcastCount;
+    el.feedCountAll.textContent = totalCount;
+    el.feedCountNews.textContent = newsCount;
+    el.feedCountPodcast.textContent = podcastCount;
 
-  const renderAllContent = (items, viewMode) => {
-    if (!items.length) return '';
-    switch (viewMode) {
-      case 'cards':
-        return `<div class="all-cards">${items.map(item => renderAllCard(item, item.type)).join('')}</div>`;
-      case 'masonry':
-        return `<div class="all-masonry">${items.map(item => renderAllMasonry(item, item.type)).join('')}</div>`;
-      case 'table':
-        return `<table class="all-table"><thead><tr><th>Type</th><th>Title</th><th>Source</th><th>Time</th></tr></thead><tbody>${items.map(item => renderAllTable(item, item.type)).join('')}</tbody></table>`;
-      default: // list
-        return `<div class="all-feed-list">${items.map(item => renderAllItem(item, item.type)).join('')}</div>`;
-    }
+    // Update active state
+    el.feedNav.querySelectorAll('.feed-nav-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.filter === state.feedFilter);
+    });
   };
 
   const renderAll = () => {
     const articles = state.articles.map(a => ({ ...a, sortDate: new Date(a.pubDate), type: 'news' }));
     const episodes = state.podcasts.map(p => ({ ...p, sortDate: new Date(p.pubDate), type: 'podcast' }));
 
+    // Count items for nav
+    const newsCount = articles.length;
+    const podcastCount = episodes.length;
+    updateFeedNav(newsCount, podcastCount);
+
     // Combine and sort by date
     let allItems = [...articles, ...episodes].sort((a, b) => b.sortDate - a.sortDate);
+
+    // Apply content type filter
+    if (state.feedFilter === 'news') {
+      allItems = allItems.filter(item => item.type === 'news');
+    } else if (state.feedFilter === 'podcast') {
+      allItems = allItems.filter(item => item.type === 'podcast');
+    }
 
     // Apply search filter if present
     if (state.query) {
@@ -2559,47 +2666,62 @@
 
     if (!allItems.length) {
       const hasFeeds = state.feeds.length > 0;
-      el.allContent.innerHTML = hasFeeds
-        ? '<div class="empty"><div class="empty-icon">📭</div><div class="empty-title">No content found</div><div style="color:var(--text3);margin-top:8px">Try refreshing your feeds</div></div>'
-        : '<div class="empty"><div class="empty-icon">📡</div><div class="empty-title">No feeds yet</div><div style="color:var(--text3);margin-top:8px">Click + to add your first feed</div></div>';
+      const filterLabel = state.feedFilter === 'news' ? 'news articles' :
+                          state.feedFilter === 'podcast' ? 'podcasts' : 'content';
+      el.feedScroll.innerHTML = hasFeeds
+        ? `<div class="feed-empty">
+            <div class="feed-empty-icon">${state.feedFilter === 'podcast' ? '🎧' : state.feedFilter === 'news' ? '📰' : '📭'}</div>
+            <div class="feed-empty-title">No ${filterLabel} found</div>
+            <div class="feed-empty-desc">Try refreshing your feeds or changing the filter</div>
+          </div>`
+        : `<div class="feed-empty">
+            <div class="feed-empty-icon">📡</div>
+            <div class="feed-empty-title">No feeds yet</div>
+            <div class="feed-empty-desc">Click + to add your first feed</div>
+          </div>`;
       return;
     }
 
-    const viewMode = getViewPref('all', 'list');
-    el.allContent.innerHTML = `
-      <div class="all-section">
-        <div class="all-section-header">
-          <div class="all-section-title">📚 All Content</div>
-          ${renderViewOptions('all', viewMode)}
-        </div>
-        ${renderAllContent(allItems.slice(0, 50), viewMode)}
-      </div>
-    `;
+    // Render social media style feed
+    el.feedScroll.innerHTML = allItems.slice(0, 100).map(item => renderFeedPost(item, item.type)).join('');
   };
 
-  // Handle clicks in all view
-  el.allContent.onclick = e => {
-    // View options
-    const viewBtn = e.target.closest('.view-btn');
-    if (viewBtn) {
-      const newView = viewBtn.dataset.view;
-      setViewPref('all', newView);
+  // Handle feed nav filter clicks
+  el.feedNav.onclick = e => {
+    const btn = e.target.closest('.feed-nav-btn');
+    if (!btn) return;
+    const filter = btn.dataset.filter;
+    if (filter && filter !== state.feedFilter) {
+      state.feedFilter = filter;
+      Mem.log('feed_filter_changed', 'filter_' + filter);
       renderAll();
-      return;
     }
+  };
 
-    // Handle all view types (list, card, masonry, table row)
-    const item = e.target.closest('.all-item, .all-card, .all-masonry-item, tr[data-type]');
-    if (!item) return;
-    const type = item.dataset.type;
-    const id = parseInt(item.dataset.id);
+  // Handle clicks in feed scroll
+  el.feedScroll.onclick = e => {
+    const post = e.target.closest('.feed-post');
+    if (!post) return;
+
+    const type = post.dataset.type;
+    const id = parseInt(post.dataset.id);
+
+    // Check for specific action buttons
+    const playBtn = e.target.closest('.feed-post-play');
+    const openBtn = e.target.closest('.feed-post-action[data-action="open"]');
+
     if (type === 'podcast') {
+      // For podcasts, always play
       playEp(id);
     } else if (type === 'news') {
+      // For news, open the article
       const art = state.articles.find(a => a.id === id);
       if (art) {
+        art.unread = false;
+        save();
         Mem.log('article_opened', 'art_' + id, { source: art.feedId });
         if (art.link) window.open(art.link, '_blank');
+        renderAll();
       }
     }
   };
