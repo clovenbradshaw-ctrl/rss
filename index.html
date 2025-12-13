@@ -1701,8 +1701,8 @@
       }
     }
 
-    // Try to extract from description/content HTML
-    const desc = getNodeText(item, 'description') || getNodeText(item, 'content:encoded');
+    // Try to extract from description/content HTML (including Atom's content element)
+    const desc = getNodeText(item, 'description') || getNodeText(item, 'content:encoded') || getNodeText(item, 'content');
     const match = desc.match(/<img[^>]+src=["']([^"']+)["']/i);
     if (match) return match[1];
 
