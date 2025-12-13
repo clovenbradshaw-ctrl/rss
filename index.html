@@ -84,7 +84,26 @@
     /* === PODCAST VIEW === */
     .podcast-view { display: none; height: 100%; flex-direction: column; }
     .podcast-view.active { display: flex; }
-    
+
+    /* === ALL VIEW === */
+    .all-view { display: none; height: 100%; flex-direction: column; }
+    .all-view.active { display: flex; }
+    .all-content { flex: 1; overflow-y: auto; padding: 20px; padding-bottom: 120px; }
+    .all-section { margin-bottom: 28px; }
+    .all-section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .all-section-title { font-size: 18px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+    .all-feed-list { display: flex; flex-direction: column; gap: 8px; }
+    .all-item { display: flex; gap: 12px; padding: 12px; background: var(--bg2); border-radius: 10px; cursor: pointer; transition: background 0.15s; }
+    .all-item:hover { background: var(--bg3); }
+    .all-item-icon { width: 50px; height: 50px; border-radius: 6px; object-fit: cover; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 24px; background: var(--bg3); }
+    .all-item-icon img { width: 100%; height: 100%; object-fit: cover; border-radius: 6px; }
+    .all-item-body { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
+    .all-item-meta { font-size: 12px; color: var(--green); font-weight: 500; margin-bottom: 2px; display: flex; align-items: center; gap: 6px; }
+    .all-item-type { background: var(--bg4); color: var(--text2); padding: 2px 6px; border-radius: 4px; font-size: 10px; text-transform: uppercase; }
+    .all-item-title { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .all-item-summary { font-size: 12px; color: var(--text3); margin-top: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .all-item-time { font-size: 11px; color: var(--text3); }
+
     .podcast-nav { display: flex; background: var(--bg2); border-bottom: 1px solid var(--border); padding: 0 16px; }
     .nav-btn { padding: 14px 18px; background: none; border: none; border-bottom: 2px solid transparent; color: var(--text2); font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit; transition: all 0.15s; }
     .nav-btn:hover { color: var(--text); }
@@ -233,8 +252,9 @@
   <header class="header">
     <div class="logo">📡 Feedr</div>
     <div class="main-toggle">
-      <button class="toggle-btn active" data-view="news"><span>📰</span><span>News</span></button>
-      <button class="toggle-btn" data-view="podcasts"><span>🎧</span><span>Podcasts</span></button>
+      <button class="toggle-btn" data-view="all"><span>📚</span><span>All</span></button>
+      <button class="toggle-btn" data-view="news"><span>📰</span><span>News</span></button>
+      <button class="toggle-btn active" data-view="podcasts"><span>🎧</span><span>Podcasts</span></button>
     </div>
     <div class="spacer"></div>
     <div class="search-box">
@@ -271,6 +291,11 @@
       </nav>
       <div class="podcast-content" id="podcastContent"></div>
       <div class="show-page" id="showPage"></div>
+    </div>
+
+    <!-- ALL VIEW -->
+    <div class="all-view" id="allView">
+      <div class="all-content" id="allContent"></div>
     </div>
   </div>
   
@@ -403,7 +428,7 @@
   
   // === STATE ===
   const state = {
-    view: 'news',
+    view: 'podcasts',
     tab: 'home',
     feeds: [],
     articles: [],
@@ -422,7 +447,8 @@
   // === DOM ===
   const $ = id => document.getElementById(id);
   const el = {
-    newsView: $('newsView'), podcastView: $('podcastView'),
+    newsView: $('newsView'), podcastView: $('podcastView'), allView: $('allView'),
+    allContent: $('allContent'),
     newsSources: $('newsSources'), newsTitle: $('newsTitle'),
     categoryChips: $('categoryChips'), newsList: $('newsList'),
     podcastContent: $('podcastContent'), showPage: $('showPage'),
@@ -441,12 +467,12 @@
   // === UTILS ===
   const fmt = s => { if (isNaN(s) || s < 0) return '0:00'; const m = Math.floor(s / 60), sec = Math.floor(s % 60); return m + ':' + String(sec).padStart(2, '0'); };
   const toast = m => { el.toast.textContent = m; el.toast.classList.add('show'); setTimeout(() => el.toast.classList.remove('show'), 2500); };
-  const save = () => localStorage.setItem('feedr2', JSON.stringify({ feeds: state.feeds, articles: state.articles, podcasts: state.podcasts, progress: state.progress }));
+  const save = () => localStorage.setItem('feedr2', JSON.stringify({ feeds: state.feeds, articles: state.articles, podcasts: state.podcasts, progress: state.progress, view: state.view }));
   
   const load = () => {
     try {
       const d = JSON.parse(localStorage.getItem('feedr2'));
-      if (d) { state.feeds = d.feeds || []; state.articles = d.articles || []; state.podcasts = d.podcasts || []; state.progress = d.progress || {}; }
+      if (d) { state.feeds = d.feeds || []; state.articles = d.articles || []; state.podcasts = d.podcasts || []; state.progress = d.progress || {}; if (d.view) state.view = d.view; }
       state.feeds.forEach(f => f.category && state.categories.add(f.category));
       if (!state.feeds.length) loadDemo();
     } catch(e) { loadDemo(); }
@@ -1120,7 +1146,75 @@
     el.showPage.classList.add('active');
     el.showPage.innerHTML = `<div class="show-hero"><img class="show-hero-art" src="${show.image || placeholderImg}" onerror="this.src='${placeholderImg}'"><div class="show-hero-info"><div class="show-hero-type">Podcast</div><div class="show-hero-title">${show.name}</div><div class="show-hero-author">${show.author || ''}</div></div></div><div class="show-actions"><button class="show-play" data-show="${id}"><svg width="22" height="22" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button></div><div class="show-episodes"><div class="show-episodes-title">Episodes</div><div class="episode-list">${eps.map(renderEpisode).join('')}</div></div>`;
   };
-  
+
+  // === RENDER ALL ===
+  const renderAllItem = (item, type) => {
+    const feed = state.feeds.find(f => f.id === item.feedId);
+    const icon = feed?.image ? `<img src="${feed.image}">` : (type === 'podcast' ? '🎧' : '📰');
+    const summary = type === 'podcast' ? item.desc : item.summary;
+    return `<div class="all-item" data-type="${type}" data-id="${item.id}">
+      <div class="all-item-icon">${icon}</div>
+      <div class="all-item-body">
+        <div class="all-item-meta">
+          <span class="all-item-type">${type}</span>
+          <span>${feed?.name || ''}</span>
+          <span class="all-item-time">· ${item.time || item.date}</span>
+        </div>
+        <div class="all-item-title">${item.title}</div>
+        ${summary ? `<div class="all-item-summary">${summary}</div>` : ''}
+      </div>
+    </div>`;
+  };
+
+  const renderAll = () => {
+    const articles = state.articles.map(a => ({ ...a, sortDate: new Date(a.pubDate), type: 'news' }));
+    const episodes = state.podcasts.map(p => ({ ...p, sortDate: new Date(p.pubDate), type: 'podcast' }));
+
+    // Combine and sort by date
+    let allItems = [...articles, ...episodes].sort((a, b) => b.sortDate - a.sortDate);
+
+    // Apply search filter if present
+    if (state.query) {
+      allItems = fuzzy(state.query, allItems, ['title', 'summary', 'desc']);
+    }
+
+    if (!allItems.length) {
+      const hasFeeds = state.feeds.length > 0;
+      el.allContent.innerHTML = hasFeeds
+        ? '<div class="empty"><div class="empty-icon">📭</div><div class="empty-title">No content found</div><div style="color:var(--text3);margin-top:8px">Try refreshing your feeds</div></div>'
+        : '<div class="empty"><div class="empty-icon">📡</div><div class="empty-title">No feeds yet</div><div style="color:var(--text3);margin-top:8px">Click + to add your first feed</div></div>';
+      return;
+    }
+
+    el.allContent.innerHTML = `
+      <div class="all-section">
+        <div class="all-section-header">
+          <div class="all-section-title">📚 All Content</div>
+        </div>
+        <div class="all-feed-list">
+          ${allItems.slice(0, 50).map(item => renderAllItem(item, item.type)).join('')}
+        </div>
+      </div>
+    `;
+  };
+
+  // Handle clicks in all view
+  el.allContent.onclick = e => {
+    const item = e.target.closest('.all-item');
+    if (!item) return;
+    const type = item.dataset.type;
+    const id = parseInt(item.dataset.id);
+    if (type === 'podcast') {
+      playEp(id);
+    } else if (type === 'news') {
+      const art = state.articles.find(a => a.id === id);
+      if (art) {
+        Mem.log('article_opened', 'art_' + id, { source: art.feedId });
+        if (art.link) window.open(art.link, '_blank');
+      }
+    }
+  };
+
   // === PLAYER ===
   const updatePlayer = () => {
     if (!state.currentEp) { el.player.classList.remove('active'); return; }
@@ -1302,7 +1396,10 @@
     Mem.log('view_changed', 'view_' + state.view, { prev });
     el.newsView.classList.toggle('active', state.view === 'news');
     el.podcastView.classList.toggle('active', state.view === 'podcasts');
+    el.allView.classList.toggle('active', state.view === 'all');
     if (state.view === 'podcasts') renderPodcasts();
+    if (state.view === 'all') renderAll();
+    save();
   };
   
   el.newsSources.onclick = e => {
@@ -1493,16 +1590,32 @@
   };
   
   let searchTO;
-  el.searchInput.oninput = e => { clearTimeout(searchTO); searchTO = setTimeout(() => { state.query = e.target.value; if (state.view === 'news') renderNews(); }, 200); };
+  el.searchInput.oninput = e => { clearTimeout(searchTO); searchTO = setTimeout(() => { state.query = e.target.value; if (state.view === 'news') renderNews(); if (state.view === 'all') renderAll(); }, 200); };
   
   document.onkeydown = e => { if (e.target.tagName === 'INPUT') return; if (e.code === 'Space') { e.preventDefault(); togglePlay(); } if (e.code === 'ArrowLeft') skip(-15); if (e.code === 'ArrowRight') skip(30); };
   
   // === INIT ===
   load();
+
+  // Apply saved view state
+  const applyView = () => {
+    // Update toggle buttons
+    document.querySelectorAll('.toggle-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.view === state.view);
+    });
+    // Update view visibility
+    el.newsView.classList.toggle('active', state.view === 'news');
+    el.podcastView.classList.toggle('active', state.view === 'podcasts');
+    el.allView.classList.toggle('active', state.view === 'all');
+  };
+
+  applyView();
   renderNewsSources();
   renderCategories();
   renderNews();
-  
+  if (state.view === 'podcasts') renderPodcasts();
+  if (state.view === 'all') renderAll();
+
   console.log('Feedr loaded');
   console.log('Memory API: Memory.setEndpoint(url), Memory.getLocal()');
 })();
