@@ -140,9 +140,11 @@
     .ep-bar { flex: 1; height: 4px; background: var(--border2); border-radius: 2px; overflow: hidden; }
     .ep-fill { height: 100%; background: var(--green); }
     .ep-time { font-size: 11px; color: var(--text3); white-space: nowrap; }
-    .ep-dl { background: none; border: none; color: var(--text3); cursor: pointer; padding: 4px; }
+    .ep-dl { background: none; border: none; color: var(--text3); cursor: pointer; padding: 4px; min-width: 24px; display: flex; align-items: center; justify-content: center; }
     .ep-dl:hover { color: var(--text); }
     .ep-dl.active { color: var(--green); }
+    .ep-dl.downloading { color: var(--green); cursor: wait; animation: pulse 1.5s ease-in-out infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
     
     /* Show Page & Source Page */
     .show-page, .source-page { display: none; overflow-y: auto; height: 100%; }
@@ -507,7 +509,7 @@
     pending: [],
     session: 's_' + Date.now(),
     endpoint: null,
-    
+
     log(action, target, data = {}) {
       const m = { id: 'm_' + Date.now() + '_' + Math.random().toString(36).substr(2,4), ts: new Date().toISOString(), action, target, session: this.session, ctx: { view: state.view, tab: state.tab }, ...data };
       this.pending.push(m);
@@ -523,6 +525,75 @@
     getLocal() { try { return JSON.parse(localStorage.getItem('mem') || '[]'); } catch(e) { return []; } }
   };
   window.Memory = Mem;
+
+  // === DOWNLOAD STORAGE (IndexedDB) ===
+  const DownloadDB = {
+    db: null,
+    DB_NAME: 'feedr_downloads',
+    STORE_NAME: 'audio_files',
+
+    async init() {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open(this.DB_NAME, 1);
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => { this.db = request.result; resolve(); };
+        request.onupgradeneeded = (e) => {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains(this.STORE_NAME)) {
+            db.createObjectStore(this.STORE_NAME, { keyPath: 'id' });
+          }
+        };
+      });
+    },
+
+    async save(id, blob, metadata = {}) {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction(this.STORE_NAME, 'readwrite');
+        const store = tx.objectStore(this.STORE_NAME);
+        const request = store.put({ id, blob, metadata, savedAt: Date.now() });
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+      });
+    },
+
+    async get(id) {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction(this.STORE_NAME, 'readonly');
+        const store = tx.objectStore(this.STORE_NAME);
+        const request = store.get(id);
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+    },
+
+    async delete(id) {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction(this.STORE_NAME, 'readwrite');
+        const store = tx.objectStore(this.STORE_NAME);
+        const request = store.delete(id);
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+      });
+    },
+
+    async has(id) {
+      const record = await this.get(id);
+      return !!record;
+    },
+
+    async getAll() {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction(this.STORE_NAME, 'readonly');
+        const store = tx.objectStore(this.STORE_NAME);
+        const request = store.getAllKeys();
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+    }
+  };
+
+  // Track ongoing downloads
+  const downloadProgress = {}; // { episodeId: { progress: 0-100, status: 'downloading'|'done'|'error' } }
   
   // === FUZZY SEARCH ===
   const fuzzy = (q, items, fields) => {
@@ -660,6 +731,126 @@
       console.warn(`Proxy ${proxyIndex} failed:`, e.message);
       return fetchWithProxy(url, proxyIndex + 1);
     }
+  };
+
+  // Download audio file with progress tracking
+  const downloadAudioFile = async (episodeId, audioUrl, onProgress) => {
+    // Try direct fetch first, then CORS proxies
+    const urlsToTry = [
+      audioUrl,
+      ...CORS_PROXIES.map(p => p(audioUrl))
+    ];
+
+    for (let i = 0; i < urlsToTry.length; i++) {
+      const url = urlsToTry[i];
+      try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const contentLength = response.headers.get('content-length');
+        const total = contentLength ? parseInt(contentLength, 10) : 0;
+
+        if (!response.body) {
+          // Fallback for browsers without ReadableStream support
+          const blob = await response.blob();
+          if (onProgress) onProgress(100);
+          return blob;
+        }
+
+        const reader = response.body.getReader();
+        const chunks = [];
+        let received = 0;
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          chunks.push(value);
+          received += value.length;
+          if (total && onProgress) {
+            onProgress(Math.round((received / total) * 100));
+          }
+        }
+
+        const blob = new Blob(chunks, { type: response.headers.get('content-type') || 'audio/mpeg' });
+        if (onProgress) onProgress(100);
+        return blob;
+      } catch (e) {
+        console.warn(`Download attempt ${i + 1} failed:`, e.message);
+        if (i === urlsToTry.length - 1) throw e;
+      }
+    }
+    throw new Error('All download attempts failed');
+  };
+
+  // Start downloading an episode
+  const startDownload = async (episodeId) => {
+    const ep = state.podcasts.find(p => p.id === episodeId);
+    if (!ep || !ep.audioUrl) {
+      toast('No audio URL for this episode');
+      return;
+    }
+
+    if (downloadProgress[episodeId]?.status === 'downloading') {
+      toast('Already downloading...');
+      return;
+    }
+
+    downloadProgress[episodeId] = { progress: 0, status: 'downloading' };
+    renderPodcasts();
+    if (state.currentShowPage) renderShowPage(state.currentShowPage);
+
+    try {
+      toast('Starting download...');
+      const blob = await downloadAudioFile(episodeId, ep.audioUrl, (progress) => {
+        downloadProgress[episodeId].progress = progress;
+        // Update UI periodically (not every progress update to avoid excessive re-renders)
+        if (progress % 10 === 0 || progress === 100) {
+          renderPodcasts();
+          if (state.currentShowPage) renderShowPage(state.currentShowPage);
+        }
+      });
+
+      // Save to IndexedDB
+      await DownloadDB.save(episodeId, blob, {
+        title: ep.title,
+        audioUrl: ep.audioUrl,
+        size: blob.size
+      });
+
+      ep.downloaded = true;
+      downloadProgress[episodeId] = { progress: 100, status: 'done' };
+      save();
+      Mem.log('download_completed', 'ep_' + episodeId, { size: blob.size });
+      toast('Download complete!');
+    } catch (e) {
+      console.error('Download failed:', e);
+      downloadProgress[episodeId] = { progress: 0, status: 'error' };
+      toast('Download failed: ' + e.message);
+    }
+
+    renderPodcasts();
+    if (state.currentShowPage) renderShowPage(state.currentShowPage);
+  };
+
+  // Remove a downloaded episode
+  const removeDownload = async (episodeId) => {
+    const ep = state.podcasts.find(p => p.id === episodeId);
+    if (!ep) return;
+
+    try {
+      await DownloadDB.delete(episodeId);
+      ep.downloaded = false;
+      delete downloadProgress[episodeId];
+      save();
+      Mem.log('download_removed', 'ep_' + episodeId);
+      toast('Download removed');
+    } catch (e) {
+      console.error('Failed to remove download:', e);
+      toast('Failed to remove download');
+    }
+
+    renderPodcasts();
+    if (state.currentShowPage) renderShowPage(state.currentShowPage);
   };
 
   const parseRSSDate = dateStr => {
@@ -1256,7 +1447,23 @@
     const rem = ep.duration - pr;
     const done = pr >= ep.duration * 0.95;
     const imgSrc = ep.image || show?.image || placeholderImg;
-    return `<div class="episode" data-ep="${ep.id}"><img class="episode-art" src="${imgSrc}" onerror="this.src='${placeholderImg}'"><div class="episode-body"><div class="episode-show">${show?.name || ''}</div><div class="episode-title">${ep.title}</div><div class="episode-footer"><button class="ep-play" data-ep="${ep.id}"><svg width="10" height="10" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button><div class="ep-progress"><div class="ep-bar"><div class="ep-fill" style="width:${pct}%"></div></div><span class="ep-time">${done ? 'Played' : pr > 0 ? fmt(rem) + ' left' : fmt(ep.duration)}</span></div><button class="ep-dl ${ep.downloaded ? 'active' : ''}" data-dl="${ep.id}"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg></button></div></div></div>`;
+
+    // Download status
+    const dlStatus = downloadProgress[ep.id];
+    const isDownloading = dlStatus?.status === 'downloading';
+    const dlPct = dlStatus?.progress || 0;
+
+    // Download button content
+    let dlBtnContent;
+    if (isDownloading) {
+      dlBtnContent = `<span style="font-size:10px;font-weight:600">${dlPct}%</span>`;
+    } else if (ep.downloaded) {
+      dlBtnContent = `<svg width="16" height="16" fill="currentColor" stroke="none" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>`;
+    } else {
+      dlBtnContent = `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>`;
+    }
+
+    return `<div class="episode" data-ep="${ep.id}"><img class="episode-art" src="${imgSrc}" onerror="this.src='${placeholderImg}'"><div class="episode-body"><div class="episode-show">${show?.name || ''}</div><div class="episode-title">${ep.title}</div><div class="episode-footer"><button class="ep-play" data-ep="${ep.id}"><svg width="10" height="10" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button><div class="ep-progress"><div class="ep-bar"><div class="ep-fill" style="width:${pct}%"></div></div><span class="ep-time">${done ? 'Played' : pr > 0 ? fmt(rem) + ' left' : fmt(ep.duration)}</span></div><button class="ep-dl ${ep.downloaded ? 'active' : ''} ${isDownloading ? 'downloading' : ''}" data-dl="${ep.id}" ${isDownloading ? 'disabled' : ''}>${dlBtnContent}</button></div></div></div>`;
   };
   
   // View options HTML generator
@@ -1623,7 +1830,10 @@
     }
   }, 10000);
 
-  const playEp = id => {
+  // Track current blob URL for cleanup
+  let currentBlobUrl = null;
+
+  const playEp = async id => {
     const ep = state.podcasts.find(p => p.id === id);
     if (!ep) return;
     if (!ep.audioUrl) {
@@ -1642,9 +1852,30 @@
 
     progStart = pr;
 
+    // Clean up previous blob URL
+    if (currentBlobUrl) {
+      URL.revokeObjectURL(currentBlobUrl);
+      currentBlobUrl = null;
+    }
+
+    // Check if episode is downloaded and use local content
+    let audioSrc = ep.audioUrl;
+    if (ep.downloaded) {
+      try {
+        const downloaded = await DownloadDB.get(id);
+        if (downloaded && downloaded.blob) {
+          currentBlobUrl = URL.createObjectURL(downloaded.blob);
+          audioSrc = currentBlobUrl;
+          console.log('Playing from downloaded content');
+        }
+      } catch (e) {
+        console.warn('Failed to load downloaded content, falling back to stream:', e);
+      }
+    }
+
     // Set audio source and play
-    if (el.audio.src !== ep.audioUrl) {
-      el.audio.src = ep.audioUrl;
+    if (el.audio.src !== audioSrc) {
+      el.audio.src = audioSrc;
       el.audio.load();
     }
     el.audio.playbackRate = state.speed;
@@ -1951,11 +2182,11 @@
       const id = parseInt(dl.dataset.dl);
       const p = state.podcasts.find(x => x.id === id);
       if (p) {
-        p.downloaded = !p.downloaded;
-        if (p.downloaded) Mem.log('download_requested', 'ep_' + id);
-        save();
-        renderPodcasts();
-        toast(p.downloaded ? 'Downloaded' : 'Removed');
+        if (p.downloaded) {
+          removeDownload(id);
+        } else {
+          startDownload(id);
+        }
       }
       return;
     }
@@ -1999,10 +2230,11 @@
       const id = parseInt(dl.dataset.dl);
       const p = state.podcasts.find(x => x.id === id);
       if (p) {
-        p.downloaded = !p.downloaded;
-        save();
-        renderShowPage(p.feedId);
-        toast(p.downloaded ? 'Downloaded' : 'Removed');
+        if (p.downloaded) {
+          removeDownload(id);
+        } else {
+          startDownload(id);
+        }
       }
       return;
     }
@@ -2149,29 +2381,56 @@
   document.onkeydown = e => { if (e.target.tagName === 'INPUT') return; if (e.code === 'Space') { e.preventDefault(); togglePlay(); } if (e.code === 'ArrowLeft') skip(-15); if (e.code === 'ArrowRight') skip(30); };
   
   // === INIT ===
-  load();
+  const init = async () => {
+    load();
 
-  // Apply saved view state
-  const applyView = () => {
-    // Update toggle buttons
-    document.querySelectorAll('.toggle-btn').forEach(b => {
-      b.classList.toggle('active', b.dataset.view === state.view);
-    });
-    // Update view visibility
-    el.newsView.classList.toggle('active', state.view === 'news');
-    el.podcastView.classList.toggle('active', state.view === 'podcasts');
-    el.allView.classList.toggle('active', state.view === 'all');
+    // Initialize download database
+    try {
+      await DownloadDB.init();
+      console.log('Download database initialized');
+
+      // Sync download state with actual IndexedDB content
+      const downloadedIds = await DownloadDB.getAll();
+      const downloadedSet = new Set(downloadedIds);
+
+      // Update podcast downloaded flags based on what's actually in IndexedDB
+      let syncNeeded = false;
+      state.podcasts.forEach(p => {
+        const actuallyDownloaded = downloadedSet.has(p.id);
+        if (p.downloaded !== actuallyDownloaded) {
+          p.downloaded = actuallyDownloaded;
+          syncNeeded = true;
+        }
+      });
+      if (syncNeeded) save();
+    } catch (e) {
+      console.error('Failed to initialize download database:', e);
+    }
+
+    // Apply saved view state
+    const applyView = () => {
+      // Update toggle buttons
+      document.querySelectorAll('.toggle-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.view === state.view);
+      });
+      // Update view visibility
+      el.newsView.classList.toggle('active', state.view === 'news');
+      el.podcastView.classList.toggle('active', state.view === 'podcasts');
+      el.allView.classList.toggle('active', state.view === 'all');
+    };
+
+    applyView();
+    renderNewsSources();
+    renderCategories();
+    renderNews();
+    if (state.view === 'podcasts') renderPodcasts();
+    if (state.view === 'all') renderAll();
+
+    console.log('Feedr loaded');
+    console.log('Memory API: Memory.setEndpoint(url), Memory.getLocal()');
   };
 
-  applyView();
-  renderNewsSources();
-  renderCategories();
-  renderNews();
-  if (state.view === 'podcasts') renderPodcasts();
-  if (state.view === 'all') renderAll();
-
-  console.log('Feedr loaded');
-  console.log('Memory API: Memory.setEndpoint(url), Memory.getLocal()');
+  init();
 })();
 </script>
 </body>
