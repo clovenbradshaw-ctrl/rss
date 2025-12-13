@@ -2550,15 +2550,25 @@
 
   const updateAdaptiveBackground = () => {
     if (!el.expArt.complete || !el.expArt.src) return;
-    const color = extractColor(el.expArt);
-    if (color) {
-      el.expanded.style.setProperty('--adaptive-color', color);
-      el.expanded.classList.add('adaptive-bg');
-    }
+    // Use a separate image with CORS for color extraction
+    // This way if CORS fails, the main image still displays
+    const corsImg = new Image();
+    corsImg.crossOrigin = 'anonymous';
+    corsImg.onload = () => {
+      const color = extractColor(corsImg);
+      if (color) {
+        el.expanded.style.setProperty('--adaptive-color', color);
+        el.expanded.classList.add('adaptive-bg');
+      }
+    };
+    corsImg.onerror = () => {
+      // CORS failed, just skip adaptive background
+      el.expanded.classList.remove('adaptive-bg');
+    };
+    corsImg.src = el.expArt.src;
   };
 
   el.expArt.onload = updateAdaptiveBackground;
-  el.expArt.crossOrigin = 'anonymous';
 
   // === MEDIA SESSION API ===
   const updateMediaSession = () => {
