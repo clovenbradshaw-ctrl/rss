@@ -471,7 +471,115 @@
     .empty { display: flex; flex-direction: column; align-items: center; padding: 48px 24px; text-align: center; color: var(--text3); }
     .empty-icon { font-size: 48px; margin-bottom: 12px; }
     .empty-title { font-size: 16px; font-weight: 600; color: var(--text); }
-    
+
+    /* === STACKS VIEW === */
+    .stacks-view { display: none; height: 100%; flex-direction: column; overflow-y: auto; }
+    .stacks-view.active { display: flex; }
+    .stacks-content { flex: 1; padding: 20px; padding-bottom: 120px; }
+    .stacks-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .stacks-title { font-size: 24px; font-weight: 700; }
+    .create-stack-btn { padding: 10px 20px; background: var(--green); border: none; border-radius: 20px; color: #000; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; display: flex; align-items: center; gap: 8px; }
+    .create-stack-btn:hover { background: var(--green2); }
+
+    .stacks-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+    .stack-card { background: var(--bg2); border-radius: 12px; padding: 20px; cursor: pointer; border: 1px solid transparent; transition: all 0.15s; }
+    .stack-card:hover { background: var(--bg3); border-color: var(--border2); transform: translateY(-2px); }
+    .stack-card-icon { font-size: 32px; margin-bottom: 12px; }
+    .stack-card-name { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+    .stack-card-desc { font-size: 12px; color: var(--text3); margin-bottom: 12px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .stack-card-progress { margin-bottom: 8px; }
+    .stack-progress-bar { height: 4px; background: var(--bg4); border-radius: 2px; overflow: hidden; }
+    .stack-progress-fill { height: 100%; background: var(--green); transition: width 0.3s; }
+    .stack-card-stats { font-size: 11px; color: var(--text3); display: flex; align-items: center; gap: 8px; }
+    .stack-card-count { color: var(--text2); font-weight: 500; }
+    .stack-card.add-new { border: 2px dashed var(--border2); display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text3); min-height: 180px; }
+    .stack-card.add-new:hover { border-color: var(--green); color: var(--green); }
+    .stack-card.add-new .stack-card-icon { font-size: 28px; margin-bottom: 8px; }
+
+    /* Stack Detail View */
+    .stack-detail { display: none; height: 100%; flex-direction: column; overflow: hidden; }
+    .stack-detail.active { display: flex; }
+    .stack-detail-header { padding: 20px; border-bottom: 1px solid var(--border); }
+    .stack-detail-top { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 16px; }
+    .stack-detail-icon { font-size: 48px; }
+    .stack-detail-info { flex: 1; }
+    .stack-detail-name { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+    .stack-detail-desc { font-size: 14px; color: var(--text2); }
+    .stack-detail-actions { display: flex; gap: 8px; }
+    .stack-edit-btn, .stack-delete-btn { padding: 8px 16px; background: var(--bg3); border: 1px solid var(--border2); border-radius: 8px; color: var(--text); font-size: 13px; cursor: pointer; font-family: inherit; }
+    .stack-edit-btn:hover { background: var(--bg4); }
+    .stack-delete-btn:hover { background: #e74c3c; border-color: #e74c3c; color: #fff; }
+    .stack-detail-progress { display: flex; align-items: center; gap: 12px; }
+    .stack-detail-progress .stack-progress-bar { flex: 1; height: 6px; }
+    .stack-detail-progress-text { font-size: 14px; font-weight: 600; color: var(--text2); }
+
+    .stack-detail-controls { padding: 12px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
+    .stack-filter-btn { padding: 6px 12px; background: var(--bg3); border: 1px solid var(--border2); border-radius: 6px; color: var(--text2); font-size: 12px; cursor: pointer; font-family: inherit; }
+    .stack-filter-btn.active { background: var(--green); border-color: var(--green); color: #000; }
+
+    .stack-items { flex: 1; overflow-y: auto; padding: 16px 20px 120px; }
+    .stack-item { display: flex; align-items: center; gap: 12px; padding: 12px; background: var(--bg2); border-radius: 10px; margin-bottom: 8px; transition: all 0.15s; }
+    .stack-item:hover { background: var(--bg3); }
+    .stack-item.completed { opacity: 0.6; }
+    .stack-item-checkbox { width: 22px; height: 22px; border: 2px solid var(--border2); border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.15s; }
+    .stack-item-checkbox:hover { border-color: var(--green); }
+    .stack-item.completed .stack-item-checkbox { background: var(--green); border-color: var(--green); }
+    .stack-item.completed .stack-item-checkbox::after { content: '✓'; color: #000; font-size: 12px; font-weight: 700; }
+    .stack-item-icon { width: 48px; height: 48px; border-radius: 6px; background: var(--bg3); display: flex; align-items: center; justify-content: center; font-size: 20px; overflow: hidden; flex-shrink: 0; }
+    .stack-item-icon img { width: 100%; height: 100%; object-fit: cover; }
+    .stack-item-body { flex: 1; min-width: 0; }
+    .stack-item-type { font-size: 10px; text-transform: uppercase; color: var(--text3); margin-bottom: 2px; display: flex; align-items: center; gap: 6px; }
+    .stack-item-type-badge { padding: 2px 6px; background: var(--bg4); border-radius: 4px; }
+    .stack-item-source { color: var(--green); font-weight: 500; }
+    .stack-item-title { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .stack-item.completed .stack-item-title { text-decoration: line-through; color: var(--text3); }
+    .stack-item-meta { font-size: 12px; color: var(--text3); margin-top: 2px; }
+    .stack-item-actions { display: flex; gap: 4px; opacity: 0; transition: opacity 0.15s; }
+    .stack-item:hover .stack-item-actions { opacity: 1; }
+    .stack-item-btn { background: none; border: none; color: var(--text3); cursor: pointer; padding: 6px; border-radius: 4px; }
+    .stack-item-btn:hover { background: var(--bg4); color: var(--text); }
+    .stack-item-btn.remove:hover { color: #e74c3c; }
+
+    .stack-items-empty { text-align: center; padding: 48px 24px; color: var(--text3); }
+    .stack-items-empty-icon { font-size: 48px; margin-bottom: 12px; }
+    .stack-items-empty-title { font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+
+    /* Add to Stack Menu */
+    .add-to-stack-btn { background: none; border: none; color: var(--text3); cursor: pointer; padding: 6px; border-radius: 4px; opacity: 0; transition: all 0.15s; }
+    .article:hover .add-to-stack-btn, .episode:hover .add-to-stack-btn, .all-item:hover .add-to-stack-btn { opacity: 1; }
+    .add-to-stack-btn:hover { background: var(--bg4); color: var(--green); }
+
+    .add-to-stack-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.75); display: none; align-items: center; justify-content: center; z-index: 350; }
+    .add-to-stack-modal.active { display: flex; }
+    .add-to-stack-box { background: var(--bg2); border-radius: 14px; width: 90%; max-width: 360px; max-height: 80vh; display: flex; flex-direction: column; }
+    .add-to-stack-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+    .add-to-stack-header h3 { font-size: 16px; font-weight: 600; }
+    .add-to-stack-close { background: none; border: none; color: var(--text2); cursor: pointer; }
+    .add-to-stack-list { flex: 1; overflow-y: auto; padding: 12px; }
+    .add-to-stack-option { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 8px; cursor: pointer; transition: background 0.15s; }
+    .add-to-stack-option:hover { background: var(--bg3); }
+    .add-to-stack-option.in-stack { background: rgba(29,185,84,0.1); }
+    .add-to-stack-option-icon { font-size: 24px; }
+    .add-to-stack-option-name { flex: 1; font-size: 14px; font-weight: 500; }
+    .add-to-stack-option-check { color: var(--green); font-size: 18px; }
+    .add-to-stack-create { display: flex; align-items: center; gap: 12px; padding: 12px; border-top: 1px solid var(--border); margin-top: 8px; color: var(--green); cursor: pointer; }
+    .add-to-stack-create:hover { background: var(--bg3); }
+
+    /* Stack Modal (Create/Edit) */
+    .stack-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.75); display: none; align-items: center; justify-content: center; z-index: 350; }
+    .stack-modal.active { display: flex; }
+    .stack-modal-box { background: var(--bg2); border-radius: 14px; width: 90%; max-width: 400px; }
+    .stack-modal-header { padding: 18px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+    .stack-modal-header h2 { font-size: 18px; font-weight: 600; }
+    .stack-modal-close { background: none; border: none; color: var(--text2); cursor: pointer; }
+    .stack-modal-body { padding: 20px; }
+    .emoji-picker { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+    .emoji-option { width: 40px; height: 40px; border: 2px solid var(--border2); border-radius: 8px; background: var(--bg3); cursor: pointer; font-size: 20px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+    .emoji-option:hover { border-color: var(--text3); }
+    .emoji-option.active { border-color: var(--green); background: rgba(29,185,84,0.1); }
+    .stack-submit-btn { width: 100%; padding: 12px; background: var(--green); border: none; border-radius: 18px; color: #000; font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit; margin-top: 8px; }
+    .stack-submit-btn:hover { background: var(--green2); }
+
     @media (max-width: 768px) {
       .toggle-btn span:last-child { display: none; }
       .search-box { display: none; }
@@ -492,6 +600,7 @@
       <button class="toggle-btn" data-view="all"><span>📚</span><span>All</span></button>
       <button class="toggle-btn" data-view="news"><span>📰</span><span>News</span></button>
       <button class="toggle-btn active" data-view="podcasts"><span>🎧</span><span>Podcasts</span></button>
+      <button class="toggle-btn" data-view="stacks"><span>📋</span><span>Stacks</span></button>
     </div>
     <div class="spacer"></div>
     <div class="search-box">
@@ -535,8 +644,14 @@
     <div class="all-view" id="allView">
       <div class="all-content" id="allContent"></div>
     </div>
+
+    <!-- STACKS VIEW -->
+    <div class="stacks-view" id="stacksView">
+      <div class="stacks-content" id="stacksContent"></div>
+      <div class="stack-detail" id="stackDetail"></div>
+    </div>
   </div>
-  
+
   <!-- PLAYER -->
   <div class="player" id="player">
     <div class="player-left">
@@ -694,6 +809,55 @@
   </div>
 </div>
 
+<!-- Stack Modal (Create/Edit) -->
+<div class="stack-modal" id="stackModal">
+  <div class="stack-modal-box">
+    <div class="stack-modal-header">
+      <h2 id="stackModalTitle">Create Stack</h2>
+      <button class="stack-modal-close" id="stackModalClose"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 5L5 15M5 5l10 10"/></svg></button>
+    </div>
+    <div class="stack-modal-body">
+      <div class="form-group">
+        <label class="form-label">Icon</label>
+        <div class="emoji-picker" id="stackEmojiPicker">
+          <button class="emoji-option active" data-emoji="📚">📚</button>
+          <button class="emoji-option" data-emoji="📖">📖</button>
+          <button class="emoji-option" data-emoji="🎧">🎧</button>
+          <button class="emoji-option" data-emoji="🎯">🎯</button>
+          <button class="emoji-option" data-emoji="⭐">⭐</button>
+          <button class="emoji-option" data-emoji="🔥">🔥</button>
+          <button class="emoji-option" data-emoji="💡">💡</button>
+          <button class="emoji-option" data-emoji="🚀">🚀</button>
+          <button class="emoji-option" data-emoji="🌅">🌅</button>
+          <button class="emoji-option" data-emoji="🌙">🌙</button>
+          <button class="emoji-option" data-emoji="☕">☕</button>
+          <button class="emoji-option" data-emoji="🏃">🏃</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Name</label>
+        <input type="text" class="form-input" id="stackNameInput" placeholder="Weekend Reads, Commute Queue...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description (optional)</label>
+        <input type="text" class="form-input" id="stackDescInput" placeholder="What's this stack for?">
+      </div>
+      <button class="stack-submit-btn" id="stackSubmitBtn">Create Stack</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add to Stack Modal -->
+<div class="add-to-stack-modal" id="addToStackModal">
+  <div class="add-to-stack-box">
+    <div class="add-to-stack-header">
+      <h3>Add to Stack</h3>
+      <button class="add-to-stack-close" id="addToStackClose"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 5L5 15M5 5l10 10"/></svg></button>
+    </div>
+    <div class="add-to-stack-list" id="addToStackList"></div>
+  </div>
+</div>
+
 <!-- Audio element for actual playback -->
 <audio id="audioPlayer" preload="metadata"></audio>
 
@@ -828,7 +992,13 @@
     bookmarks: {}, // { episodeId: [{ time, note, created }] }
     sleepTimer: null, // { endTime, intervalId, fadeIntervalId }
     speedPanelOpen: false,
-    bookmarksPanelOpen: false
+    bookmarksPanelOpen: false,
+    // Stacks
+    stacks: {}, // { stackId: { id, name, emoji, description, items: [], createdAt, updatedAt } }
+    currentStack: null, // Currently viewing stack ID
+    stackFilter: 'all', // 'all' | 'pending' | 'completed'
+    editingStackId: null, // Stack being edited (null = creating new)
+    addToStackItem: null // { contentId, contentType } - item being added to stack
   };
   
   // === DOM ===
@@ -862,19 +1032,25 @@
     sleepTimerModal: $('sleepTimerModal'), sleepTimerContent: $('sleepTimerContent'),
     sleepTimerActive: $('sleepTimerActive'), sleepCountdown: $('sleepCountdown'),
     sleepPresets: $('sleepPresets'), sleepCustomInput: $('sleepCustomInput'),
-    sleepCustomBtn: $('sleepCustomBtn'), sleepCancelBtn: $('sleepCancelBtn')
+    sleepCustomBtn: $('sleepCustomBtn'), sleepCancelBtn: $('sleepCancelBtn'),
+    // Stacks
+    stacksView: $('stacksView'), stacksContent: $('stacksContent'), stackDetail: $('stackDetail'),
+    stackModal: $('stackModal'), stackModalTitle: $('stackModalTitle'), stackModalClose: $('stackModalClose'),
+    stackEmojiPicker: $('stackEmojiPicker'), stackNameInput: $('stackNameInput'),
+    stackDescInput: $('stackDescInput'), stackSubmitBtn: $('stackSubmitBtn'),
+    addToStackModal: $('addToStackModal'), addToStackClose: $('addToStackClose'), addToStackList: $('addToStackList')
   };
   
   // === UTILS ===
   const fmt = s => { if (isNaN(s) || s < 0) return '0:00'; const m = Math.floor(s / 60), sec = Math.floor(s % 60); return m + ':' + String(sec).padStart(2, '0'); };
   const fmtLong = s => { if (isNaN(s) || s < 0) return '0:00'; const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = Math.floor(s % 60); return h > 0 ? h + ':' + String(m).padStart(2, '0') + ':' + String(sec).padStart(2, '0') : m + ':' + String(sec).padStart(2, '0'); };
   const toast = m => { el.toast.textContent = m; el.toast.classList.add('show'); setTimeout(() => el.toast.classList.remove('show'), 2500); };
-  const save = () => localStorage.setItem('feedr2', JSON.stringify({ feeds: state.feeds, articles: state.articles, podcasts: state.podcasts, progress: state.progress, view: state.view, viewPrefs: state.viewPrefs, bookmarks: state.bookmarks }));
+  const save = () => localStorage.setItem('feedr2', JSON.stringify({ feeds: state.feeds, articles: state.articles, podcasts: state.podcasts, progress: state.progress, view: state.view, viewPrefs: state.viewPrefs, bookmarks: state.bookmarks, stacks: state.stacks }));
 
   const load = () => {
     try {
       const d = JSON.parse(localStorage.getItem('feedr2'));
-      if (d) { state.feeds = d.feeds || []; state.articles = d.articles || []; state.podcasts = d.podcasts || []; state.progress = d.progress || {}; if (d.view) state.view = d.view; state.viewPrefs = d.viewPrefs || {}; state.bookmarks = d.bookmarks || {}; }
+      if (d) { state.feeds = d.feeds || []; state.articles = d.articles || []; state.podcasts = d.podcasts || []; state.progress = d.progress || {}; if (d.view) state.view = d.view; state.viewPrefs = d.viewPrefs || {}; state.bookmarks = d.bookmarks || {}; state.stacks = d.stacks || {}; }
       state.feeds.forEach(f => f.category && state.categories.add(f.category));
       if (!state.feeds.length) loadDemo();
     } catch(e) { loadDemo(); }
@@ -1676,7 +1852,7 @@
       dlBtnContent = `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>`;
     }
 
-    return `<div class="episode" data-ep="${ep.id}"><img class="episode-art" src="${imgSrc}" onerror="this.src='${placeholderImg}'"><div class="episode-body"><div class="episode-show">${show?.name || ''}</div><div class="episode-title">${ep.title}</div><div class="episode-footer"><button class="ep-play" data-ep="${ep.id}"><svg width="10" height="10" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button><div class="ep-progress"><div class="ep-bar"><div class="ep-fill" style="width:${pct}%"></div></div><span class="ep-time">${done ? 'Played' : pr > 0 ? fmt(rem) + ' left' : fmt(ep.duration)}</span></div><button class="ep-dl ${ep.downloaded ? 'active' : ''} ${isDownloading ? 'downloading' : ''}" data-dl="${ep.id}" ${isDownloading ? 'disabled' : ''}>${dlBtnContent}</button></div></div></div>`;
+    return `<div class="episode" data-ep="${ep.id}"><img class="episode-art" src="${imgSrc}" onerror="this.src='${placeholderImg}'"><div class="episode-body"><div class="episode-show">${show?.name || ''}</div><div class="episode-title">${ep.title}</div><div class="episode-footer"><button class="ep-play" data-ep="${ep.id}"><svg width="10" height="10" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button><div class="ep-progress"><div class="ep-bar"><div class="ep-fill" style="width:${pct}%"></div></div><span class="ep-time">${done ? 'Played' : pr > 0 ? fmt(rem) + ' left' : fmt(ep.duration)}</span></div><button class="ep-dl ${ep.downloaded ? 'active' : ''} ${isDownloading ? 'downloading' : ''}" data-dl="${ep.id}" ${isDownloading ? 'disabled' : ''}>${dlBtnContent}</button><button class="add-to-stack-btn" onclick="event.stopPropagation();openAddToStackModal(${ep.id},'episode')" title="Add to Stack" style="opacity:1;margin-left:4px"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button></div></div></div>`;
   };
   
   // View options HTML generator
@@ -1782,7 +1958,7 @@
       default: // list
         return `<div class="news-list-view">${articles.map(a => {
           const feed = state.feeds.find(f => f.id === a.feedId);
-          return `<div class="article ${a.unread ? 'unread' : ''}" data-id="${a.id}"><div class="article-icon">${feed?.image ? `<img src="${feed.image}">` : '📄'}</div><div class="article-body"><div class="article-meta"><span class="article-source">${feed?.name || ''}</span><span class="article-time">· ${a.time}</span>${a.unread ? '<span class="article-new">NEW</span>' : ''}</div><div class="article-title">${a.title}</div>${a.summary ? `<div class="article-summary">${a.summary}</div>` : ''}</div>${a.image ? `<img class="article-image" src="${a.image}">` : ''}</div>`;
+          return `<div class="article ${a.unread ? 'unread' : ''}" data-id="${a.id}"><div class="article-icon">${feed?.image ? `<img src="${feed.image}">` : '📄'}</div><div class="article-body"><div class="article-meta"><span class="article-source">${feed?.name || ''}</span><span class="article-time">· ${a.time}</span>${a.unread ? '<span class="article-new">NEW</span>' : ''}</div><div class="article-title">${a.title}</div>${a.summary ? `<div class="article-summary">${a.summary}</div>` : ''}</div>${a.image ? `<img class="article-image" src="${a.image}">` : ''}<button class="add-to-stack-btn" onclick="event.stopPropagation();openAddToStackModal(${a.id},'article')" title="Add to Stack"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button></div>`;
         }).join('')}</div>`;
     }
   };
@@ -1888,6 +2064,7 @@
     const feed = state.feeds.find(f => f.id === item.feedId);
     const icon = feed?.image ? `<img src="${feed.image}">` : (type === 'podcast' ? '🎧' : '📰');
     const summary = type === 'podcast' ? item.desc : item.summary;
+    const contentType = type === 'podcast' ? 'episode' : 'article';
     return `<div class="all-item" data-type="${type}" data-id="${item.id}">
       <div class="all-item-icon">${icon}</div>
       <div class="all-item-body">
@@ -1899,6 +2076,7 @@
         <div class="all-item-title">${item.title}</div>
         ${summary ? `<div class="all-item-summary">${summary}</div>` : ''}
       </div>
+      <button class="add-to-stack-btn" onclick="event.stopPropagation();openAddToStackModal(${item.id},'${contentType}')" title="Add to Stack"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button>
     </div>`;
   };
 
@@ -2019,6 +2197,476 @@
         Mem.log('article_opened', 'art_' + id, { source: art.feedId });
         if (art.link) window.open(art.link, '_blank');
       }
+    }
+  };
+
+  // === STACKS ===
+  const generateStackId = () => 'stack_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+  const generateItemId = () => 'item_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+
+  // Stack CRUD
+  const createStack = (name, emoji = '📚', description = '') => {
+    const id = generateStackId();
+    state.stacks[id] = {
+      id,
+      name,
+      emoji,
+      description,
+      items: [],
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    };
+    save();
+    Mem.log('stack_created', id, { name });
+    return id;
+  };
+
+  const updateStack = (stackId, updates) => {
+    if (!state.stacks[stackId]) return;
+    Object.assign(state.stacks[stackId], updates, { updatedAt: Date.now() });
+    save();
+  };
+
+  const deleteStack = (stackId) => {
+    if (!state.stacks[stackId]) return;
+    const name = state.stacks[stackId].name;
+    delete state.stacks[stackId];
+    save();
+    Mem.log('stack_deleted', stackId, { name });
+  };
+
+  // Stack items
+  const addToStack = (stackId, contentId, contentType) => {
+    const stack = state.stacks[stackId];
+    if (!stack) return;
+    // Check if already in stack
+    if (stack.items.some(i => i.contentId === contentId && i.contentType === contentType)) {
+      toast('Already in stack');
+      return;
+    }
+    stack.items.push({
+      id: generateItemId(),
+      contentId,
+      contentType,
+      completed: false,
+      completedAt: null,
+      addedAt: Date.now(),
+      order: stack.items.length
+    });
+    stack.updatedAt = Date.now();
+    save();
+    Mem.log('stack_item_added', stackId, { contentId, contentType });
+    toast(`Added to ${stack.name}`);
+  };
+
+  const removeFromStack = (stackId, itemId) => {
+    const stack = state.stacks[stackId];
+    if (!stack) return;
+    stack.items = stack.items.filter(i => i.id !== itemId);
+    stack.updatedAt = Date.now();
+    save();
+  };
+
+  const toggleStackItemComplete = (stackId, itemId) => {
+    const stack = state.stacks[stackId];
+    if (!stack) return;
+    const item = stack.items.find(i => i.id === itemId);
+    if (!item) return;
+    item.completed = !item.completed;
+    item.completedAt = item.completed ? Date.now() : null;
+    stack.updatedAt = Date.now();
+    save();
+    Mem.log('stack_item_toggled', stackId, { itemId, completed: item.completed });
+  };
+
+  const getStackProgress = (stackId) => {
+    const stack = state.stacks[stackId];
+    if (!stack || !stack.items.length) return { completed: 0, total: 0, percent: 0 };
+    const completed = stack.items.filter(i => i.completed).length;
+    const total = stack.items.length;
+    return { completed, total, percent: Math.round((completed / total) * 100) };
+  };
+
+  const isItemInAnyStack = (contentId, contentType) => {
+    return Object.values(state.stacks).some(stack =>
+      stack.items.some(i => i.contentId === contentId && i.contentType === contentType)
+    );
+  };
+
+  const getStacksContainingItem = (contentId, contentType) => {
+    return Object.values(state.stacks).filter(stack =>
+      stack.items.some(i => i.contentId === contentId && i.contentType === contentType)
+    ).map(s => s.id);
+  };
+
+  // Get content for stack item
+  const getStackItemContent = (item) => {
+    if (item.contentType === 'article') {
+      return state.articles.find(a => a.id === item.contentId);
+    } else {
+      return state.podcasts.find(p => p.id === item.contentId);
+    }
+  };
+
+  // Render stack card
+  const renderStackCard = (stack) => {
+    const progress = getStackProgress(stack.id);
+    const articleCount = stack.items.filter(i => i.contentType === 'article').length;
+    const podcastCount = stack.items.filter(i => i.contentType === 'episode').length;
+    const statsText = [];
+    if (articleCount) statsText.push(`${articleCount} article${articleCount > 1 ? 's' : ''}`);
+    if (podcastCount) statsText.push(`${podcastCount} podcast${podcastCount > 1 ? 's' : ''}`);
+
+    return `<div class="stack-card" data-stack="${stack.id}">
+      <div class="stack-card-icon">${stack.emoji}</div>
+      <div class="stack-card-name">${stack.name}</div>
+      ${stack.description ? `<div class="stack-card-desc">${stack.description}</div>` : '<div class="stack-card-desc" style="min-height:32px"></div>'}
+      <div class="stack-card-progress">
+        <div class="stack-progress-bar"><div class="stack-progress-fill" style="width:${progress.percent}%"></div></div>
+      </div>
+      <div class="stack-card-stats">
+        <span class="stack-card-count">${progress.completed}/${progress.total}</span>
+        <span>${statsText.join(' · ') || 'Empty'}</span>
+      </div>
+    </div>`;
+  };
+
+  // Render stacks grid view
+  const renderStacks = () => {
+    const stacks = Object.values(state.stacks).sort((a, b) => b.updatedAt - a.updatedAt);
+
+    if (!stacks.length) {
+      el.stacksContent.innerHTML = `
+        <div class="stacks-header">
+          <div class="stacks-title">Stacks</div>
+        </div>
+        <div class="empty" style="margin-top:60px">
+          <div class="empty-icon">📋</div>
+          <div class="empty-title">Create Your First Stack</div>
+          <div style="color:var(--text3);margin-top:8px;max-width:300px">Stacks help you organize content from any source into curated collections. Save articles and podcasts to consume later.</div>
+          <button class="create-stack-btn" style="margin-top:20px" onclick="openStackModal()">+ Create Stack</button>
+        </div>
+      `;
+      el.stackDetail.classList.remove('active');
+      el.stacksContent.style.display = 'block';
+      return;
+    }
+
+    el.stacksContent.innerHTML = `
+      <div class="stacks-header">
+        <div class="stacks-title">Stacks</div>
+        <button class="create-stack-btn" onclick="openStackModal()">+ New Stack</button>
+      </div>
+      <div class="stacks-grid">
+        ${stacks.map(renderStackCard).join('')}
+        <div class="stack-card add-new" onclick="openStackModal()">
+          <div class="stack-card-icon">+</div>
+          <div style="font-size:14px;font-weight:500">Create New Stack</div>
+        </div>
+      </div>
+    `;
+    el.stackDetail.classList.remove('active');
+    el.stacksContent.style.display = 'block';
+  };
+
+  // Render stack item
+  const renderStackItem = (item) => {
+    const content = getStackItemContent(item);
+    if (!content) return ''; // Content was deleted
+    const feed = state.feeds.find(f => f.id === content.feedId);
+    const isArticle = item.contentType === 'article';
+    const icon = feed?.image ? `<img src="${feed.image}">` : (isArticle ? '📰' : '🎧');
+    const meta = isArticle ? content.time : (content.date + (content.duration ? ` · ${fmtLong(content.duration)}` : ''));
+
+    return `<div class="stack-item ${item.completed ? 'completed' : ''}" data-item="${item.id}">
+      <div class="stack-item-checkbox" data-action="toggle"></div>
+      <div class="stack-item-icon">${icon}</div>
+      <div class="stack-item-body">
+        <div class="stack-item-type">
+          <span class="stack-item-type-badge">${isArticle ? 'Article' : 'Podcast'}</span>
+          <span class="stack-item-source">${feed?.name || ''}</span>
+        </div>
+        <div class="stack-item-title">${content.title}</div>
+        <div class="stack-item-meta">${meta}</div>
+      </div>
+      <div class="stack-item-actions">
+        <button class="stack-item-btn" data-action="open" title="Open">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>
+        </button>
+        <button class="stack-item-btn remove" data-action="remove" title="Remove">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+    </div>`;
+  };
+
+  // Render stack detail view
+  const renderStackDetail = (stackId) => {
+    const stack = state.stacks[stackId];
+    if (!stack) {
+      state.currentStack = null;
+      renderStacks();
+      return;
+    }
+
+    state.currentStack = stackId;
+    const progress = getStackProgress(stackId);
+
+    // Filter items
+    let items = [...stack.items];
+    if (state.stackFilter === 'pending') {
+      items = items.filter(i => !i.completed);
+    } else if (state.stackFilter === 'completed') {
+      items = items.filter(i => i.completed);
+    }
+
+    // Sort: pending first, then by addedAt
+    items.sort((a, b) => {
+      if (a.completed !== b.completed) return a.completed ? 1 : -1;
+      return a.addedAt - b.addedAt;
+    });
+
+    el.stacksContent.style.display = 'none';
+    el.stackDetail.classList.add('active');
+    el.stackDetail.innerHTML = `
+      <div class="stack-detail-header">
+        <div style="margin-bottom:16px">
+          <button class="back-btn" onclick="backToStacks()">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+            Back to Stacks
+          </button>
+        </div>
+        <div class="stack-detail-top">
+          <div class="stack-detail-icon">${stack.emoji}</div>
+          <div class="stack-detail-info">
+            <div class="stack-detail-name">${stack.name}</div>
+            ${stack.description ? `<div class="stack-detail-desc">${stack.description}</div>` : ''}
+          </div>
+          <div class="stack-detail-actions">
+            <button class="stack-edit-btn" onclick="openStackModal('${stackId}')">Edit</button>
+            <button class="stack-delete-btn" onclick="confirmDeleteStack('${stackId}')">Delete</button>
+          </div>
+        </div>
+        <div class="stack-detail-progress">
+          <div class="stack-progress-bar"><div class="stack-progress-fill" style="width:${progress.percent}%"></div></div>
+          <div class="stack-detail-progress-text">${progress.completed}/${progress.total} completed</div>
+        </div>
+      </div>
+      <div class="stack-detail-controls">
+        <button class="stack-filter-btn ${state.stackFilter === 'all' ? 'active' : ''}" data-filter="all">All</button>
+        <button class="stack-filter-btn ${state.stackFilter === 'pending' ? 'active' : ''}" data-filter="pending">Pending</button>
+        <button class="stack-filter-btn ${state.stackFilter === 'completed' ? 'active' : ''}" data-filter="completed">Completed</button>
+      </div>
+      <div class="stack-items">
+        ${items.length ? items.map(renderStackItem).join('') : `
+          <div class="stack-items-empty">
+            <div class="stack-items-empty-icon">📭</div>
+            <div class="stack-items-empty-title">${state.stackFilter === 'all' ? 'This Stack is Empty' : `No ${state.stackFilter} items`}</div>
+            <div style="color:var(--text3);margin-top:8px">${state.stackFilter === 'all' ? 'Add articles or podcasts from your feeds using the stack button.' : ''}</div>
+          </div>
+        `}
+      </div>
+    `;
+  };
+
+  const backToStacks = () => {
+    state.currentStack = null;
+    state.stackFilter = 'all';
+    renderStacks();
+  };
+  window.backToStacks = backToStacks;
+
+  // Stack modal functions
+  const openStackModal = (editStackId = null) => {
+    state.editingStackId = editStackId;
+    const stack = editStackId ? state.stacks[editStackId] : null;
+
+    el.stackModalTitle.textContent = stack ? 'Edit Stack' : 'Create Stack';
+    el.stackSubmitBtn.textContent = stack ? 'Save Changes' : 'Create Stack';
+    el.stackNameInput.value = stack?.name || '';
+    el.stackDescInput.value = stack?.description || '';
+
+    // Reset emoji selection
+    el.stackEmojiPicker.querySelectorAll('.emoji-option').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.emoji === (stack?.emoji || '📚'));
+    });
+
+    el.stackModal.classList.add('active');
+    el.stackNameInput.focus();
+  };
+  window.openStackModal = openStackModal;
+
+  const closeStackModal = () => {
+    el.stackModal.classList.remove('active');
+    state.editingStackId = null;
+  };
+
+  const submitStack = () => {
+    const name = el.stackNameInput.value.trim();
+    if (!name) {
+      toast('Please enter a stack name');
+      return;
+    }
+
+    const emoji = el.stackEmojiPicker.querySelector('.emoji-option.active')?.dataset.emoji || '📚';
+    const description = el.stackDescInput.value.trim();
+
+    if (state.editingStackId) {
+      updateStack(state.editingStackId, { name, emoji, description });
+      toast('Stack updated');
+      if (state.currentStack === state.editingStackId) {
+        renderStackDetail(state.editingStackId);
+      }
+    } else {
+      const newId = createStack(name, emoji, description);
+      toast('Stack created');
+      renderStackDetail(newId);
+    }
+    closeStackModal();
+    if (!state.currentStack) renderStacks();
+  };
+
+  const confirmDeleteStack = (stackId) => {
+    const stack = state.stacks[stackId];
+    if (!stack) return;
+    if (confirm(`Delete "${stack.name}"? This cannot be undone.`)) {
+      deleteStack(stackId);
+      toast('Stack deleted');
+      backToStacks();
+    }
+  };
+  window.confirmDeleteStack = confirmDeleteStack;
+
+  // Add to stack modal
+  const openAddToStackModal = (contentId, contentType) => {
+    state.addToStackItem = { contentId, contentType };
+    const stacks = Object.values(state.stacks).sort((a, b) => b.updatedAt - a.updatedAt);
+    const inStacks = getStacksContainingItem(contentId, contentType);
+
+    el.addToStackList.innerHTML = stacks.length ? `
+      ${stacks.map(stack => `
+        <div class="add-to-stack-option ${inStacks.includes(stack.id) ? 'in-stack' : ''}" data-stack="${stack.id}">
+          <span class="add-to-stack-option-icon">${stack.emoji}</span>
+          <span class="add-to-stack-option-name">${stack.name}</span>
+          ${inStacks.includes(stack.id) ? '<span class="add-to-stack-option-check">✓</span>' : ''}
+        </div>
+      `).join('')}
+      <div class="add-to-stack-create" onclick="closeAddToStackModal();openStackModal()">
+        <span style="font-size:20px">+</span>
+        <span>Create New Stack</span>
+      </div>
+    ` : `
+      <div style="text-align:center;padding:24px;color:var(--text3)">
+        <div style="font-size:32px;margin-bottom:8px">📋</div>
+        <div>No stacks yet</div>
+      </div>
+      <div class="add-to-stack-create" onclick="closeAddToStackModal();openStackModal()">
+        <span style="font-size:20px">+</span>
+        <span>Create Your First Stack</span>
+      </div>
+    `;
+
+    el.addToStackModal.classList.add('active');
+  };
+  window.openAddToStackModal = openAddToStackModal;
+
+  const closeAddToStackModal = () => {
+    el.addToStackModal.classList.remove('active');
+    state.addToStackItem = null;
+  };
+  window.closeAddToStackModal = closeAddToStackModal;
+
+  // Event handlers for stacks
+  el.stacksContent.onclick = e => {
+    const card = e.target.closest('.stack-card[data-stack]');
+    if (card) {
+      renderStackDetail(card.dataset.stack);
+    }
+  };
+
+  el.stackDetail.onclick = e => {
+    // Filter buttons
+    const filterBtn = e.target.closest('.stack-filter-btn');
+    if (filterBtn) {
+      state.stackFilter = filterBtn.dataset.filter;
+      renderStackDetail(state.currentStack);
+      return;
+    }
+
+    // Item actions
+    const item = e.target.closest('.stack-item');
+    if (!item) return;
+    const itemId = item.dataset.item;
+    const action = e.target.closest('[data-action]')?.dataset.action;
+
+    if (action === 'toggle') {
+      toggleStackItemComplete(state.currentStack, itemId);
+      renderStackDetail(state.currentStack);
+    } else if (action === 'remove') {
+      removeFromStack(state.currentStack, itemId);
+      renderStackDetail(state.currentStack);
+    } else if (action === 'open') {
+      const stackItem = state.stacks[state.currentStack]?.items.find(i => i.id === itemId);
+      if (stackItem) {
+        if (stackItem.contentType === 'article') {
+          const art = state.articles.find(a => a.id === stackItem.contentId);
+          if (art?.link) window.open(art.link, '_blank');
+        } else {
+          playEp(stackItem.contentId);
+        }
+      }
+    } else {
+      // Click on item row (not action button) - open content
+      const stackItem = state.stacks[state.currentStack]?.items.find(i => i.id === itemId);
+      if (stackItem) {
+        if (stackItem.contentType === 'article') {
+          const art = state.articles.find(a => a.id === stackItem.contentId);
+          if (art?.link) window.open(art.link, '_blank');
+        } else {
+          playEp(stackItem.contentId);
+        }
+      }
+    }
+  };
+
+  // Stack modal events
+  el.stackModalClose.onclick = closeStackModal;
+  el.stackModal.onclick = e => { if (e.target === el.stackModal) closeStackModal(); };
+  el.stackSubmitBtn.onclick = submitStack;
+  el.stackNameInput.onkeydown = e => { if (e.key === 'Enter') submitStack(); };
+
+  el.stackEmojiPicker.onclick = e => {
+    const btn = e.target.closest('.emoji-option');
+    if (!btn) return;
+    el.stackEmojiPicker.querySelectorAll('.emoji-option').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  };
+
+  // Add to stack modal events
+  el.addToStackClose.onclick = closeAddToStackModal;
+  el.addToStackModal.onclick = e => { if (e.target === el.addToStackModal) closeAddToStackModal(); };
+  el.addToStackList.onclick = e => {
+    const option = e.target.closest('.add-to-stack-option');
+    if (!option || !state.addToStackItem) return;
+    const stackId = option.dataset.stack;
+    const inStacks = getStacksContainingItem(state.addToStackItem.contentId, state.addToStackItem.contentType);
+
+    if (inStacks.includes(stackId)) {
+      // Remove from stack
+      const stack = state.stacks[stackId];
+      const item = stack?.items.find(i =>
+        i.contentId === state.addToStackItem.contentId &&
+        i.contentType === state.addToStackItem.contentType
+      );
+      if (item) {
+        removeFromStack(stackId, item.id);
+        toast(`Removed from ${stack.name}`);
+        // Update the modal UI
+        openAddToStackModal(state.addToStackItem.contentId, state.addToStackItem.contentType);
+      }
+    } else {
+      addToStack(stackId, state.addToStackItem.contentId, state.addToStackItem.contentType);
+      closeAddToStackModal();
     }
   };
 
@@ -2644,6 +3292,13 @@
         </div>
       ` : ''}
       <div class="drawer-section">
+        <div class="drawer-section-title">Stacks</div>
+        <div class="drawer-item" id="drawerStacks">
+          <div class="drawer-item-icon">📋</div>
+          <span class="drawer-item-name">View All Stacks</span>
+        </div>
+      </div>
+      <div class="drawer-section">
         <div class="drawer-section-title">Quick Actions</div>
         <div class="drawer-item" id="drawerAddFeed">
           <div class="drawer-item-icon">➕</div>
@@ -2703,8 +3358,13 @@
     el.newsView.classList.toggle('active', state.view === 'news');
     el.podcastView.classList.toggle('active', state.view === 'podcasts');
     el.allView.classList.toggle('active', state.view === 'all');
+    el.stacksView.classList.toggle('active', state.view === 'stacks');
     if (state.view === 'podcasts') renderPodcasts();
     if (state.view === 'all') renderAll();
+    if (state.view === 'stacks') {
+      if (state.currentStack) renderStackDetail(state.currentStack);
+      else renderStacks();
+    }
     save();
   };
   
@@ -3129,6 +3789,18 @@
       refreshAllFeeds();
       return;
     }
+    if (item.id === 'drawerStacks') {
+      closeDrawer();
+      document.querySelectorAll('.toggle-btn').forEach(b => b.classList.toggle('active', b.dataset.view === 'stacks'));
+      state.view = 'stacks';
+      el.newsView.classList.remove('active');
+      el.podcastView.classList.remove('active');
+      el.allView.classList.remove('active');
+      el.stacksView.classList.add('active');
+      renderStacks();
+      save();
+      return;
+    }
     const type = item.dataset.type;
     const id = parseInt(item.dataset.id);
     closeDrawer();
@@ -3236,6 +3908,7 @@
       el.newsView.classList.toggle('active', state.view === 'news');
       el.podcastView.classList.toggle('active', state.view === 'podcasts');
       el.allView.classList.toggle('active', state.view === 'all');
+      el.stacksView.classList.toggle('active', state.view === 'stacks');
     };
 
     applyView();
@@ -3244,6 +3917,7 @@
     renderNews();
     if (state.view === 'podcasts') renderPodcasts();
     if (state.view === 'all') renderAll();
+    if (state.view === 'stacks') renderStacks();
 
     console.log('BURSST loaded');
     console.log('Memory API: Memory.setEndpoint(url), Memory.getLocal()');
