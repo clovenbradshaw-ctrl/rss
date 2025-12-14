@@ -86,6 +86,25 @@
     .search-box input:focus { outline: none; border-color: var(--blue); background: var(--bg); }
     .search-box input::placeholder { color: var(--text3); }
     .search-box svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text3); }
+    .search-box .search-clear { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: var(--bg3); border: none; color: var(--text3); width: 20px; height: 20px; border-radius: 50%; cursor: pointer; display: none; align-items: center; justify-content: center; font-size: 12px; transition: all 0.15s; }
+    .search-box .search-clear:hover { background: var(--bg4); color: var(--text); }
+    .search-box.has-query .search-clear { display: flex; }
+    .search-box.has-query input { padding-right: 36px; }
+    .search-scope { position: absolute; top: 100%; left: 0; right: 0; margin-top: 4px; background: var(--bg2); border: 1px solid var(--border2); border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); z-index: 1000; max-height: 300px; overflow-y: auto; display: none; }
+    .search-scope.active { display: block; }
+    .search-scope-header { padding: 12px 16px; border-bottom: 1px solid var(--border2); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text3); }
+    .search-scope-item { display: flex; align-items: center; gap: 10px; padding: 10px 16px; cursor: pointer; transition: background 0.15s; }
+    .search-scope-item:hover { background: var(--bg4); }
+    .search-scope-item.active { background: var(--bg4); color: var(--blue); }
+    .search-scope-item .scope-icon { width: 24px; height: 24px; border-radius: 6px; background: var(--bg3); display: flex; align-items: center; justify-content: center; font-size: 12px; overflow: hidden; }
+    .search-scope-item .scope-icon img { width: 100%; height: 100%; object-fit: cover; }
+    .search-scope-item .scope-name { flex: 1; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .search-scope-badge { background: var(--bg3); padding: 3px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; color: var(--text2); margin-left: 4px; }
+    .search-scope-badge.active { background: var(--blue); color: #fff; }
+    .search-results-info { padding: 8px 16px; background: var(--bg3); border-radius: 8px; margin-bottom: 12px; font-size: 12px; color: var(--text2); display: flex; align-items: center; gap: 8px; }
+    .search-results-info strong { color: var(--text); }
+    .search-results-info .search-scope-tag { background: var(--blue); color: #fff; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; }
+    .search-highlight { background: rgba(59,130,246,0.3); color: var(--text); border-radius: 2px; padding: 0 2px; }
     .icon-btn { background: none; border: none; color: var(--text2); cursor: pointer; padding: 10px; border-radius: 50%; transition: all 0.15s ease-out; display: flex; align-items: center; justify-content: center; }
     .icon-btn:hover { background: rgba(255,255,255,0.05); color: var(--text); }
     
@@ -2560,9 +2579,11 @@
       <button class="toggle-btn active" data-view="podcasts"><span><i class="ph ph-headphones"></i></span><span>Podcasts</span></button>
     </div>
     <div class="spacer"></div>
-    <div class="search-box">
+    <div class="search-box" id="searchBox">
       <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="7" cy="7" r="5"/><path d="M12 12l3 3"/></svg>
-      <input type="text" id="searchInput" placeholder="Search...">
+      <input type="text" id="searchInput" placeholder="Search all content...">
+      <button class="search-clear" id="searchClear" title="Clear search">&times;</button>
+      <div class="search-scope" id="searchScope"></div>
     </div>
     <button class="icon-btn" id="refreshBtn" title="Refresh feeds"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 4v6h6M23 20v-6h-6"/><path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15"/></svg></button>
     <button class="icon-btn" id="settingsBtn" title="Settings"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg></button>
@@ -3738,17 +3759,61 @@
   const getTagInfo = (tagKey) => CONTENT_TAGS[tagKey] || { label: tagKey, icon: '<i class="ph ph-tag"></i>', keywords: [] };
 
   // === FUZZY SEARCH ===
+  // Enhanced fuzzy search with scoring and multi-term support
   const fuzzy = (q, items, fields) => {
     if (!q.trim()) return items;
-    const ql = q.toLowerCase();
+    const terms = q.toLowerCase().split(/\s+/).filter(t => t.length > 0);
+
     return items.map(item => {
-      let score = 0;
-      for (const f of fields) {
-        const v = f.split('.').reduce((o, k) => o?.[k], item);
-        if (v && String(v).toLowerCase().includes(ql)) score = 1;
+      let totalScore = 0;
+      let matchedTerms = 0;
+
+      for (const term of terms) {
+        let termScore = 0;
+        for (const f of fields) {
+          const v = f.split('.').reduce((o, k) => o?.[k], item);
+          if (!v) continue;
+          const vl = String(v).toLowerCase();
+
+          // Exact match (highest score)
+          if (vl === term) {
+            termScore = Math.max(termScore, 100);
+          }
+          // Word boundary match (high score)
+          else if (new RegExp(`\\b${term}\\b`, 'i').test(vl)) {
+            termScore = Math.max(termScore, 50);
+          }
+          // Title field gets higher score for partial matches
+          else if (vl.includes(term)) {
+            const fieldBoost = f.includes('title') ? 20 : 10;
+            termScore = Math.max(termScore, fieldBoost);
+          }
+        }
+        if (termScore > 0) {
+          matchedTerms++;
+          totalScore += termScore;
+        }
       }
-      return { item, score };
-    }).filter(x => x.score > 0).map(x => x.item);
+
+      // All terms must match (AND logic)
+      const allTermsMatch = matchedTerms === terms.length;
+      return { item, score: allTermsMatch ? totalScore : 0 };
+    })
+    .filter(x => x.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .map(x => x.item);
+  };
+
+  // Highlight search matches in text
+  const highlightSearch = (text, query) => {
+    if (!query || !text) return text || '';
+    const terms = query.toLowerCase().split(/\s+/).filter(t => t.length > 0);
+    let result = text;
+    for (const term of terms) {
+      const regex = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+      result = result.replace(regex, '<mark class="search-highlight">$1</mark>');
+    }
+    return result;
   };
 
   // Filter items by tag
@@ -3777,6 +3842,7 @@
     selectedPodcastTag: 'all', // Tag filter for podcasts
     feedFilter: 'all', // Feed filter: 'all', 'news', 'podcast'
     query: '',
+    searchScope: null, // null = all feeds, or feedId to search within specific feed
     feedType: 'news',
     currentEp: null,
     playing: false,
@@ -3833,6 +3899,7 @@
     editAuthor: $('editAuthor'), editCat: $('editCat'), editImage: $('editImage'),
     editStatus: $('editStatus'), editSubmit: $('editSubmit'), editModalClose: $('editModalClose'),
     toast: $('toast'), searchInput: $('searchInput'),
+    searchBox: $('searchBox'), searchClear: $('searchClear'), searchScope: $('searchScope'),
     audio: $('audioPlayer'),
     // New elements
     hamburgerBtn: $('hamburgerBtn'), drawer: $('drawer'), drawerOverlay: $('drawerOverlay'),
@@ -5242,18 +5309,40 @@
     if (state.selectedTag && state.selectedTag !== 'all') {
       items = filterByTag(items, state.selectedTag);
     }
+    // Apply search scope filter (search within specific feed)
+    if (state.searchScope) {
+      items = items.filter(i => i.feedId === state.searchScope);
+    }
+    // Apply search query
     if (state.query) items = fuzzy(state.query, items, ['title', 'summary', 'feed.name']);
+
+    // Build search results info
+    let searchInfo = '';
+    if (state.query) {
+      const scopeFeed = state.searchScope ? state.feeds.find(f => f.id === state.searchScope) : null;
+      searchInfo = `<div class="search-results-info">
+        <i class="ph ph-magnifying-glass"></i>
+        <span><strong>${items.length}</strong> result${items.length !== 1 ? 's' : ''} for "<strong>${state.query}</strong>"</span>
+        ${scopeFeed ? `<span class="search-scope-tag">in ${scopeFeed.name}</span>` : ''}
+      </div>`;
+    }
 
     if (!items.length) {
       const hasFeeds = state.feeds.filter(f => f.type === 'news').length > 0;
       const hasTagFilter = state.selectedTag && state.selectedTag !== 'all';
+      const hasSearch = state.query;
       el.newsList.innerHTML = hasFeeds
-        ? `<div class="empty"><div class="empty-icon"><i class="ph ph-tray"></i></div><div class="empty-title">No articles found</div><div style="color:var(--text3);margin-top:8px">${hasTagFilter ? 'Try selecting a different topic' : 'Try refreshing your feeds'}</div></div>`
+        ? `${searchInfo}<div class="empty"><div class="empty-icon"><i class="ph ph-tray"></i></div><div class="empty-title">${hasSearch ? 'No matching articles' : 'No articles found'}</div><div style="color:var(--text3);margin-top:8px">${hasSearch ? 'Try different search terms' : hasTagFilter ? 'Try selecting a different topic' : 'Try refreshing your feeds'}</div></div>`
         : '<div class="empty"><div class="empty-icon"><i class="ph ph-broadcast"></i></div><div class="empty-title">No news feeds yet</div><div style="color:var(--text3);margin-top:8px">Click + to add your first RSS feed</div></div>';
       return;
     }
 
-    el.newsList.innerHTML = items.map(i => `<div class="article ${i.unread ? 'unread' : ''}" data-id="${i.id}"><div class="article-icon">${i.feed?.image ? `<img src="${i.feed.image}">` : '<i class="ph ph-article"></i>'}</div><div class="article-body"><div class="article-meta"><span class="article-source">${i.feed?.name || ''}</span><span class="article-time">· ${i.time}</span>${i.unread ? '<span class="article-new">NEW</span>' : ''}</div><div class="article-title">${i.title}</div>${i.summary ? `<div class="article-summary">${i.summary}</div>` : ''}${renderItemTags(i.tags)}</div>${i.image ? `<img class="article-image" src="${i.image}">` : ''}</div>`).join('');
+    const q = state.query;
+    el.newsList.innerHTML = searchInfo + items.map(i => {
+      const title = q ? highlightSearch(i.title, q) : i.title;
+      const summary = i.summary ? (q ? highlightSearch(i.summary, q) : i.summary) : '';
+      return `<div class="article ${i.unread ? 'unread' : ''}" data-id="${i.id}"><div class="article-icon">${i.feed?.image ? `<img src="${i.feed.image}">` : '<i class="ph ph-article"></i>'}</div><div class="article-body"><div class="article-meta"><span class="article-source">${i.feed?.name || ''}</span><span class="article-time">· ${i.time}</span>${i.unread ? '<span class="article-new">NEW</span>' : ''}</div><div class="article-title">${title}</div>${summary ? `<div class="article-summary">${summary}</div>` : ''}${renderItemTags(i.tags)}</div>${i.image ? `<img class="article-image" src="${i.image}">` : ''}</div>`;
+    }).join('');
   };
   
 // === RENDER PODCASTS (Inbox Style) ===
@@ -5319,20 +5408,81 @@
       items = items.filter(i => i.feedId === state.selectedPodcastSource);
     }
 
+    // Apply category filter
+    if (state.selectedPodcastCat !== 'All') {
+      items = fuzzy(state.selectedPodcastCat, items, ['feed.category']);
+    }
+
+    // Apply tag filter
+    if (state.selectedPodcastTag && state.selectedPodcastTag !== 'all') {
+      items = filterByTag(items, state.selectedPodcastTag);
+    }
+
+    // Apply search scope filter (search within specific feed)
+    if (state.searchScope) {
+      items = items.filter(i => i.feedId === state.searchScope);
+    }
+
     // Apply search query
     if (state.query) {
       items = fuzzy(state.query, items, ['title', 'desc', 'feed.name']);
     }
 
+    // Build search results info
+    let searchInfo = '';
+    if (state.query) {
+      const scopeFeed = state.searchScope ? state.feeds.find(f => f.id === state.searchScope) : null;
+      searchInfo = `<div class="search-results-info">
+        <i class="ph ph-magnifying-glass"></i>
+        <span><strong>${items.length}</strong> result${items.length !== 1 ? 's' : ''} for "<strong>${state.query}</strong>"</span>
+        ${scopeFeed ? `<span class="search-scope-tag">in ${scopeFeed.name}</span>` : ''}
+      </div>`;
+    }
+
     if (!items.length) {
       const hasFeeds = state.feeds.filter(f => f.type === 'podcast').length > 0;
+      const hasTagFilter = state.selectedPodcastTag && state.selectedPodcastTag !== 'all';
+      const hasSearch = state.query;
       el.podcastInboxList.innerHTML = hasFeeds
-        ? `<div class="empty"><div class="empty-icon"><i class="ph ph-tray"></i></div><div class="empty-title">No episodes found</div><div style="color:var(--text3);margin-top:8px">Try refreshing your feeds</div></div>`
+        ? `${searchInfo}<div class="empty"><div class="empty-icon"><i class="ph ph-tray"></i></div><div class="empty-title">${hasSearch ? 'No matching episodes' : 'No episodes found'}</div><div style="color:var(--text3);margin-top:8px">${hasSearch ? 'Try different search terms' : hasTagFilter ? 'Try selecting a different topic' : 'Try refreshing your feeds'}</div></div>`
         : '<div class="empty"><div class="empty-icon"><i class="ph ph-microphone-stage"></i></div><div class="empty-title">No podcasts yet</div><div style="color:var(--text3);margin-top:8px">Click + to add your first podcast</div></div>';
       return;
     }
 
-    el.podcastInboxList.innerHTML = items.map(renderPodcastEpisodeItem).join('');
+    const q = state.query;
+    el.podcastInboxList.innerHTML = searchInfo + items.map(ep => {
+      const show = state.feeds.find(f => f.id === ep.feedId);
+      const pr = state.progress[ep.id] || 0;
+      const pct = ep.duration ? (pr / ep.duration) * 100 : 0;
+      const done = pr >= ep.duration * 0.95;
+      const inProgress = pr > 0 && !done;
+      const imgSrc = ep.image || show?.image || placeholderImg;
+
+      const title = q ? highlightSearch(ep.title, q) : ep.title;
+      const desc = ep.desc ? (q ? highlightSearch(ep.desc, q) : ep.desc) : '';
+
+      return `<div class="podcast-episode-item ${inProgress ? 'in-progress' : ''}" data-ep="${ep.id}">
+        <div class="podcast-episode-icon"><img src="${imgSrc}" onerror="this.parentElement.innerHTML='<i class=\\'ph ph-microphone-stage\\'></i>'"></div>
+        <div class="podcast-episode-body">
+          <div class="podcast-episode-meta">
+            <span class="podcast-episode-show" data-show="${ep.feedId}">${show?.name || ''}</span>
+            <span class="podcast-episode-time">· ${ep.date}</span>
+            ${inProgress ? '<span class="podcast-episode-new">IN PROGRESS</span>' : ''}
+          </div>
+          <div class="podcast-episode-title">${title}</div>
+          ${desc ? `<div class="podcast-episode-desc">${desc}</div>` : ''}
+          <div class="podcast-episode-footer">
+            <button class="podcast-episode-play" data-ep="${ep.id}">
+              <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            </button>
+            <span class="podcast-episode-duration"><i class="ph ph-clock"></i> ${done ? 'Played' : pr > 0 ? fmt(ep.duration - pr) + ' left' : fmt(ep.duration)}</span>
+            ${pr > 0 && !done ? `<div class="podcast-episode-progress"><div class="podcast-episode-progress-fill" style="width:${pct}%"></div></div>` : ''}
+            ${renderItemTags(ep.tags)}
+          </div>
+        </div>
+        ${ep.image ? `<img class="podcast-episode-image" src="${ep.image}" onerror="this.style.display='none'">` : ''}
+      </div>`;
+    }).join('');
   };
 
   const renderPodcasts = () => {
@@ -5584,14 +5734,18 @@
   // === RENDER ALL - Social Media Feed Style ===
 
   // Render a single feed post in social media style
-  const renderFeedPost = (item, type) => {
+  const renderFeedPost = (item, type, searchQuery = null) => {
     const feed = state.feeds.find(f => f.id === item.feedId);
     const feedName = feed?.name || 'Unknown Source';
     const feedImage = feed?.image;
-    const summary = type === 'podcast' ? item.desc : item.summary;
+    const rawSummary = type === 'podcast' ? item.desc : item.summary;
     const image = item.image || feed?.image;
     const isUnread = type === 'news' && item.unread;
     const duration = type === 'podcast' && item.duration ? fmtLong(item.duration) : '';
+
+    // Apply search highlighting
+    const title = searchQuery ? highlightSearch(item.title, searchQuery) : item.title;
+    const summary = rawSummary ? (searchQuery ? highlightSearch(rawSummary, searchQuery) : rawSummary) : '';
 
     // Generate avatar
     const podcastIcon = '<i class="ph ph-headphones"></i>';
@@ -5647,7 +5801,7 @@
           </div>
         </div>
         <div class="feed-post-body">
-          <div class="feed-post-title">${item.title}</div>
+          <div class="feed-post-title">${title}</div>
           ${summary ? `<div class="feed-post-summary">${summary}</div>` : ''}
           ${image ? `<div class="feed-post-media"><img src="${image}" onerror="this.parentElement.style.display='none'" alt=""></div>` : ''}
           ${tagsHtml}
@@ -5690,21 +5844,38 @@
       allItems = allItems.filter(item => item.type === 'podcast');
     }
 
+    // Apply search scope filter (search within specific feed)
+    if (state.searchScope) {
+      allItems = allItems.filter(item => item.feedId === state.searchScope);
+    }
+
     // Apply search filter if present
     if (state.query) {
       allItems = fuzzy(state.query, allItems, ['title', 'summary', 'desc']);
     }
 
+    // Build search results info
+    let searchInfo = '';
+    if (state.query) {
+      const scopeFeed = state.searchScope ? state.feeds.find(f => f.id === state.searchScope) : null;
+      searchInfo = `<div class="search-results-info" style="margin: 16px;">
+        <i class="ph ph-magnifying-glass"></i>
+        <span><strong>${allItems.length}</strong> result${allItems.length !== 1 ? 's' : ''} for "<strong>${state.query}</strong>"</span>
+        ${scopeFeed ? `<span class="search-scope-tag">in ${scopeFeed.name}</span>` : ''}
+      </div>`;
+    }
+
     if (!allItems.length) {
       const hasFeeds = state.feeds.length > 0;
+      const hasSearch = state.query;
       const filterLabel = state.feedFilter === 'news' ? 'news articles' :
                           state.feedFilter === 'podcast' ? 'podcasts' : 'content';
       const emptyIcon = state.feedFilter === 'podcast' ? '<i class="ph ph-headphones"></i>' : state.feedFilter === 'news' ? '<i class="ph ph-newspaper"></i>' : '<i class="ph ph-tray"></i>';
       el.feedScroll.innerHTML = hasFeeds
-        ? `<div class="feed-empty">
+        ? `${searchInfo}<div class="feed-empty">
             <div class="feed-empty-icon">${emptyIcon}</div>
-            <div class="feed-empty-title">No ${filterLabel} found</div>
-            <div class="feed-empty-desc">Try refreshing your feeds or changing the filter</div>
+            <div class="feed-empty-title">${hasSearch ? 'No matching ' + filterLabel : 'No ' + filterLabel + ' found'}</div>
+            <div class="feed-empty-desc">${hasSearch ? 'Try different search terms' : 'Try refreshing your feeds or changing the filter'}</div>
           </div>`
         : `<div class="feed-empty">
             <div class="feed-empty-icon"><i class="ph ph-broadcast"></i></div>
@@ -5714,8 +5885,9 @@
       return;
     }
 
-    // Render social media style feed
-    el.feedScroll.innerHTML = allItems.slice(0, 100).map(item => renderFeedPost(item, item.type)).join('');
+    // Render social media style feed with search highlighting
+    const q = state.query;
+    el.feedScroll.innerHTML = searchInfo + allItems.slice(0, 100).map(item => renderFeedPost(item, item.type, q)).join('');
   };
 
   // Handle feed nav filter clicks
@@ -6457,6 +6629,10 @@
     el.newsView.classList.toggle('active', state.view === 'news');
     el.podcastView.classList.toggle('active', state.view === 'podcasts');
     el.allView.classList.toggle('active', state.view === 'all');
+    // Reset search scope when changing views (keep query)
+    state.searchScope = null;
+    updateSearchUI();
+    if (state.view === 'news') renderNews();
     if (state.view === 'podcasts') renderPodcasts();
     if (state.view === 'all') renderAll();
     save();
@@ -6970,9 +7146,136 @@
     el.modal.classList.remove('active');
   };
   
+  // === SEARCH FUNCTIONALITY ===
   let searchTO;
-  el.searchInput.oninput = e => { clearTimeout(searchTO); searchTO = setTimeout(() => { state.query = e.target.value; if (state.view === 'news') renderNews(); if (state.view === 'all') renderAll(); }, 200); };
-  
+
+  // Update search box UI state
+  const updateSearchUI = () => {
+    const hasQuery = state.query.length > 0;
+    el.searchBox.classList.toggle('has-query', hasQuery);
+
+    // Update placeholder based on search scope
+    if (state.searchScope) {
+      const feed = state.feeds.find(f => f.id === state.searchScope);
+      el.searchInput.placeholder = feed ? `Search in "${feed.name}"...` : 'Search...';
+    } else {
+      el.searchInput.placeholder = 'Search all content...';
+    }
+  };
+
+  // Render search scope dropdown
+  const renderSearchScope = () => {
+    const currentView = state.view;
+    let feeds = [];
+
+    if (currentView === 'news') {
+      feeds = state.feeds.filter(f => f.type === 'news');
+    } else if (currentView === 'podcasts') {
+      feeds = state.feeds.filter(f => f.type === 'podcast');
+    } else {
+      feeds = state.feeds;
+    }
+
+    const typeLabel = currentView === 'news' ? 'news feeds' : currentView === 'podcasts' ? 'podcasts' : 'all feeds';
+
+    el.searchScope.innerHTML = `
+      <div class="search-scope-header">Search in</div>
+      <div class="search-scope-item ${!state.searchScope ? 'active' : ''}" data-scope="">
+        <div class="scope-icon"><i class="ph ph-globe"></i></div>
+        <span class="scope-name">All ${typeLabel}</span>
+      </div>
+      ${feeds.map(f => `
+        <div class="search-scope-item ${state.searchScope === f.id ? 'active' : ''}" data-scope="${f.id}">
+          <div class="scope-icon">${f.image ? `<img src="${f.image}">` : `<i class="ph ph-${f.type === 'podcast' ? 'microphone-stage' : 'newspaper'}"></i>`}</div>
+          <span class="scope-name">${f.name}</span>
+        </div>
+      `).join('')}
+    `;
+  };
+
+  // Show/hide search scope dropdown
+  const toggleSearchScope = (show) => {
+    if (show) {
+      renderSearchScope();
+      el.searchScope.classList.add('active');
+    } else {
+      el.searchScope.classList.remove('active');
+    }
+  };
+
+  // Handle search scope selection
+  el.searchScope.onclick = e => {
+    const item = e.target.closest('.search-scope-item');
+    if (!item) return;
+
+    const scopeId = item.dataset.scope;
+    state.searchScope = scopeId ? parseInt(scopeId) : null;
+    toggleSearchScope(false);
+    updateSearchUI();
+    triggerSearch();
+  };
+
+  // Trigger search in current view
+  const triggerSearch = () => {
+    if (state.view === 'news') renderNews();
+    else if (state.view === 'podcasts') renderPodcastInbox();
+    else if (state.view === 'all') renderAll();
+  };
+
+  // Search input handler
+  el.searchInput.oninput = e => {
+    clearTimeout(searchTO);
+    searchTO = setTimeout(() => {
+      state.query = e.target.value;
+      updateSearchUI();
+      triggerSearch();
+      // Log search for analytics
+      if (state.query.length >= 2) {
+        Mem.log('search', state.query, { scope: state.searchScope, view: state.view });
+      }
+    }, 200);
+  };
+
+  // Focus search input to show scope dropdown
+  el.searchInput.onfocus = () => {
+    if (state.feeds.length > 0) {
+      toggleSearchScope(true);
+    }
+  };
+
+  // Handle Escape key in search input to clear search
+  el.searchInput.onkeydown = e => {
+    if (e.key === 'Escape') {
+      if (state.query || state.searchScope) {
+        e.preventDefault();
+        state.query = '';
+        state.searchScope = null;
+        el.searchInput.value = '';
+        updateSearchUI();
+        triggerSearch();
+      }
+      el.searchInput.blur();
+      toggleSearchScope(false);
+    }
+  };
+
+  // Clear search
+  el.searchClear.onclick = () => {
+    state.query = '';
+    state.searchScope = null;
+    el.searchInput.value = '';
+    updateSearchUI();
+    triggerSearch();
+    el.searchInput.focus();
+  };
+
+  // Close search scope on click outside
+  document.addEventListener('click', e => {
+    if (!el.searchBox.contains(e.target)) {
+      toggleSearchScope(false);
+    }
+  });
+
   // === KEYBOARD SHORTCUTS ===
   document.onkeydown = e => {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
@@ -6992,6 +7295,7 @@
       el.expanded.classList.remove('active');
       el.sleepTimerModal.classList.remove('active');
       el.snapshotModal.classList.remove('active');
+      toggleSearchScope(false);
       closeAllPanels();
       closeDrawer();
       return;
@@ -7030,6 +7334,14 @@
     if (e.shiftKey) {
       if (e.key === 'N' || e.key === 'n') { e.preventDefault(); playNextEpisode(); return; }
       if (e.key === 'P' || e.key === 'p') { e.preventDefault(); playPreviousEpisode(); return; }
+    }
+
+    // Focus search with / or Ctrl+K
+    if (e.key === '/' || ((e.ctrlKey || e.metaKey) && e.key === 'k')) {
+      e.preventDefault();
+      el.searchInput.focus();
+      el.searchInput.select();
+      return;
     }
   };
 
