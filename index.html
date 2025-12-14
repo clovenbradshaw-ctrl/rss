@@ -1374,6 +1374,27 @@
     .podcast-search-powered a { color: var(--blue); text-decoration: none; }
     .podcast-search-powered a:hover { text-decoration: underline; }
 
+    /* Article Preview Modal */
+    .article-preview-image { width: 100%; height: 200px; background: var(--bg4); border-radius: 12px; overflow: hidden; margin-bottom: 16px; }
+    .article-preview-image img { width: 100%; height: 100%; object-fit: cover; }
+    .article-preview-meta { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .article-preview-source { font-size: 13px; font-weight: 600; color: var(--blue); }
+    .article-preview-date { font-size: 12px; color: var(--text3); }
+    .article-preview-title { font-size: 20px; font-weight: 600; line-height: 1.3; margin-bottom: 12px; color: var(--text); }
+    .article-preview-summary { font-size: 14px; line-height: 1.6; color: var(--text2); margin-bottom: 12px; }
+    .article-preview-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+    .article-preview-tag { display: inline-flex; align-items: center; gap: 4px; padding: 6px 10px; background: var(--bg4); color: var(--text2); border-radius: 8px; font-size: 12px; font-weight: 500; }
+
+    /* Episode Preview Modal */
+    .episode-preview-image { width: 100%; height: 200px; background: var(--bg4); border-radius: 12px; overflow: hidden; margin-bottom: 16px; display: flex; align-items: center; justify-content: center; }
+    .episode-preview-image img { width: 100%; height: 100%; object-fit: cover; }
+    .episode-preview-meta { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .episode-preview-show { font-size: 13px; font-weight: 600; color: var(--blue); }
+    .episode-preview-date { font-size: 12px; color: var(--text3); }
+    .episode-preview-title { font-size: 20px; font-weight: 600; line-height: 1.3; margin-bottom: 8px; color: var(--text); }
+    .episode-preview-duration { font-size: 13px; color: var(--text3); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+    .episode-preview-summary { font-size: 14px; line-height: 1.6; color: var(--text2); max-height: 200px; overflow-y: auto; }
+
     /* Settings Modal */
     .settings-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 350; backdrop-filter: blur(4px); }
     .settings-modal.active { display: flex; }
@@ -4107,6 +4128,66 @@
   </div>
 </div>
 
+<!-- Article Preview Modal -->
+<div class="modal" id="articlePreviewModal">
+  <div class="modal-box" style="max-width: 520px">
+    <div class="modal-header">
+      <h2><i class="ph ph-newspaper"></i> Article Preview</h2>
+      <button class="modal-close" id="articlePreviewClose"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 5L5 15M5 5l10 10"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div id="articlePreviewContent">
+        <div class="article-preview-image" id="articlePreviewImage"></div>
+        <div class="article-preview-meta">
+          <div class="article-preview-source" id="articlePreviewSource"></div>
+          <div class="article-preview-date" id="articlePreviewDate"></div>
+        </div>
+        <h3 class="article-preview-title" id="articlePreviewTitle"></h3>
+        <div class="article-preview-summary" id="articlePreviewSummary"></div>
+        <div class="article-preview-tags" id="articlePreviewTags"></div>
+      </div>
+      <div class="article-preview-actions" style="display:flex;gap:8px;margin-top:20px">
+        <button class="submit-btn" id="articlePreviewOpen" style="flex:1">
+          <i class="ph ph-arrow-square-out"></i> Open Article
+        </button>
+        <button class="submit-btn" id="articlePreviewViewSource" style="flex:0 0 auto;background:var(--bg4);color:var(--text);box-shadow:none">
+          <i class="ph ph-newspaper"></i> View Source
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Episode Preview Modal -->
+<div class="modal" id="episodePreviewModal">
+  <div class="modal-box" style="max-width: 520px">
+    <div class="modal-header">
+      <h2><i class="ph ph-microphone-stage"></i> Episode Preview</h2>
+      <button class="modal-close" id="episodePreviewClose"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 5L5 15M5 5l10 10"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div id="episodePreviewContent">
+        <div class="episode-preview-image" id="episodePreviewImage"></div>
+        <div class="episode-preview-meta">
+          <div class="episode-preview-show" id="episodePreviewShow"></div>
+          <div class="episode-preview-date" id="episodePreviewDate"></div>
+        </div>
+        <h3 class="episode-preview-title" id="episodePreviewTitle"></h3>
+        <div class="episode-preview-duration" id="episodePreviewDuration"></div>
+        <div class="episode-preview-summary" id="episodePreviewSummary"></div>
+      </div>
+      <div class="episode-preview-actions" style="display:flex;gap:8px;margin-top:20px">
+        <button class="submit-btn" id="episodePreviewPlay" style="flex:1">
+          <i class="ph ph-play"></i> Play Now
+        </button>
+        <button class="submit-btn" id="episodePreviewViewDetails" style="flex:0 0 auto;background:var(--bg4);color:var(--text);box-shadow:none">
+          <i class="ph ph-info"></i> Details
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Audio element for actual playback -->
 <audio id="audioPlayer" preload="metadata"></audio>
 
@@ -6547,7 +6628,19 @@
     // Podcast search modal
     podcastSearchModal: $('podcastSearchModal'), podcastSearchClose: $('podcastSearchClose'),
     podcastSearchInput: $('podcastSearchInput'), podcastSearchBtn: $('podcastSearchBtn'),
-    podcastSearchResults: $('podcastSearchResults'), podcastSearchStatus: $('podcastSearchStatus')
+    podcastSearchResults: $('podcastSearchResults'), podcastSearchStatus: $('podcastSearchStatus'),
+    // Article preview modal
+    articlePreviewModal: $('articlePreviewModal'), articlePreviewClose: $('articlePreviewClose'),
+    articlePreviewImage: $('articlePreviewImage'), articlePreviewSource: $('articlePreviewSource'),
+    articlePreviewDate: $('articlePreviewDate'), articlePreviewTitle: $('articlePreviewTitle'),
+    articlePreviewSummary: $('articlePreviewSummary'), articlePreviewTags: $('articlePreviewTags'),
+    articlePreviewOpen: $('articlePreviewOpen'), articlePreviewViewSource: $('articlePreviewViewSource'),
+    // Episode preview modal
+    episodePreviewModal: $('episodePreviewModal'), episodePreviewClose: $('episodePreviewClose'),
+    episodePreviewImage: $('episodePreviewImage'), episodePreviewShow: $('episodePreviewShow'),
+    episodePreviewDate: $('episodePreviewDate'), episodePreviewTitle: $('episodePreviewTitle'),
+    episodePreviewDuration: $('episodePreviewDuration'), episodePreviewSummary: $('episodePreviewSummary'),
+    episodePreviewPlay: $('episodePreviewPlay'), episodePreviewViewDetails: $('episodePreviewViewDetails')
   };
   
   // === UTILS ===
@@ -9509,18 +9602,15 @@
       if (playBtn) {
         playEp(id);
       } else {
-        // Otherwise navigate to episode page
-        renderEpisodePage(id);
+        // Show episode preview modal
+        showEpisodePreview(id);
       }
     } else if (type === 'news') {
-      // For news, open the article
+      // Show article preview modal
       const art = state.articles.find(a => a.id === id);
       if (art) {
-        art.unread = false;
-        save();
-        Mem.log('article_opened', id, { source: art.feedId, link: art.link });
-        openArticleLink(art.link);
-        renderAll();
+        Mem.log('article_preview_opened', id, { source: art.feedId });
+        showArticlePreview(art);
       }
     }
   };
@@ -10282,11 +10372,8 @@
     const id = item.dataset.id;
     const art = state.articles.find(a => a.id === id);
     if (art) {
-      Mem.log('article_opened', id, { source: art.feedId, link: art.link });
-      art.unread = false;
-      save();
-      openArticleLink(art.link);
-      renderNews();
+      Mem.log('article_preview_opened', id, { source: art.feedId });
+      showArticlePreview(art);
     }
   };
 
@@ -10356,11 +10443,8 @@
       const id = articleEl.dataset.id;
       const art = state.articles.find(a => a.id === id);
       if (art) {
-        Mem.log('article_opened', id, { source: art.feedId, link: art.link });
-        art.unread = false;
-        save();
-        openArticleLink(art.link);
-        if (state.currentSourcePage) renderSourcePage(state.currentSourcePage);
+        Mem.log('article_preview_opened', id, { source: art.feedId });
+        showArticlePreview(art);
       }
       return;
     }
@@ -10371,11 +10455,8 @@
       const id = tableRow.dataset.id;
       const art = state.articles.find(a => a.id === id);
       if (art) {
-        Mem.log('article_opened', id, { source: art.feedId, link: art.link });
-        art.unread = false;
-        save();
-        openArticleLink(art.link);
-        if (state.currentSourcePage) renderSourcePage(state.currentSourcePage);
+        Mem.log('article_preview_opened', id, { source: art.feedId });
+        showArticlePreview(art);
       }
     }
   };
@@ -10412,11 +10493,11 @@
       return;
     }
 
-    // Episode item click - navigate to episode page
+    // Episode item click - show preview modal
     const item = e.target.closest('.spotify-ep');
     if (item) {
       const epId = item.dataset.ep;
-      renderEpisodePage(epId);
+      showEpisodePreview(epId);
     }
   };
 
@@ -10470,10 +10551,10 @@
       return;
     }
 
-    // Episode clicks (all view modes - list, card, masonry, table row) - navigate to episode page
+    // Episode clicks (all view modes - list, card, masonry, table row) - show preview modal
     const epEl = e.target.closest('.episode, .episode-card, .episode-masonry, tr[data-ep]');
     if (epEl && epEl.dataset.ep) {
-      renderEpisodePage(epEl.dataset.ep);
+      showEpisodePreview(epEl.dataset.ep);
     }
   };
 
@@ -10534,10 +10615,10 @@
       return;
     }
 
-    // Episode clicks (all view modes - list, card, masonry, table row) - navigate to episode page
+    // Episode clicks (all view modes - list, card, masonry, table row) - show preview modal
     const epEl = e.target.closest('.episode, .episode-card, .episode-masonry, tr[data-ep]');
     if (epEl && epEl.dataset.ep) {
-      renderEpisodePage(epEl.dataset.ep);
+      showEpisodePreview(epEl.dataset.ep);
     }
   };
 
@@ -10722,6 +10803,140 @@
     if (state.currentShowPage === feedId) renderShowPage(feedId);
     renderNewsSources();
     renderPodcastSources();
+  };
+
+  // Article preview modal handlers
+  let currentArticlePreview = null;
+  const showArticlePreview = article => {
+    if (!article) return;
+    currentArticlePreview = article;
+
+    // Set image
+    if (article.image) {
+      el.articlePreviewImage.innerHTML = `<img src="${article.image}" onerror="this.parentElement.style.display='none'" alt="">`;
+      el.articlePreviewImage.style.display = 'block';
+    } else {
+      el.articlePreviewImage.style.display = 'none';
+    }
+
+    // Set source
+    const feed = state.feeds.find(f => f.id === article.feedId);
+    el.articlePreviewSource.textContent = feed ? feed.name : 'Unknown Source';
+
+    // Set date
+    const date = new Date(article.pubDate);
+    el.articlePreviewDate.textContent = date.toLocaleDateString();
+
+    // Set title
+    el.articlePreviewTitle.textContent = article.title;
+
+    // Set summary
+    el.articlePreviewSummary.textContent = article.summary || 'No summary available';
+
+    // Set tags
+    if (article.tags && article.tags.length > 0) {
+      el.articlePreviewTags.innerHTML = article.tags.map(tag =>
+        `<span class="article-preview-tag"><i class="ph ph-tag"></i> ${tag}</span>`
+      ).join('');
+      el.articlePreviewTags.style.display = 'flex';
+    } else {
+      el.articlePreviewTags.style.display = 'none';
+    }
+
+    el.articlePreviewModal.classList.add('active');
+  };
+
+  el.articlePreviewClose.onclick = () => {
+    el.articlePreviewModal.classList.remove('active');
+    currentArticlePreview = null;
+  };
+  el.articlePreviewModal.onclick = e => {
+    if (e.target === el.articlePreviewModal) {
+      el.articlePreviewModal.classList.remove('active');
+      currentArticlePreview = null;
+    }
+  };
+
+  el.articlePreviewOpen.onclick = () => {
+    if (currentArticlePreview) {
+      currentArticlePreview.unread = false;
+      save();
+      openArticleLink(currentArticlePreview.link);
+      el.articlePreviewModal.classList.remove('active');
+      renderAll();
+    }
+  };
+
+  el.articlePreviewViewSource.onclick = () => {
+    if (currentArticlePreview && currentArticlePreview.feedId) {
+      const feedId = currentArticlePreview.feedId;
+      el.articlePreviewModal.classList.remove('active');
+      currentArticlePreview = null;
+      renderSourcePage(feedId);
+    }
+  };
+
+  // Episode preview modal handlers
+  let currentEpisodePreview = null;
+  const showEpisodePreview = episodeId => {
+    const episode = state.podcasts.find(p => p.id === episodeId);
+    if (!episode) return;
+    currentEpisodePreview = episode;
+
+    const show = state.feeds.find(f => f.id === episode.feedId);
+
+    // Set image
+    const imgSrc = episode.image || show?.image || placeholderImg;
+    el.episodePreviewImage.innerHTML = `<img src="${imgSrc}" onerror="this.src='${placeholderImg}'" alt="">`;
+
+    // Set show name
+    el.episodePreviewShow.textContent = show ? show.name : 'Unknown Show';
+
+    // Set date
+    const date = new Date(episode.pubDate);
+    el.episodePreviewDate.textContent = date.toLocaleDateString();
+
+    // Set title
+    el.episodePreviewTitle.textContent = episode.title;
+
+    // Set duration
+    if (episode.duration) {
+      el.episodePreviewDuration.innerHTML = `<i class="ph ph-clock"></i> ${fmtLong(episode.duration)}`;
+    } else {
+      el.episodePreviewDuration.textContent = '';
+    }
+
+    // Set summary
+    el.episodePreviewSummary.textContent = episode.summary || 'No description available';
+
+    el.episodePreviewModal.classList.add('active');
+  };
+
+  el.episodePreviewClose.onclick = () => {
+    el.episodePreviewModal.classList.remove('active');
+    currentEpisodePreview = null;
+  };
+  el.episodePreviewModal.onclick = e => {
+    if (e.target === el.episodePreviewModal) {
+      el.episodePreviewModal.classList.remove('active');
+      currentEpisodePreview = null;
+    }
+  };
+
+  el.episodePreviewPlay.onclick = () => {
+    if (currentEpisodePreview) {
+      el.episodePreviewModal.classList.remove('active');
+      playEp(currentEpisodePreview.id);
+      currentEpisodePreview = null;
+    }
+  };
+
+  el.episodePreviewViewDetails.onclick = () => {
+    if (currentEpisodePreview) {
+      el.episodePreviewModal.classList.remove('active');
+      renderEpisodePage(currentEpisodePreview.id);
+      currentEpisodePreview = null;
+    }
   };
 
   // Settings modal handlers
