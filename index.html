@@ -5248,6 +5248,31 @@
       if (href) return href;
     }
 
+    // FALLBACK: Find ANY element with href attribute that looks like an image URL
+    // This catches itunes:image when namespace parsing fails (common with Patreon feeds)
+    try {
+      const allElements = parent.getElementsByTagName('*');
+      for (let i = 0; i < allElements.length; i++) {
+        const el = allElements[i];
+        const tagName = el.tagName.toLowerCase();
+        // Only check elements that look like image tags
+        if (!tagName.includes('image') && tagName !== 'logo' && tagName !== 'icon') continue;
+        const href = el.getAttribute('href');
+        if (href) return href;
+      }
+    } catch(e) {}
+
+    // LAST RESORT: Find first href that looks like an image URL (jpg/png)
+    try {
+      const allElements = parent.getElementsByTagName('*');
+      for (let i = 0; i < allElements.length; i++) {
+        const href = allElements[i].getAttribute('href');
+        if (href && /\.(jpg|jpeg|png|gif|webp)/i.test(href)) {
+          return href;
+        }
+      }
+    } catch(e) {}
+
     return '';
   };
 
