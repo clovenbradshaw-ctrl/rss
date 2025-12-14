@@ -2412,7 +2412,7 @@
     syncQueue: null, // Pending save operation
     syncTimeout: null, // Debounce timer
 
-    // Fetch state from server (GET)
+    // Fetch state from server (GET) - parses activity logs to reconstruct state
     async fetchState() {
       if (!this.endpoint) return null;
       try {
@@ -2427,26 +2427,57 @@
         const rawData = await response.json();
         console.log('[StateSync] Raw server response:', rawData);
 
-        // Handle different possible response formats from Xano
+        // Handle activity endpoint format: { items: [...], itemsReceived, curPage, etc. }
+        if (rawData && rawData.items && Array.isArray(rawData.items)) {
+          console.log('[StateSync] Parsing activity items to reconstruct state');
+          const feeds = [];
+          const feedUrls = new Set(); // Track unique feeds
+
+          // Process activity items to reconstruct state
+          for (const item of rawData.items) {
+            if (item.action === 'feed_added' && item.data) {
+              const feedData = item.data;
+              const url = feedData.url || feedData.content_url || item.content_url;
+
+              // Only add unique feeds
+              if (url && !feedUrls.has(url)) {
+                feedUrls.add(url);
+                feeds.push({
+                  id: feedData.target || ('feed_' + Date.now() + '_' + feeds.length),
+                  url: url,
+                  title: feedData.name || 'Unknown Feed',
+                  type: feedData.type || 'news',
+                  author: feedData.author || '',
+                  category: feedData.category || 'Uncategorized',
+                  addedAt: feedData.ts || item.created_at
+                });
+              }
+            }
+          }
+
+          console.log('[StateSync] Reconstructed', feeds.length, 'feeds from activity');
+          return {
+            data: {
+              feeds: feeds,
+              articles: [],
+              podcasts: []
+            }
+          };
+        }
+
+        // Fallback: Handle other response formats
         let data = rawData;
 
-        // If response is an array, take the first/most recent record
         if (Array.isArray(rawData)) {
           data = rawData.length > 0 ? rawData[0] : null;
-          console.log('[StateSync] Response was array, using first item');
         }
 
-        // If the response has a nested 'response' key (Xano sometimes wraps responses)
         if (data && data.response) {
           data = data.response;
-          console.log('[StateSync] Unwrapped response key');
         }
 
-        // If the state data is directly in the response (not under 'data' key)
-        // Check for presence of expected state properties
         if (data && !data.data && (data.feeds || data.articles || data.podcasts)) {
           data = { data: data };
-          console.log('[StateSync] State was at root level, wrapped in data key');
         }
 
         console.log('[StateSync] Fetched state from server, has data:', !!data?.data);
