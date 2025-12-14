@@ -160,8 +160,39 @@
     .article-image { width: 100px; height: 70px; border-radius: 10px; object-fit: cover; flex-shrink: 0; }
     
     /* === PODCAST VIEW === */
-    .podcast-view { display: none; height: 100%; flex-direction: column; }
+    .podcast-view { display: none; height: 100%; }
     .podcast-view.active { display: flex; }
+
+    /* Podcast Inbox Layout (similar to news) */
+    .podcast-sidebar { width: 260px; background: var(--bg2); border-right: 1px solid var(--border2); display: flex; flex-direction: column; }
+    .podcast-inbox-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .podcast-inbox-header { padding: 16px 24px; border-bottom: 1px solid var(--border2); display: flex; align-items: center; gap: 16px; }
+    .podcast-inbox-title { font-size: 20px; font-weight: 600; margin-right: 16px; letter-spacing: -0.02em; }
+    .podcast-inbox-list { flex: 1; overflow-y: auto; padding: 16px 24px 120px; }
+
+    /* Podcast Episode Item (inbox style) */
+    .podcast-episode-item { display: flex; gap: 16px; padding: 20px; background: var(--bg3); border-radius: 16px; margin-bottom: 12px; cursor: pointer; border: 1px solid var(--border2); transition: all 0.2s ease-out; }
+    .podcast-episode-item:hover { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.15); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+    .podcast-episode-item.in-progress { position: relative; }
+    .podcast-episode-item.in-progress::after { content: ''; position: absolute; top: 50%; right: 16px; transform: translateY(-50%); width: 8px; height: 8px; background: var(--blue); border-radius: 50%; }
+    .podcast-episode-icon { width: 64px; height: 64px; border-radius: 12px; background: var(--bg4); display: flex; align-items: center; justify-content: center; font-size: 28px; overflow: hidden; flex-shrink: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+    .podcast-episode-icon img { width: 100%; height: 100%; object-fit: cover; }
+    .podcast-episode-body { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
+    .podcast-episode-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 13px; }
+    .podcast-episode-show { color: var(--blue); font-weight: 500; cursor: pointer; }
+    .podcast-episode-show:hover { color: var(--blue2); }
+    .podcast-episode-time { color: var(--text3); }
+    .podcast-episode-new { color: var(--orange); font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .podcast-episode-title { font-size: 16px; font-weight: 600; line-height: 1.4; margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .podcast-episode-item:not(.in-progress) .podcast-episode-title { font-weight: 400; color: var(--text2); }
+    .podcast-episode-desc { font-size: 14px; color: var(--text2); line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 8px; }
+    .podcast-episode-footer { display: flex; align-items: center; gap: 12px; }
+    .podcast-episode-duration { font-size: 12px; color: var(--text3); display: flex; align-items: center; gap: 4px; }
+    .podcast-episode-progress { flex: 1; max-width: 120px; height: 4px; background: var(--bg4); border-radius: 2px; overflow: hidden; }
+    .podcast-episode-progress-fill { height: 100%; background: linear-gradient(90deg, var(--blue), var(--blue2)); border-radius: 2px; }
+    .podcast-episode-play { width: 36px; height: 36px; border-radius: 50%; background: var(--blue); border: none; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.15s; box-shadow: 0 2px 8px rgba(59,130,246,0.3); }
+    .podcast-episode-play:hover { background: var(--blue2); transform: scale(1.05); }
+    .podcast-episode-image { width: 100px; height: 70px; border-radius: 10px; object-fit: cover; flex-shrink: 0; }
 
     /* === ALL VIEW === */
     .all-view { display: none; height: 100%; flex-direction: column; }
@@ -630,6 +661,7 @@
       .toggle-btn span:last-child { display: none; }
       .search-box { display: none; }
       .news-sidebar { display: none; }
+      .podcast-sidebar { display: none; }
       .show-hero, .source-hero { flex-direction: column; align-items: center; text-align: center; padding: 24px; }
       .show-hero-art, .source-hero-art { width: 160px; height: 160px; }
       .show-hero-title, .source-hero-title { font-size: 26px; }
@@ -1782,13 +1814,23 @@
     
     <!-- PODCAST VIEW -->
     <div class="podcast-view" id="podcastView">
-      <nav class="podcast-nav">
-        <button class="nav-btn active" data-tab="home">Home</button>
-        <button class="nav-btn" data-tab="shows">Shows</button>
-        <button class="nav-btn" data-tab="queue">Queue</button>
-        <button class="nav-btn" data-tab="downloads">Downloads</button>
-      </nav>
-      <div class="podcast-content" id="podcastContent"></div>
+      <aside class="podcast-sidebar">
+        <div class="sidebar-header"><h2>Shows</h2><button class="add-btn" id="addPodcastBtn">+</button></div>
+        <div class="sidebar-content" id="podcastSources"></div>
+      </aside>
+      <div class="podcast-inbox-content" id="podcastInboxContent">
+        <div class="podcast-inbox-header">
+          <div class="podcast-inbox-title" id="podcastInboxTitle">All Episodes</div>
+          <div class="category-chips" id="podcastCategoryChips"></div>
+        </div>
+        <div class="tag-filter-section" id="podcastTagFilterSection">
+          <div class="tag-filter-header">
+            <span class="tag-filter-title">Filter by Topic</span>
+          </div>
+          <div class="tag-chips" id="podcastTagChips"></div>
+        </div>
+        <div class="podcast-inbox-list" id="podcastInboxList"></div>
+      </div>
       <div class="show-page" id="showPage"></div>
     </div>
 
@@ -2452,9 +2494,14 @@
     archivedArticles: [], // Historical articles no longer in feed but preserved locally
     archivedPodcasts: [], // Historical episodes no longer in feed but preserved locally
     categories: new Set(['All']),
+    podcastCategories: new Set(['All']), // Categories for podcast feeds
     selectedSource: null,
     selectedCat: 'All',
     selectedTag: 'all', // Selected tag filter
+    // Podcast inbox filters
+    selectedPodcastSource: null, // Currently selected podcast source (null = all)
+    selectedPodcastCat: 'All', // Category filter for podcasts
+    selectedPodcastTag: 'all', // Tag filter for podcasts
     feedFilter: 'all', // Feed filter: 'all', 'news', 'podcast'
     query: '',
     feedType: 'news',
@@ -2487,7 +2534,12 @@
     categoryChips: $('categoryChips'), newsList: $('newsList'),
     newsContent: $('newsContent'), sourcePage: $('sourcePage'),
     tagFilterSection: $('tagFilterSection'), tagChips: $('tagChips'),
-    podcastContent: $('podcastContent'), showPage: $('showPage'),
+    // Podcast inbox elements
+    podcastSources: $('podcastSources'), podcastInboxTitle: $('podcastInboxTitle'),
+    podcastCategoryChips: $('podcastCategoryChips'), podcastInboxList: $('podcastInboxList'),
+    podcastInboxContent: $('podcastInboxContent'), podcastTagFilterSection: $('podcastTagFilterSection'),
+    podcastTagChips: $('podcastTagChips'),
+    showPage: $('showPage'),
     player: $('player'), playerArt: $('playerArt'), playerTitle: $('playerTitle'),
     playerShow: $('playerShow'), pPlay: $('pPlay'), pPlayIcon: $('pPlayIcon'),
     pCur: $('pCur'), pDur: $('pDur'), pBar: $('pBar'), pFill: $('pFill'), pSpeed: $('pSpeed'), scrubTooltip: $('scrubTooltip'),
@@ -3513,31 +3565,147 @@
     el.newsList.innerHTML = items.map(i => `<div class="article ${i.unread ? 'unread' : ''}" data-id="${i.id}"><div class="article-icon">${i.feed?.image ? `<img src="${i.feed.image}">` : '<i class="ph ph-article"></i>'}</div><div class="article-body"><div class="article-meta"><span class="article-source">${i.feed?.name || ''}</span><span class="article-time">· ${i.time}</span>${i.unread ? '<span class="article-new">NEW</span>' : ''}</div><div class="article-title">${i.title}</div>${i.summary ? `<div class="article-summary">${i.summary}</div>` : ''}${renderItemTags(i.tags)}</div>${i.image ? `<img class="article-image" src="${i.image}">` : ''}</div>`).join('');
   };
   
-  // === RENDER PODCASTS ===
+  // === RENDER PODCASTS (Inbox Style) ===
+  const renderPodcastSources = () => {
+    const podcasts = state.feeds.filter(f => f.type === 'podcast');
+    el.podcastSources.innerHTML = `<div class="source-item ${!state.selectedPodcastSource && !state.currentShowPage ? 'active' : ''}" data-id="all"><div class="source-icon"><i class="ph ph-headphones"></i></div><div class="source-name">All Episodes</div></div>` +
+      podcasts.map(f => {
+        const episodeCount = state.podcasts.filter(p => p.feedId === f.id).length;
+        const inProgressCount = state.podcasts.filter(p => {
+          if (p.feedId !== f.id) return false;
+          const pr = state.progress[p.id] || 0;
+          return pr > 0 && pr < p.duration * 0.95;
+        }).length;
+        return `<div class="source-item ${state.currentShowPage === f.id ? 'active' : ''}" data-id="${f.id}"><div class="source-icon">${f.image ? `<img src="${f.image}">` : '<i class="ph ph-microphone-stage"></i>'}</div><div class="source-name">${f.name}</div>${inProgressCount ? `<span class="source-badge">${inProgressCount}</span>` : ''}<span class="source-arrow">→</span></div>`;
+      }).join('');
+  };
+
+  const renderPodcastCategories = () => {
+    // Collect categories from podcast feeds
+    const podcastFeeds = state.feeds.filter(f => f.type === 'podcast');
+    const cats = ['All', ...new Set(podcastFeeds.map(f => f.category).filter(c => c && c !== 'All'))];
+    el.podcastCategoryChips.innerHTML = cats.map(c => `<button class="chip ${state.selectedPodcastCat === c ? 'active' : ''}" data-cat="${c}">${c}</button>`).join('');
+  };
+
+  const renderPodcastTagFilters = () => {
+    // Collect all tags from podcast episodes and feeds
+    const tagCounts = {};
+    state.podcasts.forEach(p => {
+      if (p.tags) {
+        p.tags.forEach(tag => {
+          tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+        });
+      }
+    });
+
+    // Also include tags from podcast feeds
+    state.feeds.filter(f => f.type === 'podcast').forEach(f => {
+      if (f.tags) {
+        f.tags.forEach(tag => {
+          if (!tagCounts[tag]) tagCounts[tag] = 0;
+        });
+      }
+    });
+
+    // Sort tags by count descending
+    const sortedTags = Object.entries(tagCounts)
+      .filter(([_, count]) => count > 0)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 12);
+
+    if (sortedTags.length === 0) {
+      el.podcastTagFilterSection.style.display = 'none';
+      return;
+    }
+
+    el.podcastTagFilterSection.style.display = 'block';
+    el.podcastTagChips.innerHTML = `
+      <button class="tag-chip ${state.selectedPodcastTag === 'all' ? 'active' : ''}" data-tag="all">
+        <span class="tag-icon"><i class="ph ph-tag"></i></span>All
+      </button>
+      ${sortedTags.map(([tag, count]) => {
+        const info = getTagInfo(tag);
+        return `<button class="tag-chip ${state.selectedPodcastTag === tag ? 'active' : ''}" data-tag="${tag}">
+          <span class="tag-icon">${info.icon}</span>${info.label}<span class="tag-count">${count}</span>
+        </button>`;
+      }).join('')}
+    `;
+  };
+
+  const renderPodcastEpisodeItem = (ep) => {
+    const show = state.feeds.find(f => f.id === ep.feedId);
+    const pr = state.progress[ep.id] || 0;
+    const pct = ep.duration ? (pr / ep.duration) * 100 : 0;
+    const done = pr >= ep.duration * 0.95;
+    const inProgress = pr > 0 && !done;
+    const imgSrc = ep.image || show?.image || placeholderImg;
+
+    return `<div class="podcast-episode-item ${inProgress ? 'in-progress' : ''}" data-ep="${ep.id}">
+      <div class="podcast-episode-icon"><img src="${imgSrc}" onerror="this.parentElement.innerHTML='<i class=\\'ph ph-microphone-stage\\'></i>'"></div>
+      <div class="podcast-episode-body">
+        <div class="podcast-episode-meta">
+          <span class="podcast-episode-show" data-show="${ep.feedId}">${show?.name || ''}</span>
+          <span class="podcast-episode-time">· ${ep.date}</span>
+          ${inProgress ? '<span class="podcast-episode-new">IN PROGRESS</span>' : ''}
+        </div>
+        <div class="podcast-episode-title">${ep.title}</div>
+        ${ep.desc ? `<div class="podcast-episode-desc">${ep.desc}</div>` : ''}
+        <div class="podcast-episode-footer">
+          <button class="podcast-episode-play" data-ep="${ep.id}">
+            <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          </button>
+          <span class="podcast-episode-duration"><i class="ph ph-clock"></i> ${done ? 'Played' : pr > 0 ? fmt(ep.duration - pr) + ' left' : fmt(ep.duration)}</span>
+          ${pr > 0 && !done ? `<div class="podcast-episode-progress"><div class="podcast-episode-progress-fill" style="width:${pct}%"></div></div>` : ''}
+          ${renderItemTags(ep.tags)}
+        </div>
+      </div>
+      ${ep.image ? `<img class="podcast-episode-image" src="${ep.image}" onerror="this.style.display='none'">` : ''}
+    </div>`;
+  };
+
+  const renderPodcastInbox = () => {
+    let items = state.podcasts.map(p => ({ ...p, feed: state.feeds.find(f => f.id === p.feedId) }));
+
+    // Apply source filter
+    if (state.selectedPodcastSource) {
+      items = items.filter(i => i.feedId === state.selectedPodcastSource);
+    }
+
+    // Apply category filter
+    if (state.selectedPodcastCat !== 'All') {
+      items = fuzzy(state.selectedPodcastCat, items, ['feed.category']);
+    }
+
+    // Apply tag filter
+    if (state.selectedPodcastTag && state.selectedPodcastTag !== 'all') {
+      items = filterByTag(items, state.selectedPodcastTag);
+    }
+
+    // Apply search query
+    if (state.query) {
+      items = fuzzy(state.query, items, ['title', 'desc', 'feed.name']);
+    }
+
+    if (!items.length) {
+      const hasFeeds = state.feeds.filter(f => f.type === 'podcast').length > 0;
+      const hasTagFilter = state.selectedPodcastTag && state.selectedPodcastTag !== 'all';
+      el.podcastInboxList.innerHTML = hasFeeds
+        ? `<div class="empty"><div class="empty-icon"><i class="ph ph-tray"></i></div><div class="empty-title">No episodes found</div><div style="color:var(--text3);margin-top:8px">${hasTagFilter ? 'Try selecting a different topic' : 'Try refreshing your feeds'}</div></div>`
+        : '<div class="empty"><div class="empty-icon"><i class="ph ph-microphone-stage"></i></div><div class="empty-title">No podcasts yet</div><div style="color:var(--text3);margin-top:8px">Click + to add your first podcast</div></div>';
+      return;
+    }
+
+    el.podcastInboxList.innerHTML = items.map(renderPodcastEpisodeItem).join('');
+  };
+
   const renderPodcasts = () => {
     el.showPage.classList.remove('active');
-    el.podcastContent.style.display = 'block';
-    
-    const shows = state.feeds.filter(f => f.type === 'podcast');
-    const inProgress = state.podcasts.filter(p => { const pr = state.progress[p.id] || 0; return pr > 0 && pr < p.duration * 0.95; });
-    const downloaded = state.podcasts.filter(p => p.downloaded);
-    
-    if (state.tab === 'home') {
-      if (!shows.length) {
-        el.podcastContent.innerHTML = '<div class="empty" style="padding-top:80px"><div class="empty-icon"><i class="ph ph-microphone-stage"></i></div><div class="empty-title">No podcasts yet</div><div style="color:var(--text3);margin-top:8px">Click + to add your first podcast feed</div></div>';
-        return;
-      }
-      el.podcastContent.innerHTML = `
-        ${inProgress.length ? `<div class="section"><div class="section-header"><div class="section-title">Continue Listening</div></div><div class="episode-list">${inProgress.map(renderEpisode).join('')}</div></div>` : ''}
-        <div class="section"><div class="section-header"><div class="section-title">Your Shows</div></div><div class="shows-grid">${shows.map(s => `<div class="show-card" data-show="${s.id}"><img class="show-art" src="${s.image || placeholderImg}" onerror="this.src='${placeholderImg}'"><div class="show-name">${s.name}</div><div class="show-author">${s.author || ''}</div></div>`).join('')}</div></div>
-        ${state.podcasts.length ? `<div class="section"><div class="section-header"><div class="section-title">Recent Episodes</div></div><div class="episode-list">${state.podcasts.slice(0, 6).map(renderEpisode).join('')}</div></div>` : ''}`;
-    } else if (state.tab === 'shows') {
-      el.podcastContent.innerHTML = `<div class="section"><div class="section-header"><div class="section-title">All Shows</div><button class="add-btn" onclick="document.getElementById('tPodcast').click();document.getElementById('modal').classList.add('active')">+</button></div><div class="shows-grid">${shows.map(s => `<div class="show-card" data-show="${s.id}"><img class="show-art" src="${s.image || placeholderImg}" onerror="this.src='${placeholderImg}'"><div class="show-name">${s.name}</div><div class="show-author">${s.author || ''}</div></div>`).join('')}</div></div>`;
-    } else if (state.tab === 'queue') {
-      el.podcastContent.innerHTML = `<div class="section"><div class="section-header"><div class="section-title">Up Next</div></div>${state.podcasts.length ? `<div class="episode-list">${state.podcasts.slice(0, 10).map(renderEpisode).join('')}</div>` : '<div class="empty"><div class="empty-icon"><i class="ph ph-queue"></i></div><div class="empty-title">Queue empty</div></div>'}</div>`;
-    } else if (state.tab === 'downloads') {
-      el.podcastContent.innerHTML = `<div class="section"><div class="section-header"><div class="section-title">Downloads</div></div>${downloaded.length ? `<div class="episode-list">${downloaded.map(renderEpisode).join('')}</div>` : '<div class="empty"><div class="empty-icon"><i class="ph ph-download-simple"></i></div><div class="empty-title">No downloads</div></div>'}</div>`;
-    }
+    el.podcastInboxContent.style.display = 'flex';
+
+    renderPodcastSources();
+    renderPodcastCategories();
+    renderPodcastTagFilters();
+    renderPodcastInbox();
   };
   
   // Placeholder SVG for broken images
@@ -3743,8 +3911,9 @@
     const eps = state.podcasts.filter(p => p.feedId === id);
     const viewMode = getViewPref('podcast_' + id, 'list');
 
-    el.podcastContent.style.display = 'none';
+    el.podcastInboxContent.style.display = 'none';
     el.showPage.classList.add('active');
+    renderPodcastSources(); // Update active state in sidebar
     el.showPage.innerHTML = `
       <div class="show-hero">
         <button class="back-btn" id="showBackBtn"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg> Back</button>
@@ -3770,7 +3939,8 @@
   const closeShowPage = () => {
     state.currentShowPage = null;
     el.showPage.classList.remove('active');
-    el.podcastContent.style.display = 'block';
+    el.podcastInboxContent.style.display = 'flex';
+    renderPodcastSources(); // Update active state in sidebar
   };
 
   // === RENDER ALL - Social Media Feed Style ===
@@ -4757,17 +4927,78 @@
     }
   };
 
-  document.querySelector('.podcast-nav').onclick = e => {
-    const btn = e.target.closest('.nav-btn');
-    if (!btn) return;
-    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    state.tab = btn.dataset.tab;
-    closeShowPage(); // Close show page and reset state
-    renderPodcasts();
+  // === PODCAST INBOX EVENT HANDLERS ===
+  el.podcastSources.onclick = e => {
+    const src = e.target.closest('.source-item');
+    if (!src) return;
+    const id = src.dataset.id;
+    if (id === 'all') {
+      state.selectedPodcastSource = null;
+      el.podcastInboxTitle.textContent = 'All Episodes';
+      renderPodcastSources();
+      renderPodcastInbox();
+    } else {
+      // Open show page for individual sources
+      renderShowPage(parseInt(id));
+    }
   };
-  
-  el.podcastContent.onclick = e => {
+
+  el.podcastCategoryChips.onclick = e => {
+    const chip = e.target.closest('.chip');
+    if (!chip) return;
+    const prev = state.selectedPodcastCat;
+    state.selectedPodcastCat = chip.dataset.cat;
+    Mem.log('podcast_category_changed', 'cat_' + state.selectedPodcastCat, { prev });
+    renderPodcastCategories();
+    renderPodcastInbox();
+  };
+
+  el.podcastTagChips.onclick = e => {
+    const chip = e.target.closest('.tag-chip');
+    if (!chip) return;
+    const prev = state.selectedPodcastTag;
+    state.selectedPodcastTag = chip.dataset.tag;
+    Mem.log('podcast_tag_filter_changed', 'tag_' + state.selectedPodcastTag, { prev });
+    renderPodcastTagFilters();
+    renderPodcastInbox();
+  };
+
+  el.podcastInboxList.onclick = e => {
+    // Show name click - navigate to show page
+    const showEl = e.target.closest('.podcast-episode-show');
+    if (showEl) {
+      const showId = parseInt(showEl.dataset.show);
+      if (showId) {
+        renderShowPage(showId);
+        return;
+      }
+    }
+
+    // Play button click
+    const playBtn = e.target.closest('.podcast-episode-play');
+    if (playBtn) {
+      const epId = parseInt(playBtn.dataset.ep);
+      playEp(epId);
+      return;
+    }
+
+    // Episode item click - play episode
+    const item = e.target.closest('.podcast-episode-item');
+    if (item) {
+      const epId = parseInt(item.dataset.ep);
+      playEp(epId);
+    }
+  };
+
+  // Add podcast button in sidebar
+  document.getElementById('addPodcastBtn').onclick = () => {
+    document.getElementById('tPodcast').click();
+    el.modal.classList.add('active');
+  };
+
+  // Legacy podcastContent handler for show page elements (still needed for show page)
+  const podcastContentEl = document.getElementById('podcastContent');
+  if (podcastContentEl) podcastContentEl.onclick = e => {
     // Show card click
     const card = e.target.closest('.show-card');
     if (card) { renderShowPage(parseInt(card.dataset.show)); return; }
@@ -5731,7 +5962,7 @@
       if (state.view === 'news') {
         LoadingStates.show(el.newsList, 'article', 5);
       } else if (state.view === 'podcasts') {
-        LoadingStates.show(el.podcastContent, 'episode', 5);
+        LoadingStates.show(el.podcastInboxList, 'episode', 5);
       }
     }
 
