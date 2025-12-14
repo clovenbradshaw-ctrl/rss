@@ -93,7 +93,7 @@ Add "Stacks" to the main view toggle:
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│  🔥 BURSST    [News] [Podcasts] [All] [Stacks]  🔍  │
+│  🔥 BRSST    [News] [Podcasts] [All] [Stacks]  🔍  │
 └─────────────────────────────────────────────────────┘
 ```
 
@@ -441,7 +441,7 @@ onclick: openAddToStackMenu(contentId, contentType)
 
 ## Summary
 
-The **Stack** feature transforms BURSST from a feed reader into a personal content curation system. Key benefits:
+The **Stack** feature transforms BRSST from a feed reader into a personal content curation system. Key benefits:
 
 - ✅ **Cross-source organization** - Mix articles and podcasts
 - ✅ **Progress tracking** - Visual completion indicators
@@ -449,4 +449,4 @@ The **Stack** feature transforms BURSST from a feed reader into a personal conte
 - ✅ **Minimal friction** - One-click add from anywhere
 - ✅ **Native integration** - Uses existing render patterns
 
-The implementation follows BURSST's existing architecture: vanilla JS, localStorage persistence, template literals for rendering, and direct DOM manipulation. No new dependencies required.
+The implementation follows BRSST's existing architecture: vanilla JS, localStorage persistence, template literals for rendering, and direct DOM manipulation. No new dependencies required.
