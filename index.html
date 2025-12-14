@@ -113,7 +113,21 @@
     .source-badge { background: var(--orange); color: #fff; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 12px; flex-shrink: 0; box-shadow: 0 2px 6px rgba(255,107,53,0.3); }
     .source-arrow { color: var(--text3); opacity: 0; transition: opacity 0.15s; }
     .source-item:hover .source-arrow { opacity: 1; }
-    
+
+    /* New content indicator styles */
+    .source-item { position: relative; }
+    .source-info { flex: 1; min-width: 0; }
+    .source-info .source-name { flex: none; }
+    .source-subtitle { font-size: 11px; color: var(--blue); font-weight: 500; margin-top: 2px; }
+    .new-indicator { position: absolute; left: 4px; top: 50%; transform: translateY(-50%); width: 6px; height: 6px; background: var(--blue); border-radius: 50%; box-shadow: 0 0 8px var(--blue); }
+    .source-item.has-new { padding-left: 16px; }
+    .source-item.has-new .source-name { color: var(--text); }
+
+    /* Show card new content indicator */
+    .show-card { position: relative; }
+    .show-card.has-new .new-indicator { position: absolute; top: 8px; right: 8px; width: 10px; height: 10px; z-index: 1; }
+    .show-card .show-new-indicator { color: var(--blue); font-weight: 500; }
+
     .news-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
     .news-list-view { display: flex; flex-direction: column; gap: 12px; }
     .news-header { padding: 16px 24px; border-bottom: 1px solid var(--border2); display: flex; align-items: center; gap: 16px; }
@@ -160,8 +174,39 @@
     .article-image { width: 100px; height: 70px; border-radius: 10px; object-fit: cover; flex-shrink: 0; }
     
     /* === PODCAST VIEW === */
-    .podcast-view { display: none; height: 100%; flex-direction: column; }
+    .podcast-view { display: none; height: 100%; }
     .podcast-view.active { display: flex; }
+
+    /* Podcast Inbox Layout (similar to news) */
+    .podcast-sidebar { width: 260px; background: var(--bg2); border-right: 1px solid var(--border2); display: flex; flex-direction: column; }
+    .podcast-inbox-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .podcast-inbox-header { padding: 16px 24px; border-bottom: 1px solid var(--border2); display: flex; align-items: center; gap: 16px; }
+    .podcast-inbox-title { font-size: 20px; font-weight: 600; margin-right: 16px; letter-spacing: -0.02em; }
+    .podcast-inbox-list { flex: 1; overflow-y: auto; padding: 16px 24px 120px; }
+
+    /* Podcast Episode Item (inbox style) */
+    .podcast-episode-item { display: flex; gap: 16px; padding: 20px; background: var(--bg3); border-radius: 16px; margin-bottom: 12px; cursor: pointer; border: 1px solid var(--border2); transition: all 0.2s ease-out; }
+    .podcast-episode-item:hover { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.15); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+    .podcast-episode-item.in-progress { position: relative; }
+    .podcast-episode-item.in-progress::after { content: ''; position: absolute; top: 50%; right: 16px; transform: translateY(-50%); width: 8px; height: 8px; background: var(--blue); border-radius: 50%; }
+    .podcast-episode-icon { width: 64px; height: 64px; border-radius: 12px; background: var(--bg4); display: flex; align-items: center; justify-content: center; font-size: 28px; overflow: hidden; flex-shrink: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+    .podcast-episode-icon img { width: 100%; height: 100%; object-fit: cover; }
+    .podcast-episode-body { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
+    .podcast-episode-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 13px; }
+    .podcast-episode-show { color: var(--blue); font-weight: 500; cursor: pointer; }
+    .podcast-episode-show:hover { color: var(--blue2); }
+    .podcast-episode-time { color: var(--text3); }
+    .podcast-episode-new { color: var(--orange); font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .podcast-episode-title { font-size: 16px; font-weight: 600; line-height: 1.4; margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .podcast-episode-item:not(.in-progress) .podcast-episode-title { font-weight: 400; color: var(--text2); }
+    .podcast-episode-desc { font-size: 14px; color: var(--text2); line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 8px; }
+    .podcast-episode-footer { display: flex; align-items: center; gap: 12px; }
+    .podcast-episode-duration { font-size: 12px; color: var(--text3); display: flex; align-items: center; gap: 4px; }
+    .podcast-episode-progress { flex: 1; max-width: 120px; height: 4px; background: var(--bg4); border-radius: 2px; overflow: hidden; }
+    .podcast-episode-progress-fill { height: 100%; background: linear-gradient(90deg, var(--blue), var(--blue2)); border-radius: 2px; }
+    .podcast-episode-play { width: 36px; height: 36px; border-radius: 50%; background: var(--blue); border: none; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.15s; box-shadow: 0 2px 8px rgba(59,130,246,0.3); }
+    .podcast-episode-play:hover { background: var(--blue2); transform: scale(1.05); }
+    .podcast-episode-image { width: 100px; height: 70px; border-radius: 10px; object-fit: cover; flex-shrink: 0; }
 
     /* === ALL VIEW === */
     .all-view { display: none; height: 100%; flex-direction: column; }
@@ -630,6 +675,7 @@
       .toggle-btn span:last-child { display: none; }
       .search-box { display: none; }
       .news-sidebar { display: none; }
+      .podcast-sidebar { display: none; }
       .show-hero, .source-hero { flex-direction: column; align-items: center; text-align: center; padding: 24px; }
       .show-hero-art, .source-hero-art { width: 160px; height: 160px; }
       .show-hero-title, .source-hero-title { font-size: 26px; }
@@ -1782,13 +1828,23 @@
     
     <!-- PODCAST VIEW -->
     <div class="podcast-view" id="podcastView">
-      <nav class="podcast-nav">
-        <button class="nav-btn active" data-tab="home">Home</button>
-        <button class="nav-btn" data-tab="shows">Shows</button>
-        <button class="nav-btn" data-tab="queue">Queue</button>
-        <button class="nav-btn" data-tab="downloads">Downloads</button>
-      </nav>
-      <div class="podcast-content" id="podcastContent"></div>
+      <aside class="podcast-sidebar">
+        <div class="sidebar-header"><h2>Shows</h2><button class="add-btn" id="addPodcastBtn">+</button></div>
+        <div class="sidebar-content" id="podcastSources"></div>
+      </aside>
+      <div class="podcast-inbox-content" id="podcastInboxContent">
+        <div class="podcast-inbox-header">
+          <div class="podcast-inbox-title" id="podcastInboxTitle">All Episodes</div>
+          <div class="category-chips" id="podcastCategoryChips"></div>
+        </div>
+        <div class="tag-filter-section" id="podcastTagFilterSection">
+          <div class="tag-filter-header">
+            <span class="tag-filter-title">Filter by Topic</span>
+          </div>
+          <div class="tag-chips" id="podcastTagChips"></div>
+        </div>
+        <div class="podcast-inbox-list" id="podcastInboxList"></div>
+      </div>
       <div class="show-page" id="showPage"></div>
     </div>
 
@@ -1984,7 +2040,68 @@
 <script>
 (function() {
   'use strict';
-  
+
+  // === GUID GENERATION UTILITIES ===
+  // Generates stable, deterministic GUIDs based on content
+  // These persist across deletion/re-addition of feeds
+  const GUID = {
+    // FNV-1a hash - produces consistent 32-bit hash
+    hash32(str) {
+      let h = 0x811c9dc5;
+      for (let i = 0; i < str.length; i++) {
+        h ^= str.charCodeAt(i);
+        h = Math.imul(h, 0x01000193);
+      }
+      return h >>> 0;
+    },
+
+    // Generate 64-bit hash as two 32-bit values combined
+    hash64(str) {
+      const h1 = this.hash32(str);
+      const h2 = this.hash32(str + '_salt_' + h1);
+      return h1.toString(16).padStart(8, '0') + h2.toString(16).padStart(8, '0');
+    },
+
+    // Normalize URL for consistent hashing
+    normalizeUrl(url) {
+      try {
+        const u = new URL(url);
+        // Remove trailing slashes, normalize to lowercase host
+        return (u.protocol + '//' + u.host.toLowerCase() + u.pathname.replace(/\/+$/, '') + u.search).toLowerCase();
+      } catch {
+        return url.toLowerCase().trim();
+      }
+    },
+
+    // Generate feed GUID from URL - same URL always = same GUID
+    forFeed(feedUrl) {
+      const normalized = this.normalizeUrl(feedUrl);
+      return 'feed_' + this.hash64(normalized);
+    },
+
+    // Generate article GUID - stable across feed re-adds
+    // Uses: feedUrl + (link OR title+pubDate)
+    forArticle(feedUrl, link, title, pubDate) {
+      const feedPart = this.normalizeUrl(feedUrl);
+      // Prefer link as it's most stable, fallback to title+date
+      const contentPart = link
+        ? this.normalizeUrl(link)
+        : (title + '|' + (pubDate || '')).toLowerCase();
+      return 'art_' + this.hash64(feedPart + '::' + contentPart);
+    },
+
+    // Generate episode GUID - stable across feed re-adds
+    // Uses: feedUrl + (audioUrl OR title+pubDate)
+    forEpisode(feedUrl, audioUrl, title, pubDate) {
+      const feedPart = this.normalizeUrl(feedUrl);
+      // Prefer audioUrl as it's unique per episode, fallback to title+date
+      const contentPart = audioUrl
+        ? this.normalizeUrl(audioUrl)
+        : (title + '|' + (pubDate || '')).toLowerCase();
+      return 'ep_' + this.hash64(feedPart + '::' + contentPart);
+    }
+  };
+
   // === MEMORY & USER BEHAVIOR SYSTEM ===
   // Comprehensive tracking system for user behavior that syncs to Xano API
   const Mem = {
@@ -2438,9 +2555,14 @@
     archivedArticles: [], // Historical articles no longer in feed but preserved locally
     archivedPodcasts: [], // Historical episodes no longer in feed but preserved locally
     categories: new Set(['All']),
+    podcastCategories: new Set(['All']), // Categories for podcast feeds
     selectedSource: null,
     selectedCat: 'All',
     selectedTag: 'all', // Selected tag filter
+    // Podcast inbox filters
+    selectedPodcastSource: null, // Currently selected podcast source (null = all)
+    selectedPodcastCat: 'All', // Category filter for podcasts
+    selectedPodcastTag: 'all', // Tag filter for podcasts
     feedFilter: 'all', // Feed filter: 'all', 'news', 'podcast'
     query: '',
     feedType: 'news',
@@ -2455,6 +2577,7 @@
     sleepTimer: null, // { endTime, intervalId, fadeIntervalId }
     speedPanelOpen: false,
     bookmarksPanelOpen: false,
+    feedLastViewed: {}, // { feedId: timestamp } - when user last viewed each feed
     userBehavior: { // Track user behavior for API sync
       reads: [], // { articleId, timestamp, duration }
       plays: [], // { episodeId, timestamp, duration, completed }
@@ -2473,7 +2596,12 @@
     categoryChips: $('categoryChips'), newsList: $('newsList'),
     newsContent: $('newsContent'), sourcePage: $('sourcePage'),
     tagFilterSection: $('tagFilterSection'), tagChips: $('tagChips'),
-    podcastContent: $('podcastContent'), showPage: $('showPage'),
+    // Podcast inbox elements
+    podcastSources: $('podcastSources'), podcastInboxTitle: $('podcastInboxTitle'),
+    podcastCategoryChips: $('podcastCategoryChips'), podcastInboxList: $('podcastInboxList'),
+    podcastInboxContent: $('podcastInboxContent'), podcastTagFilterSection: $('podcastTagFilterSection'),
+    podcastTagChips: $('podcastTagChips'),
+    showPage: $('showPage'),
     player: $('player'), playerArt: $('playerArt'), playerTitle: $('playerTitle'),
     playerShow: $('playerShow'), pPlay: $('pPlay'), pPlayIcon: $('pPlayIcon'),
     pCur: $('pCur'), pDur: $('pDur'), pBar: $('pBar'), pFill: $('pFill'), pSpeed: $('pSpeed'), scrubTooltip: $('scrubTooltip'),
@@ -2513,7 +2641,8 @@
     view: state.view,
     viewPrefs: state.viewPrefs,
     bookmarks: state.bookmarks,
-    userBehavior: state.userBehavior
+    userBehavior: state.userBehavior,
+    feedLastViewed: state.feedLastViewed
   }));
 
   const load = () => {
@@ -2530,6 +2659,7 @@
         state.viewPrefs = d.viewPrefs || {};
         state.bookmarks = d.bookmarks || {};
         state.userBehavior = d.userBehavior || { reads: [], plays: [], searches: [], subscriptions: [] };
+        state.feedLastViewed = d.feedLastViewed || {};
 
         // Migrate: ensure all feeds have tags array
         state.feeds.forEach(f => {
@@ -2552,6 +2682,79 @@
   // Get/set view preference for a source
   const getViewPref = (sourceId, defaultView = 'list') => state.viewPrefs[sourceId] || defaultView;
   const setViewPref = (sourceId, viewMode) => { state.viewPrefs[sourceId] = viewMode; save(); };
+
+  // === NEW CONTENT TRACKING ===
+  // Mark a feed as viewed (user opened it)
+  const markFeedViewed = (feedId) => {
+    state.feedLastViewed[feedId] = Date.now();
+    save();
+  };
+
+  // Get the newest content date for a feed
+  const getNewestContentDate = (feedId) => {
+    const feed = state.feeds.find(f => f.id === feedId);
+    if (!feed) return null;
+
+    const items = feed.type === 'podcast'
+      ? state.podcasts.filter(p => p.feedId === feedId)
+      : state.articles.filter(a => a.feedId === feedId);
+
+    if (!items.length) return null;
+
+    // Find newest pubDate
+    let newest = null;
+    items.forEach(item => {
+      const date = item.pubDate ? new Date(item.pubDate).getTime() : null;
+      if (date && (!newest || date > newest)) newest = date;
+    });
+    return newest;
+  };
+
+  // Check if feed has new content since last viewed
+  const feedHasNewContent = (feedId) => {
+    const lastViewed = state.feedLastViewed[feedId];
+    const newestContent = getNewestContentDate(feedId);
+
+    // If never viewed, it has new content (if there's any content)
+    if (!lastViewed) return newestContent !== null;
+
+    // Compare newest content to last viewed time
+    return newestContent && newestContent > lastViewed;
+  };
+
+  // Get count of new items since last viewed
+  const getNewItemCount = (feedId) => {
+    const lastViewed = state.feedLastViewed[feedId];
+    if (!lastViewed) return 0; // Don't show count if never viewed
+
+    const feed = state.feeds.find(f => f.id === feedId);
+    if (!feed) return 0;
+
+    const items = feed.type === 'podcast'
+      ? state.podcasts.filter(p => p.feedId === feedId)
+      : state.articles.filter(a => a.feedId === feedId);
+
+    return items.filter(item => {
+      const date = item.pubDate ? new Date(item.pubDate).getTime() : null;
+      return date && date > lastViewed;
+    }).length;
+  };
+
+  // Format relative time for "Updated X ago" display
+  const formatUpdatedAgo = (timestamp) => {
+    if (!timestamp) return '';
+    const now = Date.now();
+    const diff = now - timestamp;
+    const mins = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+
+    if (mins < 1) return 'Just now';
+    if (mins < 60) return `${mins}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    if (days < 7) return `${days}d ago`;
+    return new Date(timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
   
   const loadDemo = () => {
     // No sample data - users add their own feeds
@@ -2702,7 +2905,7 @@
       ep.downloaded = true;
       downloadProgress[episodeId] = { progress: 100, status: 'done' };
       save();
-      Mem.log('download_completed', 'ep_' + episodeId, { size: blob.size, audioUrl: ep.audioUrl });
+      Mem.log('download_completed', episodeId, { size: blob.size, audioUrl: ep.audioUrl });
       toast('Download complete!');
     } catch (e) {
       console.error('Download failed:', e);
@@ -2724,7 +2927,7 @@
       ep.downloaded = false;
       delete downloadProgress[episodeId];
       save();
-      Mem.log('download_removed', 'ep_' + episodeId, { audioUrl: ep.audioUrl });
+      Mem.log('download_removed', episodeId, { audioUrl: ep.audioUrl });
       toast('Download removed');
     } catch (e) {
       console.error('Failed to remove download:', e);
@@ -2898,7 +3101,7 @@
     return '';
   };
 
-  const parseNewsFeed = (xml, feedId) => {
+  const parseNewsFeed = (xml, feedId, feedUrl) => {
     const parser = new DOMParser();
     const doc = parser.parseFromString(xml, 'text/xml');
 
@@ -2931,9 +3134,9 @@
       const link = getNodeText(item, 'link') || getNodeAttr(item, 'link', 'href');
       const image = extractImage(item);
 
-      // Create unique ID using feed ID, hash of title, and index
-      const titleHash = title.split('').reduce((a, c) => ((a << 5) - a + c.charCodeAt(0)) | 0, 0);
-      const uniqueId = Math.abs(feedId * 100000 + titleHash + index);
+      // Create stable GUID using feed URL and article link/title
+      // This ensures the same article always has the same ID even after feed deletion/re-add
+      const uniqueId = GUID.forArticle(feedUrl, link, title, pubDate.toISOString());
 
       articles.push({
         id: uniqueId,
@@ -2951,7 +3154,7 @@
     return articles;
   };
 
-  const parsePodcastFeed = (xml, feedId) => {
+  const parsePodcastFeed = (xml, feedId, feedUrl) => {
     const parser = new DOMParser();
     const doc = parser.parseFromString(xml, 'text/xml');
 
@@ -3060,9 +3263,9 @@
         image = channelImage;
       }
 
-      // Create unique ID using feed ID, hash of title, and index
-      const titleHash = title.split('').reduce((a, c) => ((a << 5) - a + c.charCodeAt(0)) | 0, 0);
-      const uniqueId = Math.abs(feedId * 100000 + titleHash + index);
+      // Create stable GUID using feed URL and audio URL/title
+      // This ensures the same episode always has the same ID even after feed deletion/re-add
+      const uniqueId = GUID.forEpisode(feedUrl, audioUrl, title, pubDate.toISOString());
 
       episodes.push({
         id: uniqueId,
@@ -3141,10 +3344,27 @@
     };
   };
 
+  // Normalize feed URL - convert podcast://, feed://, etc. to https://
+  const normalizeFeedUrl = (url) => {
+    // Replace common podcast URL schemes with https
+    const schemes = ['podcast://', 'pcast://', 'feed://', 'podcasts://'];
+    for (const scheme of schemes) {
+      if (url.toLowerCase().startsWith(scheme)) {
+        return 'https://' + url.slice(scheme.length);
+      }
+    }
+    // Handle http:// -> https:// upgrade
+    if (url.toLowerCase().startsWith('http://')) {
+      return 'https://' + url.slice(7);
+    }
+    return url;
+  };
+
   // Fetch feed metadata without adding it - for preview/auto-detect
   const fetchFeedMetadata = async (url) => {
     try {
-      const xml = await fetchWithProxy(url);
+      const normalizedUrl = normalizeFeedUrl(url);
+      const xml = await fetchWithProxy(normalizedUrl);
       const meta = extractFeedMeta(xml);
 
       // Also try to detect feed type based on content
@@ -3173,7 +3393,8 @@
 
   const fetchAndParseFeed = async feed => {
     try {
-      const xml = await fetchWithProxy(feed.url);
+      const normalizedUrl = normalizeFeedUrl(feed.url);
+      const xml = await fetchWithProxy(normalizedUrl);
       const meta = extractFeedMeta(xml);
 
       // Update feed metadata if available (only if user hasn't provided values)
@@ -3190,7 +3411,7 @@
       }
 
       if (feed.type === 'news') {
-        const articles = parseNewsFeed(xml, feed.id);
+        const articles = parseNewsFeed(xml, feed.id, feed.url);
 
         // Auto-tag each article
         articles.forEach(article => {
@@ -3246,7 +3467,7 @@
         feed.unread = state.articles.filter(a => a.feedId === feed.id && a.unread).length;
 
       } else {
-        const episodes = parsePodcastFeed(xml, feed.id);
+        const episodes = parsePodcastFeed(xml, feed.id, feed.url);
 
         // Auto-tag each episode
         episodes.forEach(episode => {
@@ -3341,7 +3562,7 @@
   };
 
   const addFeed = async (url, name, type, category, author) => {
-    const id = Date.now();
+    const id = GUID.forFeed(url);
     const feed = {
       id,
       url,
@@ -3396,7 +3617,23 @@
   const renderNewsSources = () => {
     const news = state.feeds.filter(f => f.type === 'news');
     el.newsSources.innerHTML = `<div class="source-item ${!state.selectedSource && !state.currentSourcePage ? 'active' : ''}" data-id="all"><div class="source-icon"><i class="ph ph-books"></i></div><div class="source-name">All Sources</div></div>` +
-      news.map(f => `<div class="source-item ${state.currentSourcePage === f.id ? 'active' : ''}" data-id="${f.id}"><div class="source-icon">${f.image ? `<img src="${f.image}">` : '<i class="ph ph-newspaper"></i>'}</div><div class="source-name">${f.name}</div>${f.unread ? `<span class="source-badge">${f.unread}</span>` : ''}<span class="source-arrow">→</span></div>`).join('');
+      news.map(f => {
+        const hasNew = feedHasNewContent(f.id);
+        const newCount = getNewItemCount(f.id);
+        const newestDate = getNewestContentDate(f.id);
+        const updatedText = hasNew && newestDate ? formatUpdatedAgo(newestDate) : '';
+        const subtitle = hasNew ? (newCount > 0 ? `${newCount} new` : updatedText) : '';
+
+        return `<div class="source-item ${state.currentSourcePage === f.id ? 'active' : ''} ${hasNew ? 'has-new' : ''}" data-id="${f.id}">
+          ${hasNew ? '<span class="new-indicator"></span>' : ''}
+          <div class="source-icon">${f.image ? `<img src="${f.image}">` : '<i class="ph ph-newspaper"></i>'}</div>
+          <div class="source-info">
+            <div class="source-name">${f.name}</div>
+            ${subtitle ? `<div class="source-subtitle">${subtitle}</div>` : ''}
+          </div>
+          <span class="source-arrow">→</span>
+        </div>`;
+      }).join('');
   };
   
   const renderCategories = () => {
@@ -3481,35 +3718,159 @@
     el.newsList.innerHTML = items.map(i => `<div class="article ${i.unread ? 'unread' : ''}" data-id="${i.id}"><div class="article-icon">${i.feed?.image ? `<img src="${i.feed.image}">` : '<i class="ph ph-article"></i>'}</div><div class="article-body"><div class="article-meta"><span class="article-source">${i.feed?.name || ''}</span><span class="article-time">· ${i.time}</span>${i.unread ? '<span class="article-new">NEW</span>' : ''}</div><div class="article-title">${i.title}</div>${i.summary ? `<div class="article-summary">${i.summary}</div>` : ''}${renderItemTags(i.tags)}</div>${i.image ? `<img class="article-image" src="${i.image}">` : ''}</div>`).join('');
   };
   
-  // === RENDER PODCASTS ===
-  const renderPodcasts = () => {
-    el.showPage.classList.remove('active');
-    el.podcastContent.style.display = 'block';
-    
-    const shows = state.feeds.filter(f => f.type === 'podcast');
-    const inProgress = state.podcasts.filter(p => { const pr = state.progress[p.id] || 0; return pr > 0 && pr < p.duration * 0.95; });
-    const downloaded = state.podcasts.filter(p => p.downloaded);
-    
-    if (state.tab === 'home') {
-      if (!shows.length) {
-        el.podcastContent.innerHTML = '<div class="empty" style="padding-top:80px"><div class="empty-icon"><i class="ph ph-microphone-stage"></i></div><div class="empty-title">No podcasts yet</div><div style="color:var(--text3);margin-top:8px">Click + to add your first podcast feed</div></div>';
-        return;
-      }
-      el.podcastContent.innerHTML = `
-        ${inProgress.length ? `<div class="section"><div class="section-header"><div class="section-title">Continue Listening</div></div><div class="episode-list">${inProgress.map(renderEpisode).join('')}</div></div>` : ''}
-        <div class="section"><div class="section-header"><div class="section-title">Your Shows</div></div><div class="shows-grid">${shows.map(s => `<div class="show-card" data-show="${s.id}"><img class="show-art" src="${s.image || placeholderImg}" onerror="this.src='${placeholderImg}'"><div class="show-name">${s.name}</div><div class="show-author">${s.author || ''}</div></div>`).join('')}</div></div>
-        ${state.podcasts.length ? `<div class="section"><div class="section-header"><div class="section-title">Recent Episodes</div></div><div class="episode-list">${state.podcasts.slice(0, 6).map(renderEpisode).join('')}</div></div>` : ''}`;
-    } else if (state.tab === 'shows') {
-      el.podcastContent.innerHTML = `<div class="section"><div class="section-header"><div class="section-title">All Shows</div><button class="add-btn" onclick="document.getElementById('tPodcast').click();document.getElementById('modal').classList.add('active')">+</button></div><div class="shows-grid">${shows.map(s => `<div class="show-card" data-show="${s.id}"><img class="show-art" src="${s.image || placeholderImg}" onerror="this.src='${placeholderImg}'"><div class="show-name">${s.name}</div><div class="show-author">${s.author || ''}</div></div>`).join('')}</div></div>`;
-    } else if (state.tab === 'queue') {
-      el.podcastContent.innerHTML = `<div class="section"><div class="section-header"><div class="section-title">Up Next</div></div>${state.podcasts.length ? `<div class="episode-list">${state.podcasts.slice(0, 10).map(renderEpisode).join('')}</div>` : '<div class="empty"><div class="empty-icon"><i class="ph ph-queue"></i></div><div class="empty-title">Queue empty</div></div>'}</div>`;
-    } else if (state.tab === 'downloads') {
-      el.podcastContent.innerHTML = `<div class="section"><div class="section-header"><div class="section-title">Downloads</div></div>${downloaded.length ? `<div class="episode-list">${downloaded.map(renderEpisode).join('')}</div>` : '<div class="empty"><div class="empty-icon"><i class="ph ph-download-simple"></i></div><div class="empty-title">No downloads</div></div>'}</div>`;
-    }
-  };
-  
+// === RENDER PODCASTS (Inbox Style) ===
   // Placeholder SVG for broken images
   const placeholderImg = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="#1a1a1a" width="100" height="100"/><path d="M50 20c-5.5 0-10 4.5-10 10v20c0 5.5 4.5 10 10 10s10-4.5 10-10V30c0-5.5-4.5-10-10-10zm20 30c0 11-9 20-20 20s-20-9-20-20h-5c0 13.3 10.1 24.2 23 25.7V85h4V75.7c12.9-1.5 23-12.4 23-25.7h-5z" fill="#666" transform="translate(0,5)"/></svg>');
+
+  const renderPodcastSources = () => {
+    const podcasts = state.feeds.filter(f => f.type === 'podcast');
+    el.podcastSources.innerHTML = `<div class="source-item ${!state.selectedPodcastSource && !state.currentShowPage ? 'active' : ''}" data-id="all"><div class="source-icon"><i class="ph ph-headphones"></i></div><div class="source-name">All Episodes</div></div>` +
+      podcasts.map(f => {
+        const hasNew = feedHasNewContent(f.id);
+        const newCount = getNewItemCount(f.id);
+        const newestDate = getNewestContentDate(f.id);
+        const updatedText = hasNew && newestDate ? formatUpdatedAgo(newestDate) : '';
+        const subtitle = hasNew ? (newCount > 0 ? `${newCount} new` : updatedText) : '';
+
+        return `<div class="source-item ${state.currentShowPage === f.id ? 'active' : ''} ${hasNew ? 'has-new' : ''}" data-id="${f.id}">
+          ${hasNew ? '<span class="new-indicator"></span>' : ''}
+          <div class="source-icon">${f.image ? `<img src="${f.image}">` : '<i class="ph ph-microphone-stage"></i>'}</div>
+          <div class="source-info">
+            <div class="source-name">${f.name}</div>
+            ${subtitle ? `<div class="source-subtitle">${subtitle}</div>` : ''}
+          </div>
+          <span class="source-arrow">→</span>
+        </div>`;
+      }).join('');
+  };
+
+  const renderPodcastCategories = () => {
+    // Collect categories from podcast feeds
+    const podcastFeeds = state.feeds.filter(f => f.type === 'podcast');
+    const cats = ['All', ...new Set(podcastFeeds.map(f => f.category).filter(c => c && c !== 'All'))];
+    el.podcastCategoryChips.innerHTML = cats.map(c => `<button class="chip ${state.selectedPodcastCat === c ? 'active' : ''}" data-cat="${c}">${c}</button>`).join('');
+  };
+
+  const renderPodcastTagFilters = () => {
+    // Collect all tags from podcast episodes and feeds
+    const tagCounts = {};
+    state.podcasts.forEach(p => {
+      if (p.tags) {
+        p.tags.forEach(tag => {
+          tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+        });
+      }
+    });
+
+    // Also include tags from podcast feeds
+    state.feeds.filter(f => f.type === 'podcast').forEach(f => {
+      if (f.tags) {
+        f.tags.forEach(tag => {
+          if (!tagCounts[tag]) tagCounts[tag] = 0;
+        });
+      }
+    });
+
+    // Sort tags by count descending
+    const sortedTags = Object.entries(tagCounts)
+      .filter(([_, count]) => count > 0)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 12);
+
+    if (sortedTags.length === 0) {
+      el.podcastTagFilterSection.style.display = 'none';
+      return;
+    }
+
+    el.podcastTagFilterSection.style.display = 'block';
+    el.podcastTagChips.innerHTML = `
+      <button class="tag-chip ${state.selectedPodcastTag === 'all' ? 'active' : ''}" data-tag="all">
+        <span class="tag-icon"><i class="ph ph-tag"></i></span>All
+      </button>
+      ${sortedTags.map(([tag, count]) => {
+        const info = getTagInfo(tag);
+        return `<button class="tag-chip ${state.selectedPodcastTag === tag ? 'active' : ''}" data-tag="${tag}">
+          <span class="tag-icon">${info.icon}</span>${info.label}<span class="tag-count">${count}</span>
+        </button>`;
+      }).join('')}
+    `;
+  };
+
+  const renderPodcastEpisodeItem = (ep) => {
+    const show = state.feeds.find(f => f.id === ep.feedId);
+    const pr = state.progress[ep.id] || 0;
+    const pct = ep.duration ? (pr / ep.duration) * 100 : 0;
+    const done = pr >= ep.duration * 0.95;
+    const inProgress = pr > 0 && !done;
+    const imgSrc = ep.image || show?.image || placeholderImg;
+
+    return `<div class="podcast-episode-item ${inProgress ? 'in-progress' : ''}" data-ep="${ep.id}">
+      <div class="podcast-episode-icon"><img src="${imgSrc}" onerror="this.parentElement.innerHTML='<i class=\\'ph ph-microphone-stage\\'></i>'"></div>
+      <div class="podcast-episode-body">
+        <div class="podcast-episode-meta">
+          <span class="podcast-episode-show" data-show="${ep.feedId}">${show?.name || ''}</span>
+          <span class="podcast-episode-time">· ${ep.date}</span>
+          ${inProgress ? '<span class="podcast-episode-new">IN PROGRESS</span>' : ''}
+        </div>
+        <div class="podcast-episode-title">${ep.title}</div>
+        ${ep.desc ? `<div class="podcast-episode-desc">${ep.desc}</div>` : ''}
+        <div class="podcast-episode-footer">
+          <button class="podcast-episode-play" data-ep="${ep.id}">
+            <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          </button>
+          <span class="podcast-episode-duration"><i class="ph ph-clock"></i> ${done ? 'Played' : pr > 0 ? fmt(ep.duration - pr) + ' left' : fmt(ep.duration)}</span>
+          ${pr > 0 && !done ? `<div class="podcast-episode-progress"><div class="podcast-episode-progress-fill" style="width:${pct}%"></div></div>` : ''}
+          ${renderItemTags(ep.tags)}
+        </div>
+      </div>
+      ${ep.image ? `<img class="podcast-episode-image" src="${ep.image}" onerror="this.style.display='none'">` : ''}
+    </div>`;
+  };
+
+  const renderPodcastInbox = () => {
+    let items = state.podcasts.map(p => ({ ...p, feed: state.feeds.find(f => f.id === p.feedId) }));
+
+    // Apply source filter
+    if (state.selectedPodcastSource) {
+      items = items.filter(i => i.feedId === state.selectedPodcastSource);
+    }
+
+    // Apply category filter
+    if (state.selectedPodcastCat !== 'All') {
+      items = fuzzy(state.selectedPodcastCat, items, ['feed.category']);
+    }
+
+    // Apply tag filter
+    if (state.selectedPodcastTag && state.selectedPodcastTag !== 'all') {
+      items = filterByTag(items, state.selectedPodcastTag);
+    }
+
+    // Apply search query
+    if (state.query) {
+      items = fuzzy(state.query, items, ['title', 'desc', 'feed.name']);
+    }
+
+    if (!items.length) {
+      const hasFeeds = state.feeds.filter(f => f.type === 'podcast').length > 0;
+      const hasTagFilter = state.selectedPodcastTag && state.selectedPodcastTag !== 'all';
+      el.podcastInboxList.innerHTML = hasFeeds
+        ? `<div class="empty"><div class="empty-icon"><i class="ph ph-tray"></i></div><div class="empty-title">No episodes found</div><div style="color:var(--text3);margin-top:8px">${hasTagFilter ? 'Try selecting a different topic' : 'Try refreshing your feeds'}</div></div>`
+        : '<div class="empty"><div class="empty-icon"><i class="ph ph-microphone-stage"></i></div><div class="empty-title">No podcasts yet</div><div style="color:var(--text3);margin-top:8px">Click + to add your first podcast</div></div>';
+      return;
+    }
+
+    el.podcastInboxList.innerHTML = items.map(renderPodcastEpisodeItem).join('');
+  };
+
+  const renderPodcasts = () => {
+    el.showPage.classList.remove('active');
+    el.podcastInboxContent.style.display = 'flex';
+
+    renderPodcastSources();
+    renderPodcastCategories();
+    renderPodcastTagFilters();
+    renderPodcastInbox();
+  };
 
   const renderEpisode = ep => {
     const show = state.feeds.find(f => f.id === ep.feedId);
@@ -3665,8 +4026,9 @@
   const renderSourcePage = id => {
     const source = state.feeds.find(f => f.id === id);
     if (!source) return;
-    Mem.log('feed_opened', 'source_' + id);
+    Mem.log('feed_opened', id);
     state.currentSourcePage = id;
+    markFeedViewed(id); // Mark feed as viewed to clear new content indicator
 
     const articles = state.articles.filter(a => a.feedId === id);
     const viewMode = getViewPref('news_' + id, 'list');
@@ -3705,14 +4067,16 @@
   const renderShowPage = id => {
     const show = state.feeds.find(f => f.id === id);
     if (!show) return;
-    Mem.log('feed_opened', 'source_' + id);
+    Mem.log('feed_opened', id);
     state.currentShowPage = id;
+    markFeedViewed(id); // Mark feed as viewed to clear new content indicator
 
     const eps = state.podcasts.filter(p => p.feedId === id);
     const viewMode = getViewPref('podcast_' + id, 'list');
 
-    el.podcastContent.style.display = 'none';
+    el.podcastInboxContent.style.display = 'none';
     el.showPage.classList.add('active');
+    renderPodcastSources(); // Update active state in sidebar
     el.showPage.innerHTML = `
       <div class="show-hero">
         <button class="back-btn" id="showBackBtn"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg> Back</button>
@@ -3738,7 +4102,8 @@
   const closeShowPage = () => {
     state.currentShowPage = null;
     el.showPage.classList.remove('active');
-    el.podcastContent.style.display = 'block';
+    el.podcastInboxContent.style.display = 'flex';
+    renderPodcastSources(); // Update active state in sidebar
   };
 
   // === RENDER ALL - Social Media Feed Style ===
@@ -3911,7 +4276,7 @@
       if (art) {
         art.unread = false;
         save();
-        Mem.log('article_opened', 'art_' + id, { source: art.feedId, link: art.link });
+        Mem.log('article_opened', id, { source: art.feedId, link: art.link });
         if (art.link) window.open(art.link, '_blank');
         renderAll();
       }
@@ -3955,7 +4320,7 @@
 
     // Log progress every 30 seconds
     if (cur - progStart >= 30) {
-      Mem.log('playback_progress', 'ep_' + state.currentEp.id, { from: progStart, to: cur, audioUrl: state.currentEp.audioUrl });
+      Mem.log('playback_progress', state.currentEp.id, { from: progStart, to: cur, audioUrl: state.currentEp.audioUrl });
       progStart = cur;
     }
     updatePlayer();
@@ -3965,7 +4330,7 @@
 
   el.audio.addEventListener('ended', () => {
     if (state.currentEp) {
-      Mem.log('episode_completed', 'ep_' + state.currentEp.id, { audioUrl: state.currentEp.audioUrl });
+      Mem.log('episode_completed', state.currentEp.id, { audioUrl: state.currentEp.audioUrl });
       state.progress[state.currentEp.id] = state.currentEp.duration;
     }
     state.playing = false;
@@ -4026,13 +4391,13 @@
     }
 
     if (state.currentEp && state.currentEp.id !== id) {
-      Mem.log('episode_exited', 'ep_' + state.currentEp.id, { pos: state.progress[state.currentEp.id] || 0, audioUrl: state.currentEp.audioUrl });
+      Mem.log('episode_exited', state.currentEp.id, { pos: state.progress[state.currentEp.id] || 0, audioUrl: state.currentEp.audioUrl });
     }
 
     state.currentEp = ep;
     const pr = state.progress[id] || 0;
-    if (pr > 0) Mem.log('returned_to_episode', 'ep_' + id, { prev_pos: pr, audioUrl: ep.audioUrl });
-    Mem.log('play_pressed', 'ep_' + id, { pos: pr, audioUrl: ep.audioUrl });
+    if (pr > 0) Mem.log('returned_to_episode', id, { prev_pos: pr, audioUrl: ep.audioUrl });
+    Mem.log('play_pressed', id, { pos: pr, audioUrl: ep.audioUrl });
 
     progStart = pr;
 
@@ -4080,13 +4445,13 @@
 
     if (state.playing) {
       el.audio.pause();
-      Mem.log('pause_pressed', 'ep_' + state.currentEp.id, { pos: pr, audioUrl: state.currentEp.audioUrl });
+      Mem.log('pause_pressed', state.currentEp.id, { pos: pr, audioUrl: state.currentEp.audioUrl });
     } else {
       el.audio.play().catch(e => {
         console.error('Playback failed:', e);
         toast('Playback failed');
       });
-      Mem.log('play_pressed', 'ep_' + state.currentEp.id, { pos: pr, audioUrl: state.currentEp.audioUrl });
+      Mem.log('play_pressed', state.currentEp.id, { pos: pr, audioUrl: state.currentEp.audioUrl });
     }
   };
 
@@ -4095,7 +4460,7 @@
     const prev = state.progress[state.currentEp.id] || 0;
     const duration = el.audio.duration || state.currentEp.duration;
     const p = Math.max(0, Math.min(duration, pos));
-    Mem.log('seek', 'ep_' + state.currentEp.id, { from: prev, to: p, audioUrl: state.currentEp.audioUrl });
+    Mem.log('seek', state.currentEp.id, { from: prev, to: p, audioUrl: state.currentEp.audioUrl });
     el.audio.currentTime = p;
     state.progress[state.currentEp.id] = p;
     save();
@@ -4211,7 +4576,7 @@
 
       skip(seekSeconds);
       triggerHaptic('medium');
-      Mem.log('swipe_seek', 'ep_' + state.currentEp.id, {
+      Mem.log('swipe_seek', state.currentEp.id, {
         direction: deltaX > 0 ? 'rewind' : 'forward',
         amount: seekAmount,
         swipeDistance: Math.abs(deltaX),
@@ -4343,7 +4708,7 @@
     save();
     renderBookmarks();
     toast('Bookmark added at ' + fmt(time));
-    Mem.log('bookmark_added', 'ep_' + epId, { time, audioUrl: state.currentEp.audioUrl });
+    Mem.log('bookmark_added', epId, { time, audioUrl: state.currentEp.audioUrl });
   };
 
   const deleteBookmark = (epId, index) => {
@@ -4669,7 +5034,7 @@
     const id = parseInt(item.dataset.id);
     const art = state.articles.find(a => a.id === id);
     if (art) {
-      Mem.log('article_opened', 'art_' + id, { source: art.feedId, link: art.link });
+      Mem.log('article_opened', id, { source: art.feedId, link: art.link });
       art.unread = false;
       save();
       if (art.link) window.open(art.link, '_blank');
@@ -4702,7 +5067,7 @@
       const id = parseInt(articleEl.dataset.id);
       const art = state.articles.find(a => a.id === id);
       if (art) {
-        Mem.log('article_opened', 'art_' + id, { source: art.feedId, link: art.link });
+        Mem.log('article_opened', id, { source: art.feedId, link: art.link });
         art.unread = false;
         save();
         if (art.link) window.open(art.link, '_blank');
@@ -4717,7 +5082,7 @@
       const id = parseInt(tableRow.dataset.id);
       const art = state.articles.find(a => a.id === id);
       if (art) {
-        Mem.log('article_opened', 'art_' + id, { source: art.feedId, link: art.link });
+        Mem.log('article_opened', id, { source: art.feedId, link: art.link });
         art.unread = false;
         save();
         if (art.link) window.open(art.link, '_blank');
@@ -4726,17 +5091,78 @@
     }
   };
 
-  document.querySelector('.podcast-nav').onclick = e => {
-    const btn = e.target.closest('.nav-btn');
-    if (!btn) return;
-    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    state.tab = btn.dataset.tab;
-    closeShowPage(); // Close show page and reset state
-    renderPodcasts();
+  // === PODCAST INBOX EVENT HANDLERS ===
+  el.podcastSources.onclick = e => {
+    const src = e.target.closest('.source-item');
+    if (!src) return;
+    const id = src.dataset.id;
+    if (id === 'all') {
+      state.selectedPodcastSource = null;
+      el.podcastInboxTitle.textContent = 'All Episodes';
+      renderPodcastSources();
+      renderPodcastInbox();
+    } else {
+      // Open show page for individual sources
+      renderShowPage(parseInt(id));
+    }
   };
-  
-  el.podcastContent.onclick = e => {
+
+  el.podcastCategoryChips.onclick = e => {
+    const chip = e.target.closest('.chip');
+    if (!chip) return;
+    const prev = state.selectedPodcastCat;
+    state.selectedPodcastCat = chip.dataset.cat;
+    Mem.log('podcast_category_changed', 'cat_' + state.selectedPodcastCat, { prev });
+    renderPodcastCategories();
+    renderPodcastInbox();
+  };
+
+  el.podcastTagChips.onclick = e => {
+    const chip = e.target.closest('.tag-chip');
+    if (!chip) return;
+    const prev = state.selectedPodcastTag;
+    state.selectedPodcastTag = chip.dataset.tag;
+    Mem.log('podcast_tag_filter_changed', 'tag_' + state.selectedPodcastTag, { prev });
+    renderPodcastTagFilters();
+    renderPodcastInbox();
+  };
+
+  el.podcastInboxList.onclick = e => {
+    // Show name click - navigate to show page
+    const showEl = e.target.closest('.podcast-episode-show');
+    if (showEl) {
+      const showId = parseInt(showEl.dataset.show);
+      if (showId) {
+        renderShowPage(showId);
+        return;
+      }
+    }
+
+    // Play button click
+    const playBtn = e.target.closest('.podcast-episode-play');
+    if (playBtn) {
+      const epId = parseInt(playBtn.dataset.ep);
+      playEp(epId);
+      return;
+    }
+
+    // Episode item click - play episode
+    const item = e.target.closest('.podcast-episode-item');
+    if (item) {
+      const epId = parseInt(item.dataset.ep);
+      playEp(epId);
+    }
+  };
+
+  // Add podcast button in sidebar
+  document.getElementById('addPodcastBtn').onclick = () => {
+    document.getElementById('tPodcast').click();
+    el.modal.classList.add('active');
+  };
+
+  // Legacy podcastContent handler for show page elements (still needed for show page)
+  const podcastContentEl = document.getElementById('podcastContent');
+  if (podcastContentEl) podcastContentEl.onclick = e => {
     // Show card click
     const card = e.target.closest('.show-card');
     if (card) { renderShowPage(parseInt(card.dataset.show)); return; }
@@ -4917,7 +5343,12 @@
       }
 
       metadataFetched = true;
-      setFetchStatus('Metadata loaded! You can edit the fields below.', 'success');
+      // Show appropriate message based on what was found
+      if (result.title || result.author) {
+        setFetchStatus('Metadata loaded! You can edit the fields below.', 'success');
+      } else {
+        setFetchStatus('Feed found but no metadata detected. Please enter name manually.', 'success');
+      }
     } else {
       setFetchStatus('Failed to fetch: ' + (result.error || 'Unknown error'), 'error');
     }
@@ -4926,7 +5357,10 @@
   // Also fetch on URL blur if we haven't fetched yet
   el.fUrl.onblur = () => {
     const url = el.fUrl.value.trim();
-    if (url && !metadataFetched && url.startsWith('http')) {
+    // Support http, https, podcast://, feed://, pcast://, podcasts:// schemes
+    const validSchemes = ['http://', 'https://', 'podcast://', 'feed://', 'pcast://', 'podcasts://'];
+    const hasValidScheme = validSchemes.some(s => url.toLowerCase().startsWith(s));
+    if (url && !metadataFetched && hasValidScheme) {
       el.fFetch.click();
     }
   };
@@ -4940,7 +5374,8 @@
   el.fAuthor.oninput = validateForm;
 
   el.fSubmit.onclick = async () => {
-    const url = el.fUrl.value.trim();
+    const rawUrl = el.fUrl.value.trim();
+    const url = normalizeFeedUrl(rawUrl); // Convert podcast://, feed://, etc. to https://
     const name = el.fName.value.trim();
     const author = el.fAuthor.value.trim();
     const cat = el.fCat.value.trim() || 'Uncategorized';
@@ -5691,7 +6126,7 @@
       if (state.view === 'news') {
         LoadingStates.show(el.newsList, 'article', 5);
       } else if (state.view === 'podcasts') {
-        LoadingStates.show(el.podcastContent, 'episode', 5);
+        LoadingStates.show(el.podcastInboxList, 'episode', 5);
       }
     }
 
