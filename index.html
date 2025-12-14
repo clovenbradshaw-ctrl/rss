@@ -6152,7 +6152,12 @@
       throw new Error('Invalid RSS feed XML');
     }
 
-    const items = doc.querySelectorAll('item, entry');
+    // Use getElementsByTagName for better namespace compatibility (like podcast parser)
+    let items = Array.from(doc.getElementsByTagName('item'));
+    if (items.length === 0) {
+      // Try Atom entry format
+      items = Array.from(doc.getElementsByTagName('entry'));
+    }
     const articles = [];
 
     items.forEach((item, index) => {
@@ -6173,7 +6178,24 @@
       tmp.innerHTML = summary;
       summary = tmp.textContent?.trim().slice(0, 300) || '';
 
-      const link = getNodeText(item, 'link') || getNodeAttr(item, 'link', 'href');
+      // For RSS feeds, link is text content. For Atom feeds, link is in href attribute.
+      // Also handle Atom feeds with multiple links (prefer rel="alternate")
+      let link = getNodeText(item, 'link');
+      if (!link) {
+        // Atom feed - look for link elements with href attribute
+        const linkElements = item.getElementsByTagName('link');
+        for (let i = 0; i < linkElements.length; i++) {
+          const rel = linkElements[i].getAttribute('rel') || 'alternate';
+          if (rel === 'alternate') {
+            link = linkElements[i].getAttribute('href') || '';
+            break;
+          }
+        }
+        // Fallback to first link if no alternate found
+        if (!link && linkElements.length > 0) {
+          link = linkElements[0].getAttribute('href') || '';
+        }
+      }
       const image = extractImage(item);
 
       // Create stable GUID using feed URL and article link/title
