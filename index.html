@@ -2495,6 +2495,75 @@
       opacity: 0.6;
     }
 
+    /* Lazy loading images */
+    img[data-src] {
+      opacity: 0;
+      transition: opacity 0.3s ease-in-out;
+      background: var(--bg3);
+    }
+
+    img[data-src].loaded, img.loaded {
+      opacity: 1;
+    }
+
+    /* Image loading placeholder */
+    .img-placeholder {
+      background: linear-gradient(135deg, var(--bg3) 0%, var(--bg4) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text3);
+    }
+
+    /* Progressive image loading blur effect */
+    img.loading {
+      filter: blur(5px);
+      transition: filter 0.3s ease-out;
+    }
+
+    img.loaded {
+      filter: blur(0);
+    }
+
+    /* Content loading states */
+    .content-loading {
+      position: relative;
+    }
+
+    .content-loading::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(255,255,255,0.03) 50%,
+        transparent 100%
+      );
+      background-size: 200% 100%;
+      animation: shimmer 2s ease-in-out infinite;
+      pointer-events: none;
+    }
+
+    /* Fast fade-in for cached content */
+    .from-cache {
+      animation: fadeIn 0.15s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    /* Virtual scroll container */
+    .virtual-scroll-wrapper {
+      will-change: transform;
+    }
+
+    .virtual-scroll-viewport {
+      will-change: transform;
+    }
+
     /* Ripple animation */
     @keyframes ripple {
       to {
@@ -3173,12 +3242,45 @@
 
   // === STATE SYNC (Server-side storage for cross-device consistency) ===
   // This ensures the app shows the same data on any device by always fetching from server
+  // Uses differential updates to minimize data transfer
   const StateSync = {
     endpoint: 'https://xvkq-pq7i-idtl.n7d.xano.io/api:Hj4C6PGO/activity',
     syncing: false,
     lastSync: null,
     syncQueue: null, // Pending save operation
     syncTimeout: null, // Debounce timer
+    lastSyncedState: null, // Track last synced state for differential updates
+    syncStats: { full: 0, partial: 0, skipped: 0 }, // Track sync statistics
+
+    // Calculate hash of object for quick comparison
+    hashObject(obj) {
+      return JSON.stringify(obj).length; // Simple size-based hash
+    },
+
+    // Get changed properties between two states
+    getDiff(oldState, newState) {
+      if (!oldState) return { full: true, data: newState };
+
+      const diff = { changes: {} };
+      let hasChanges = false;
+
+      // Check each property for changes
+      const props = ['feeds', 'articles', 'podcasts', 'progress', 'bookmarks', 'feedLastViewed'];
+      for (const prop of props) {
+        const oldVal = JSON.stringify(oldState[prop] || []);
+        const newVal = JSON.stringify(newState[prop] || []);
+        if (oldVal !== newVal) {
+          diff.changes[prop] = newState[prop];
+          hasChanges = true;
+        }
+      }
+
+      if (!hasChanges) {
+        return null; // No changes
+      }
+
+      return diff;
+    },
 
     // Fetch state from server (GET) - parses activity logs to reconstruct state
     async fetchState() {
@@ -3272,7 +3374,7 @@
       return true;
     },
 
-    // Actually perform the sync
+    // Actually perform the sync with differential updates
     async _doSync() {
       if (this.syncing || !this.syncQueue) return;
       this.syncing = true;
@@ -3280,18 +3382,45 @@
       const stateData = this.syncQueue;
       this.syncQueue = null;
 
+      // Calculate differential update
+      const diff = this.getDiff(this.lastSyncedState, stateData);
+
+      if (!diff) {
+        // No changes to sync
+        this.syncStats.skipped++;
+        console.log('[StateSync] No changes detected, skipping sync');
+        this.syncing = false;
+        return;
+      }
+
       try {
+        // Determine payload - use full state for first sync, diff for subsequent
+        const payload = diff.full ? {
+          data: stateData,
+          sync_type: 'full',
+          updated_at: new Date().toISOString()
+        } : {
+          data: stateData, // Server expects full data
+          changes: Object.keys(diff.changes), // Hint about what changed
+          sync_type: 'incremental',
+          updated_at: new Date().toISOString()
+        };
+
         const response = await fetch(this.endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            data: stateData,
-            updated_at: new Date().toISOString()
-          })
+          body: JSON.stringify(payload)
         });
+
         if (response.ok) {
           this.lastSync = Date.now();
-          console.log('[StateSync] State saved to server');
+          this.lastSyncedState = JSON.parse(JSON.stringify(stateData)); // Deep copy
+          if (diff.full) {
+            this.syncStats.full++;
+          } else {
+            this.syncStats.partial++;
+          }
+          console.log(`[StateSync] State saved (${diff.full ? 'full' : 'partial'}: ${Object.keys(diff.changes || {}).join(', ')})`);
         } else {
           console.warn('[StateSync] Failed to save state:', response.status);
         }
@@ -3377,6 +3506,443 @@
         request.onsuccess = () => resolve(request.result);
         request.onerror = () => reject(request.error);
       });
+    }
+  };
+
+  // === CONTENT CACHE (IndexedDB) ===
+  // Caches feed XML, parsed content, and images for fast loading
+  const ContentCache = {
+    db: null,
+    DB_NAME: 'feedr_cache',
+    DB_VERSION: 2,
+    STORES: {
+      feeds: 'feed_cache',      // Cached feed XML and parsed data
+      images: 'image_cache',    // Cached images as blobs
+      metadata: 'cache_meta'    // ETags, timestamps, etc.
+    },
+    // Cache expiry times
+    FEED_TTL: 5 * 60 * 1000,      // 5 minutes for feed content
+    IMAGE_TTL: 7 * 24 * 60 * 60 * 1000, // 7 days for images
+    MAX_IMAGES: 500,               // Max cached images
+
+    async init() {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open(this.DB_NAME, this.DB_VERSION);
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => { this.db = request.result; resolve(); };
+        request.onupgradeneeded = (e) => {
+          const db = e.target.result;
+          // Feed cache store
+          if (!db.objectStoreNames.contains(this.STORES.feeds)) {
+            const feedStore = db.createObjectStore(this.STORES.feeds, { keyPath: 'url' });
+            feedStore.createIndex('timestamp', 'timestamp', { unique: false });
+          }
+          // Image cache store
+          if (!db.objectStoreNames.contains(this.STORES.images)) {
+            const imgStore = db.createObjectStore(this.STORES.images, { keyPath: 'url' });
+            imgStore.createIndex('timestamp', 'timestamp', { unique: false });
+          }
+          // Metadata store for ETags
+          if (!db.objectStoreNames.contains(this.STORES.metadata)) {
+            db.createObjectStore(this.STORES.metadata, { keyPath: 'url' });
+          }
+        };
+      });
+    },
+
+    // === FEED CACHING ===
+    async cacheFeed(url, xml, parsedData, etag = null) {
+      if (!this.db) return;
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction([this.STORES.feeds, this.STORES.metadata], 'readwrite');
+        const feedStore = tx.objectStore(this.STORES.feeds);
+        const metaStore = tx.objectStore(this.STORES.metadata);
+
+        feedStore.put({
+          url,
+          xml,
+          parsedData,
+          timestamp: Date.now()
+        });
+
+        if (etag) {
+          metaStore.put({ url, etag, timestamp: Date.now() });
+        }
+
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+    },
+
+    async getCachedFeed(url) {
+      if (!this.db) return null;
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction(this.STORES.feeds, 'readonly');
+        const store = tx.objectStore(this.STORES.feeds);
+        const request = store.get(url);
+        request.onsuccess = () => {
+          const result = request.result;
+          if (result && (Date.now() - result.timestamp) < this.FEED_TTL) {
+            resolve(result);
+          } else {
+            resolve(null);
+          }
+        };
+        request.onerror = () => reject(request.error);
+      });
+    },
+
+    async getEtag(url) {
+      if (!this.db) return null;
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction(this.STORES.metadata, 'readonly');
+        const store = tx.objectStore(this.STORES.metadata);
+        const request = store.get(url);
+        request.onsuccess = () => resolve(request.result?.etag || null);
+        request.onerror = () => reject(request.error);
+      });
+    },
+
+    // === IMAGE CACHING ===
+    async cacheImage(url, blob) {
+      if (!this.db || !url) return;
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction(this.STORES.images, 'readwrite');
+        const store = tx.objectStore(this.STORES.images);
+        store.put({
+          url,
+          blob,
+          timestamp: Date.now()
+        });
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+    },
+
+    async getCachedImage(url) {
+      if (!this.db || !url) return null;
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction(this.STORES.images, 'readonly');
+        const store = tx.objectStore(this.STORES.images);
+        const request = store.get(url);
+        request.onsuccess = () => {
+          const result = request.result;
+          if (result && (Date.now() - result.timestamp) < this.IMAGE_TTL) {
+            resolve(result.blob);
+          } else {
+            resolve(null);
+          }
+        };
+        request.onerror = () => reject(request.error);
+      });
+    },
+
+    async getImageAsDataUrl(url) {
+      const blob = await this.getCachedImage(url);
+      if (!blob) return null;
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.readAsDataURL(blob);
+      });
+    },
+
+    // Clean up old cache entries
+    async cleanup() {
+      if (!this.db) return;
+      const now = Date.now();
+
+      // Clean old images
+      const imgTx = this.db.transaction(this.STORES.images, 'readwrite');
+      const imgStore = imgTx.objectStore(this.STORES.images);
+      const imgCursor = imgStore.index('timestamp').openCursor();
+
+      let imgCount = 0;
+      const toDelete = [];
+
+      imgCursor.onsuccess = (e) => {
+        const cursor = e.target.result;
+        if (cursor) {
+          imgCount++;
+          if ((now - cursor.value.timestamp) > this.IMAGE_TTL || imgCount > this.MAX_IMAGES) {
+            toDelete.push(cursor.value.url);
+          }
+          cursor.continue();
+        } else {
+          // Delete old entries
+          toDelete.forEach(url => imgStore.delete(url));
+        }
+      };
+
+      // Clean old feed cache
+      const feedTx = this.db.transaction(this.STORES.feeds, 'readwrite');
+      const feedStore = feedTx.objectStore(this.STORES.feeds);
+      const feedCursor = feedStore.index('timestamp').openCursor();
+
+      feedCursor.onsuccess = (e) => {
+        const cursor = e.target.result;
+        if (cursor) {
+          if ((now - cursor.value.timestamp) > this.FEED_TTL * 12) { // 1 hour for feeds
+            feedStore.delete(cursor.value.url);
+          }
+          cursor.continue();
+        }
+      };
+    }
+  };
+
+  // === IMAGE LOADER WITH CACHING ===
+  // Loads images with caching, lazy loading, and error handling
+  const ImageLoader = {
+    observer: null,
+    loadingImages: new Set(),
+
+    init() {
+      // Create intersection observer for lazy loading
+      this.observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const img = entry.target;
+            const src = img.dataset.src;
+            if (src) {
+              this.loadImage(img, src);
+              this.observer.unobserve(img);
+            }
+          }
+        });
+      }, {
+        rootMargin: '100px', // Start loading 100px before visible
+        threshold: 0.01
+      });
+    },
+
+    async loadImage(imgElement, src) {
+      if (!src || this.loadingImages.has(src)) return;
+      this.loadingImages.add(src);
+
+      try {
+        // Check cache first
+        const cachedBlob = await ContentCache.getCachedImage(src);
+        if (cachedBlob) {
+          imgElement.src = URL.createObjectURL(cachedBlob);
+          imgElement.classList.add('loaded');
+          this.loadingImages.delete(src);
+          return;
+        }
+
+        // Fetch and cache
+        const response = await fetch(src, { mode: 'cors' });
+        if (response.ok) {
+          const blob = await response.blob();
+          if (blob.type.startsWith('image/')) {
+            // Cache the image
+            ContentCache.cacheImage(src, blob).catch(() => {});
+            imgElement.src = URL.createObjectURL(blob);
+            imgElement.classList.add('loaded');
+          }
+        }
+      } catch (e) {
+        // On error, try loading directly (CORS issues)
+        imgElement.src = src;
+      }
+
+      this.loadingImages.delete(src);
+    },
+
+    // Observe an image for lazy loading
+    observe(imgElement) {
+      if (this.observer && imgElement) {
+        this.observer.observe(imgElement);
+      }
+    },
+
+    // Preload images in advance
+    async preloadImages(urls) {
+      const promises = urls.slice(0, 10).map(async url => {
+        if (!url) return;
+        const cached = await ContentCache.getCachedImage(url);
+        if (!cached) {
+          try {
+            const response = await fetch(url, { mode: 'cors' });
+            if (response.ok) {
+              const blob = await response.blob();
+              if (blob.type.startsWith('image/')) {
+                await ContentCache.cacheImage(url, blob);
+              }
+            }
+          } catch (e) {
+            // Ignore preload errors
+          }
+        }
+      });
+      await Promise.allSettled(promises);
+    }
+  };
+
+  // === CONTENT PRELOADER ===
+  // Preloads content for faster page transitions
+  const ContentPreloader = {
+    preloadQueue: [],
+    isPreloading: false,
+
+    // Queue feeds for background preloading
+    queueFeedPreload(feeds) {
+      feeds.forEach(f => {
+        if (!this.preloadQueue.includes(f.url)) {
+          this.preloadQueue.push(f.url);
+        }
+      });
+      this.processQueue();
+    },
+
+    async processQueue() {
+      if (this.isPreloading || !this.preloadQueue.length) return;
+      this.isPreloading = true;
+
+      while (this.preloadQueue.length > 0) {
+        const url = this.preloadQueue.shift();
+        try {
+          const cached = await ContentCache.getCachedFeed(url);
+          if (!cached) {
+            // Low priority fetch for preloading
+            const xml = await fetchWithProxy(url);
+            const meta = extractFeedMeta(xml);
+            await ContentCache.cacheFeed(url, xml, { meta });
+          }
+        } catch (e) {
+          // Ignore preload errors
+        }
+        // Small delay between preloads to not block main thread
+        await new Promise(r => setTimeout(r, 100));
+      }
+
+      this.isPreloading = false;
+    },
+
+    // Preload images for visible content
+    preloadVisibleImages() {
+      const images = [];
+      // Collect image URLs from current view
+      state.articles.slice(0, 20).forEach(a => {
+        if (a.image) images.push(a.image);
+        const feed = state.feeds.find(f => f.id === a.feedId);
+        if (feed?.image) images.push(feed.image);
+      });
+      state.podcasts.slice(0, 20).forEach(p => {
+        if (p.image) images.push(p.image);
+        const feed = state.feeds.find(f => f.id === p.feedId);
+        if (feed?.image) images.push(feed.image);
+      });
+      state.feeds.forEach(f => {
+        if (f.image) images.push(f.image);
+      });
+
+      ImageLoader.preloadImages([...new Set(images)]);
+    }
+  };
+
+  // === VIRTUAL SCROLL FOR LARGE LISTS ===
+  // Renders only visible items for better performance
+  const VirtualScroll = {
+    instances: new Map(),
+
+    create(container, items, renderItem, options = {}) {
+      const itemHeight = options.itemHeight || 80;
+      const bufferSize = options.bufferSize || 5;
+      const id = options.id || 'default';
+
+      // Store instance
+      const instance = {
+        container,
+        items,
+        renderItem,
+        itemHeight,
+        bufferSize,
+        scrollTop: 0,
+        visibleStart: 0,
+        visibleEnd: 0
+      };
+
+      this.instances.set(id, instance);
+
+      // Setup scroll container
+      container.style.overflow = 'auto';
+      container.innerHTML = '';
+
+      // Create content wrapper
+      const wrapper = document.createElement('div');
+      wrapper.className = 'virtual-scroll-wrapper';
+      wrapper.style.position = 'relative';
+      wrapper.style.height = (items.length * itemHeight) + 'px';
+      container.appendChild(wrapper);
+
+      // Create viewport
+      const viewport = document.createElement('div');
+      viewport.className = 'virtual-scroll-viewport';
+      viewport.style.position = 'absolute';
+      viewport.style.width = '100%';
+      wrapper.appendChild(viewport);
+
+      // Initial render
+      this.render(id);
+
+      // Listen for scroll
+      container.addEventListener('scroll', () => {
+        requestAnimationFrame(() => this.render(id));
+      });
+
+      return instance;
+    },
+
+    render(id) {
+      const instance = this.instances.get(id);
+      if (!instance) return;
+
+      const { container, items, renderItem, itemHeight, bufferSize } = instance;
+      const viewport = container.querySelector('.virtual-scroll-viewport');
+      if (!viewport) return;
+
+      const scrollTop = container.scrollTop;
+      const containerHeight = container.clientHeight;
+
+      // Calculate visible range
+      const visibleStart = Math.max(0, Math.floor(scrollTop / itemHeight) - bufferSize);
+      const visibleEnd = Math.min(items.length, Math.ceil((scrollTop + containerHeight) / itemHeight) + bufferSize);
+
+      // Only re-render if range changed significantly
+      if (visibleStart === instance.visibleStart && visibleEnd === instance.visibleEnd) {
+        return;
+      }
+
+      instance.visibleStart = visibleStart;
+      instance.visibleEnd = visibleEnd;
+
+      // Position viewport
+      viewport.style.transform = `translateY(${visibleStart * itemHeight}px)`;
+
+      // Render visible items
+      viewport.innerHTML = items.slice(visibleStart, visibleEnd).map(renderItem).join('');
+
+      // Setup lazy loading for images
+      viewport.querySelectorAll('img[data-src]').forEach(img => {
+        ImageLoader.observe(img);
+      });
+    },
+
+    update(id, items) {
+      const instance = this.instances.get(id);
+      if (instance) {
+        instance.items = items;
+        const wrapper = instance.container.querySelector('.virtual-scroll-wrapper');
+        if (wrapper) {
+          wrapper.style.height = (items.length * instance.itemHeight) + 'px';
+        }
+        this.render(id);
+      }
+    },
+
+    destroy(id) {
+      this.instances.delete(id);
     }
   };
 
@@ -4136,19 +4702,36 @@
     ]);
   };
 
-  const fetchWithProxy = async (url) => {
+  const fetchWithProxy = async (url, options = {}) => {
+    const { useCache = true, forceFresh = false } = options;
+
+    // Check cache first (unless forcing fresh fetch)
+    if (useCache && !forceFresh && ContentCache.db) {
+      const cached = await ContentCache.getCachedFeed(url);
+      if (cached) {
+        console.log('[Cache] Using cached feed:', url);
+        return cached.xml;
+      }
+    }
+
     // Try all proxies in parallel for faster response
     const proxyAttempts = CORS_PROXIES.map(async (proxyFn, index) => {
       const proxyUrl = proxyFn(url);
       console.log(`Trying proxy ${index}:`, proxyUrl);
 
       const response = await fetchWithTimeout(proxyUrl, {
-        headers: { 'Accept': 'application/rss+xml, application/xml, text/xml, */*' }
+        headers: {
+          'Accept': 'application/rss+xml, application/xml, text/xml, */*',
+          'Cache-Control': forceFresh ? 'no-cache' : 'max-age=300'
+        }
       }, 12000); // Shorter timeout since we're racing
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
+
+      // Extract ETag for future conditional requests
+      const etag = response.headers.get('ETag') || response.headers.get('etag');
 
       const text = await response.text();
 
@@ -4161,14 +4744,36 @@
         console.warn('Response does not look like XML:', text.substring(0, 100));
       }
 
-      return text;
+      return { text, etag };
     });
 
     // Return first successful result
     try {
       const result = await Promise.any(proxyAttempts);
-      return result;
+
+      // Cache the result
+      if (useCache && ContentCache.db) {
+        ContentCache.cacheFeed(url, result.text, null, result.etag).catch(e => {
+          console.warn('[Cache] Failed to cache feed:', e);
+        });
+      }
+
+      return result.text;
     } catch (e) {
+      // On network failure, try returning stale cache
+      if (ContentCache.db) {
+        const staleCache = await new Promise((resolve) => {
+          const tx = ContentCache.db.transaction(ContentCache.STORES.feeds, 'readonly');
+          const store = tx.objectStore(ContentCache.STORES.feeds);
+          const request = store.get(url);
+          request.onsuccess = () => resolve(request.result);
+          request.onerror = () => resolve(null);
+        });
+        if (staleCache) {
+          console.log('[Cache] Using stale cache after network failure:', url);
+          return staleCache.xml;
+        }
+      }
       throw new Error(`All CORS proxies failed for: ${url}`);
     }
   };
@@ -5218,6 +5823,9 @@
     toast(`Removed: ${feedName}`);
   };
 
+  // Placeholder SVG for lazy-loaded images
+  const placeholderImg = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="#1a1a1a" width="100" height="100"/><path d="M50 20c-5.5 0-10 4.5-10 10v20c0 5.5 4.5 10 10 10s10-4.5 10-10V30c0-5.5-4.5-10-10-10zm20 30c0 11-9 20-20 20s-20-9-20-20h-5c0 13.3 10.1 24.2 23 25.7V85h4V75.7c12.9-1.5 23-12.4 23-25.7h-5z" fill="#666" transform="translate(0,5)"/></svg>');
+
   // === RENDER NEWS ===
   const renderNewsSources = () => {
     const news = state.feeds.filter(f => f.type === 'news');
@@ -5341,14 +5949,16 @@
     el.newsList.innerHTML = searchInfo + items.map(i => {
       const title = q ? highlightSearch(i.title, q) : i.title;
       const summary = i.summary ? (q ? highlightSearch(i.summary, q) : i.summary) : '';
-      return `<div class="article ${i.unread ? 'unread' : ''}" data-id="${i.id}"><div class="article-icon">${i.feed?.image ? `<img src="${i.feed.image}">` : '<i class="ph ph-article"></i>'}</div><div class="article-body"><div class="article-meta"><span class="article-source">${i.feed?.name || ''}</span><span class="article-time">· ${i.time}</span>${i.unread ? '<span class="article-new">NEW</span>' : ''}</div><div class="article-title">${title}</div>${summary ? `<div class="article-summary">${summary}</div>` : ''}${renderItemTags(i.tags)}</div>${i.image ? `<img class="article-image" src="${i.image}">` : ''}</div>`;
+      return `<div class="article ${i.unread ? 'unread' : ''}" data-id="${i.id}"><div class="article-icon">${i.feed?.image ? `<img data-src="${i.feed.image}" src="${placeholderImg}" class="lazy-img">` : '<i class="ph ph-article"></i>'}</div><div class="article-body"><div class="article-meta"><span class="article-source">${i.feed?.name || ''}</span><span class="article-time">· ${i.time}</span>${i.unread ? '<span class="article-new">NEW</span>' : ''}</div><div class="article-title">${title}</div>${summary ? `<div class="article-summary">${summary}</div>` : ''}${renderItemTags(i.tags)}</div>${i.image ? `<img class="article-image lazy-img" data-src="${i.image}" src="${placeholderImg}">` : ''}</div>`;
     }).join('');
+
+    // Setup lazy loading for newly rendered images
+    requestAnimationFrame(() => {
+      el.newsList.querySelectorAll('img[data-src]').forEach(img => ImageLoader.observe(img));
+    });
   };
   
 // === RENDER PODCASTS (Inbox Style) ===
-  // Placeholder SVG for broken images
-  const placeholderImg = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="#1a1a1a" width="100" height="100"/><path d="M50 20c-5.5 0-10 4.5-10 10v20c0 5.5 4.5 10 10 10s10-4.5 10-10V30c0-5.5-4.5-10-10-10zm20 30c0 11-9 20-20 20s-20-9-20-20h-5c0 13.3 10.1 24.2 23 25.7V85h4V75.7c12.9-1.5 23-12.4 23-25.7h-5z" fill="#666" transform="translate(0,5)"/></svg>');
-
   const renderPodcastSources = () => {
     const podcasts = state.feeds.filter(f => f.type === 'podcast');
     el.podcastSources.innerHTML = `<div class="source-item ${!state.selectedPodcastSource && !state.currentShowPage ? 'active' : ''}" data-id="all"><div class="source-icon"><i class="ph ph-headphones"></i></div><div class="source-name">All Episodes</div></div>` +
@@ -5382,7 +5992,7 @@
 
     return `<div class="spotify-ep ${inProgress ? 'in-progress' : ''} ${done ? 'played' : ''} ${isPlaying ? 'now-playing' : ''}" data-ep="${ep.id}">
       <div class="spotify-ep-art">
-        <img src="${imgSrc}" onerror="this.parentElement.innerHTML='<i class=\\'ph ph-microphone-stage\\'></i>'">
+        <img data-src="${imgSrc}" src="${placeholderImg}" class="lazy-img" onerror="this.parentElement.innerHTML='<i class=\\'ph ph-microphone-stage\\'></i>'">
         <button class="spotify-ep-play-overlay" data-ep="${ep.id}">
           ${isPlaying ? '<i class="ph-fill ph-pause"></i>' : '<i class="ph-fill ph-play"></i>'}
         </button>
@@ -5462,7 +6072,7 @@
       const desc = ep.desc ? (q ? highlightSearch(ep.desc, q) : ep.desc) : '';
 
       return `<div class="podcast-episode-item ${inProgress ? 'in-progress' : ''}" data-ep="${ep.id}">
-        <div class="podcast-episode-icon"><img src="${imgSrc}" onerror="this.parentElement.innerHTML='<i class=\\'ph ph-microphone-stage\\'></i>'"></div>
+        <div class="podcast-episode-icon"><img data-src="${imgSrc}" src="${placeholderImg}" class="lazy-img" onerror="this.parentElement.innerHTML='<i class=\\'ph ph-microphone-stage\\'></i>'"></div>
         <div class="podcast-episode-body">
           <div class="podcast-episode-meta">
             <span class="podcast-episode-show" data-show="${ep.feedId}">${show?.name || ''}</span>
@@ -5480,9 +6090,14 @@
             ${renderItemTags(ep.tags)}
           </div>
         </div>
-        ${ep.image ? `<img class="podcast-episode-image" src="${ep.image}" onerror="this.style.display='none'">` : ''}
+        ${ep.image ? `<img class="podcast-episode-image lazy-img" data-src="${ep.image}" src="${placeholderImg}" onerror="this.style.display='none'">` : ''}
       </div>`;
     }).join('');
+
+    // Setup lazy loading for newly rendered images
+    requestAnimationFrame(() => {
+      el.podcastInboxList.querySelectorAll('img[data-src]').forEach(img => ImageLoader.observe(img));
+    });
   };
 
   const renderPodcasts = () => {
@@ -5751,7 +6366,7 @@
     const podcastIcon = '<i class="ph ph-headphones"></i>';
     const newsIcon = '<i class="ph ph-newspaper"></i>';
     const avatar = feedImage
-      ? `<img src="${feedImage}" onerror="this.parentElement.innerHTML=\`${type === 'podcast' ? podcastIcon : newsIcon}\`">`
+      ? `<img data-src="${feedImage}" src="${placeholderImg}" class="lazy-img" onerror="this.parentElement.innerHTML=\`${type === 'podcast' ? podcastIcon : newsIcon}\`">`
       : (type === 'podcast' ? podcastIcon : newsIcon);
 
     // Generate tags HTML
@@ -5803,7 +6418,7 @@
         <div class="feed-post-body">
           <div class="feed-post-title">${title}</div>
           ${summary ? `<div class="feed-post-summary">${summary}</div>` : ''}
-          ${image ? `<div class="feed-post-media"><img src="${image}" onerror="this.parentElement.style.display='none'" alt=""></div>` : ''}
+          ${image ? `<div class="feed-post-media"><img data-src="${image}" src="${placeholderImg}" class="lazy-img" onerror="this.parentElement.style.display='none'" alt=""></div>` : ''}
           ${tagsHtml}
           ${podcastMeta}
           ${newsActions}
@@ -5888,6 +6503,11 @@
     // Render social media style feed with search highlighting
     const q = state.query;
     el.feedScroll.innerHTML = searchInfo + allItems.slice(0, 100).map(item => renderFeedPost(item, item.type, q)).join('');
+
+    // Setup lazy loading for newly rendered images
+    requestAnimationFrame(() => {
+      el.feedScroll.querySelectorAll('img[data-src]').forEach(img => ImageLoader.observe(img));
+    });
   };
 
   // Handle feed nav filter clicks
@@ -8065,6 +8685,23 @@
 
   // === INIT ===
   const init = async () => {
+    const initStart = performance.now();
+    console.log('[Performance] Init started...');
+
+    // Initialize content cache FIRST for fast loading
+    try {
+      await ContentCache.init();
+      console.log('[Cache] Content cache initialized');
+      // Cleanup old cache entries in background
+      setTimeout(() => ContentCache.cleanup(), 5000);
+    } catch (e) {
+      console.warn('[Cache] Failed to initialize content cache:', e);
+    }
+
+    // Initialize image loader for lazy loading
+    ImageLoader.init();
+    console.log('[Performance] Image lazy loading enabled');
+
     // Await load to ensure server state is fetched first for cross-device consistency
     await load();
 
@@ -8157,6 +8794,11 @@
     console.log('[Tags] Content Tags:', Object.keys(CONTENT_TAGS).length, 'categories available for auto-tagging');
     console.log('[Archive] Archived:', state.archivedArticles.length, 'articles,', state.archivedPodcasts.length, 'episodes preserved');
 
+    // Performance logging
+    const initDuration = performance.now() - initStart;
+    console.log(`[Performance] Init completed in ${initDuration.toFixed(0)}ms`);
+    console.log('[Cache] Content caching:', ContentCache.db ? 'enabled' : 'disabled');
+
     // Auto-refresh feeds on startup if we have feeds but limited cached content
     const podcastFeeds = state.feeds.filter(f => f.type === 'podcast');
     const newsFeeds = state.feeds.filter(f => f.type !== 'podcast');
@@ -8173,10 +8815,26 @@
       LoadingStates.show(el.newsList, 'article', 6);
     }
 
+    // Preload images for visible content in background
+    setTimeout(() => {
+      ContentPreloader.preloadVisibleImages();
+      // Setup lazy loading for all images currently in DOM
+      document.querySelectorAll('img[data-src]').forEach(img => ImageLoader.observe(img));
+    }, 1000);
+
     // Auto-refresh if we have feeds - fetch new content in background
     if (state.feeds.length > 0) {
       console.log('[Init] Auto-refreshing', state.feeds.length, 'feeds...');
       refreshAllFeeds(true).catch(e => console.error('[Init] Background refresh failed:', e));
+    }
+
+    // Register Service Worker for offline support
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').then(reg => {
+        console.log('[SW] Service Worker registered:', reg.scope);
+      }).catch(e => {
+        console.log('[SW] Service Worker registration skipped:', e.message);
+      });
     }
   };
 
