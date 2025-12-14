@@ -623,6 +623,29 @@
     .sleep-timer-cancel:hover { background: rgba(255,255,255,0.1); }
     .sleep-badge { position: absolute; top: -4px; right: -4px; background: var(--blue); color: #fff; font-size: 9px; font-weight: 700; padding: 3px 6px; border-radius: 10px; min-width: 18px; text-align: center; }
 
+    /* Settings Modal */
+    .settings-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 350; backdrop-filter: blur(4px); }
+    .settings-modal.active { display: flex; }
+    .settings-box { background: var(--bg3); border-radius: 20px; width: 90%; max-width: 420px; border: 1px solid var(--border2); box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+    .settings-header { padding: 20px 24px; border-bottom: 1px solid var(--border2); display: flex; align-items: center; justify-content: space-between; }
+    .settings-header h2 { font-size: 20px; font-weight: 600; letter-spacing: -0.02em; display: flex; align-items: center; gap: 10px; }
+    .settings-close { background: rgba(255,255,255,0.05); border: none; color: var(--text2); cursor: pointer; padding: 8px; border-radius: 50%; transition: all 0.15s; }
+    .settings-close:hover { background: rgba(255,255,255,0.1); color: var(--text); }
+    .settings-body { padding: 24px; }
+    .settings-section { margin-bottom: 24px; }
+    .settings-section:last-child { margin-bottom: 0; }
+    .settings-section-title { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text2); margin-bottom: 12px; }
+    .settings-item { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; background: var(--bg4); border-radius: 12px; margin-bottom: 8px; }
+    .settings-item:last-child { margin-bottom: 0; }
+    .settings-item-label { font-size: 14px; font-weight: 500; }
+    .settings-item-desc { font-size: 12px; color: var(--text2); margin-top: 2px; }
+    .toggle-switch { position: relative; width: 48px; height: 28px; cursor: pointer; }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--bg); border: 1px solid var(--border2); border-radius: 14px; transition: 0.3s; }
+    .toggle-slider:before { position: absolute; content: ""; height: 22px; width: 22px; left: 2px; bottom: 2px; background-color: var(--text2); border-radius: 50%; transition: 0.3s; }
+    .toggle-switch input:checked + .toggle-slider { background-color: var(--blue); border-color: var(--blue); }
+    .toggle-switch input:checked + .toggle-slider:before { transform: translateX(20px); background-color: #fff; }
+
     /* Snapshot List */
     .snapshot-list { max-height: 400px; overflow-y: auto; }
     .snapshot-item { display: flex; align-items: center; gap: 12px; padding: 14px; background: var(--bg4); border-radius: 12px; margin-bottom: 8px; border: 1px solid var(--border); transition: all 0.15s; }
@@ -1817,6 +1840,7 @@
       <input type="text" id="searchInput" placeholder="Search...">
     </div>
     <button class="icon-btn" id="refreshBtn" title="Refresh feeds"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 4v6h6M23 20v-6h-6"/><path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15"/></svg></button>
+    <button class="icon-btn" id="settingsBtn" title="Settings"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg></button>
     <button class="icon-btn" id="addBtn"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button>
   </header>
   
@@ -2047,6 +2071,31 @@
         <div class="sleep-timer-countdown" id="sleepCountdown">00:00</div>
       </div>
       <button class="sleep-timer-cancel" id="sleepCancelBtn">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="settings-modal" id="settingsModal">
+  <div class="settings-box">
+    <div class="settings-header">
+      <h2><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg> Settings</h2>
+      <button class="settings-close" id="settingsClose"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 5L5 15M5 5l10 10"/></svg></button>
+    </div>
+    <div class="settings-body">
+      <div class="settings-section">
+        <div class="settings-section-title">Article Behavior</div>
+        <div class="settings-item">
+          <div>
+            <div class="settings-item-label">Open links in new tab</div>
+            <div class="settings-item-desc">When disabled, articles open in the current tab</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="openLinksToggle" checked>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -2943,7 +2992,8 @@
       plays: [], // { episodeId, timestamp, duration, completed }
       searches: [], // { query, timestamp, results }
       subscriptions: [] // { feedId, timestamp, action: 'add'|'remove' }
-    }
+    },
+    openLinksInNewTab: true // Whether clicking articles opens in new tab (true) or same tab (false)
   };
   
   // === DOM ===
@@ -2985,6 +3035,9 @@
     sleepTimerActive: $('sleepTimerActive'), sleepCountdown: $('sleepCountdown'),
     sleepPresets: $('sleepPresets'), sleepCustomInput: $('sleepCustomInput'),
     sleepCustomBtn: $('sleepCustomBtn'), sleepCancelBtn: $('sleepCancelBtn'),
+    // Settings modal
+    settingsBtn: $('settingsBtn'), settingsModal: $('settingsModal'),
+    settingsClose: $('settingsClose'), openLinksToggle: $('openLinksToggle'),
     // Snapshot modal
     snapshotModal: $('snapshotModal'), snapshotModalClose: $('snapshotModalClose'),
     snapshotList: $('snapshotList'), createSnapshotBtn: $('createSnapshotBtn')
@@ -2994,6 +3047,7 @@
   const fmt = s => { if (isNaN(s) || s < 0) return '0:00'; const m = Math.floor(s / 60), sec = Math.floor(s % 60); return m + ':' + String(sec).padStart(2, '0'); };
   const fmtLong = s => { if (isNaN(s) || s < 0) return '0:00'; const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = Math.floor(s % 60); return h > 0 ? h + ':' + String(m).padStart(2, '0') + ':' + String(sec).padStart(2, '0') : m + ':' + String(sec).padStart(2, '0'); };
   const toast = m => { el.toast.textContent = m; el.toast.classList.add('show'); setTimeout(() => el.toast.classList.remove('show'), 2500); };
+  const openArticleLink = url => { if (url) state.openLinksInNewTab ? window.open(url, '_blank') : window.location.href = url; };
   const save = () => {
     const stateData = {
       feeds: state.feeds,
@@ -3006,7 +3060,8 @@
       viewPrefs: state.viewPrefs,
       bookmarks: state.bookmarks,
       userBehavior: state.userBehavior,
-      feedLastViewed: state.feedLastViewed
+      feedLastViewed: state.feedLastViewed,
+      openLinksInNewTab: state.openLinksInNewTab
     };
     // Save to localStorage for immediate local access
     localStorage.setItem('feedr2', JSON.stringify(stateData));
@@ -3028,6 +3083,7 @@
     state.bookmarks = d.bookmarks || {};
     state.userBehavior = d.userBehavior || { reads: [], plays: [], searches: [], subscriptions: [] };
     state.feedLastViewed = d.feedLastViewed || {};
+    if (typeof d.openLinksInNewTab === 'boolean') state.openLinksInNewTab = d.openLinksInNewTab;
 
     // Migrate: ensure all feeds have tags array
     state.feeds.forEach(f => {
@@ -3467,7 +3523,7 @@
       // Reject URLs that are just hostnames with no meaningful path
       if (parsed.pathname === '/' || parsed.pathname === '') return false;
       // Accept URLs with image extensions or meaningful paths
-      const imageExtensions = /\.(jpg|jpeg|png|gif|webp|svg|bmp|ico)(\?|$)/i;
+      const imageExtensions = /\.(jpg|jpeg|png|gif|webp|svg|bmp|ico|avif)(\?|$)/i;
       if (imageExtensions.test(parsed.pathname)) return true;
       // Accept URLs with paths that look like they could be images
       if (parsed.pathname.length > 1) return true;
@@ -3477,28 +3533,185 @@
     }
   };
 
+  // Check if URL looks like a tracking pixel or icon (not a main image)
+  const isLikelyTrackingOrIcon = url => {
+    if (!url) return true;
+    const lowUrl = url.toLowerCase();
+    // Common tracking pixel patterns
+    if (/pixel|track|beacon|analytics|stat|count|1x1|spacer/i.test(lowUrl)) return true;
+    // Favicon patterns
+    if (/favicon|icon\d*\.|apple-touch/i.test(lowUrl)) return true;
+    // Common ad/tracking domains
+    if (/doubleclick|googlesyndication|facebook\.com\/tr|analytics/i.test(lowUrl)) return true;
+    return false;
+  };
+
+  // Extract dimensions from img tag attributes or URL
+  const extractImageScore = (imgTag, url) => {
+    let score = 0;
+    // Check for explicit dimensions in tag
+    const widthMatch = imgTag.match(/width=["']?(\d+)/i);
+    const heightMatch = imgTag.match(/height=["']?(\d+)/i);
+    if (widthMatch) score += parseInt(widthMatch[1]);
+    if (heightMatch) score += parseInt(heightMatch[1]);
+    // Bonus for large images
+    if (widthMatch && parseInt(widthMatch[1]) >= 400) score += 500;
+    if (heightMatch && parseInt(heightMatch[1]) >= 300) score += 500;
+    // Penalty for tiny images (likely icons/tracking)
+    if (widthMatch && parseInt(widthMatch[1]) < 50) score -= 1000;
+    if (heightMatch && parseInt(heightMatch[1]) < 50) score -= 1000;
+    // Look for size hints in URL
+    if (/large|big|full|hero|featured|main|og[_-]?image/i.test(url)) score += 300;
+    if (/thumb|small|tiny|icon|avatar|logo/i.test(url)) score -= 200;
+    // Penalty for tracking pixels
+    if (isLikelyTrackingOrIcon(url)) score -= 2000;
+    return score;
+  };
+
+  // Get best URL from srcset attribute
+  const getBestFromSrcset = srcset => {
+    if (!srcset) return null;
+    const candidates = srcset.split(',').map(s => {
+      const parts = s.trim().split(/\s+/);
+      const url = parts[0];
+      let width = 0;
+      if (parts[1]) {
+        const wMatch = parts[1].match(/(\d+)w/);
+        if (wMatch) width = parseInt(wMatch[1]);
+      }
+      return { url, width };
+    }).filter(c => c.url && isValidImageUrl(c.url));
+    if (!candidates.length) return null;
+    // Return the largest image
+    candidates.sort((a, b) => b.width - a.width);
+    return candidates[0].url;
+  };
+
   const extractImage = item => {
-    // Try media:content
-    let img = getNodeAttr(item, 'media:content', 'url');
-    if (img && isValidImageUrl(img)) return img;
+    // 1. Try media:content - find the best one (largest image type)
+    const mediaContents = item.getElementsByTagName('media:content');
+    let bestMediaContent = null;
+    let bestMediaScore = -1;
+    for (let i = 0; i < mediaContents.length; i++) {
+      const mc = mediaContents[i];
+      const url = mc.getAttribute('url');
+      const medium = mc.getAttribute('medium');
+      const type = mc.getAttribute('type') || '';
+      const width = parseInt(mc.getAttribute('width')) || 0;
+      const height = parseInt(mc.getAttribute('height')) || 0;
 
-    // Try media:thumbnail
-    img = getNodeAttr(item, 'media:thumbnail', 'url');
-    if (img && isValidImageUrl(img)) return img;
+      if (!url || !isValidImageUrl(url)) continue;
+      if (isLikelyTrackingOrIcon(url)) continue;
 
-    // Try enclosure with image type
-    const enclosure = findElement(item, 'enclosure');
-    if (enclosure) {
-      const type = enclosure.getAttribute('type') || '';
-      if (type.startsWith('image/')) {
-        return enclosure.getAttribute('url') || '';
+      // Skip non-image media
+      if (medium && medium !== 'image') continue;
+      if (type && !type.startsWith('image/')) continue;
+
+      const score = width + height + (medium === 'image' ? 100 : 0);
+      if (score > bestMediaScore) {
+        bestMediaScore = score;
+        bestMediaContent = url;
+      }
+    }
+    if (bestMediaContent) return bestMediaContent;
+
+    // 2. Try media:thumbnail (often used for article thumbnails)
+    const thumbnails = item.getElementsByTagName('media:thumbnail');
+    let bestThumb = null;
+    let bestThumbScore = -1;
+    for (let i = 0; i < thumbnails.length; i++) {
+      const t = thumbnails[i];
+      const url = t.getAttribute('url');
+      const width = parseInt(t.getAttribute('width')) || 0;
+      const height = parseInt(t.getAttribute('height')) || 0;
+      if (url && isValidImageUrl(url) && !isLikelyTrackingOrIcon(url)) {
+        const score = width + height;
+        if (score > bestThumbScore) {
+          bestThumbScore = score;
+          bestThumb = url;
+        }
+      }
+    }
+    if (bestThumb) return bestThumb;
+
+    // 3. Try media:group (contains multiple media elements)
+    const mediaGroups = item.getElementsByTagName('media:group');
+    for (let i = 0; i < mediaGroups.length; i++) {
+      const group = mediaGroups[i];
+      const contents = group.getElementsByTagName('media:content');
+      for (let j = 0; j < contents.length; j++) {
+        const url = contents[j].getAttribute('url');
+        const type = contents[j].getAttribute('type') || '';
+        if (url && (type.startsWith('image/') || isValidImageUrl(url)) && !isLikelyTrackingOrIcon(url)) {
+          return url;
+        }
       }
     }
 
-    // Try to extract from description/content HTML (including Atom's content element)
-    const desc = getNodeText(item, 'description') || getNodeText(item, 'content:encoded') || getNodeText(item, 'content');
-    const match = desc.match(/<img[^>]+src=["']([^"']+)["']/i);
-    if (match) return match[1];
+    // 4. Try enclosure with image type OR image-like URL
+    const enclosures = item.getElementsByTagName('enclosure');
+    for (let i = 0; i < enclosures.length; i++) {
+      const enc = enclosures[i];
+      const type = enc.getAttribute('type') || '';
+      const url = enc.getAttribute('url') || '';
+      if (type.startsWith('image/') && isValidImageUrl(url)) {
+        return url;
+      }
+      // Also check if URL looks like an image even without proper type
+      if (!type && /\.(jpg|jpeg|png|gif|webp|avif)(\?|$)/i.test(url)) {
+        return url;
+      }
+    }
+
+    // 5. Try image element with url attribute (some RSS 2.0 feeds)
+    const imageEl = findElement(item, 'image');
+    if (imageEl) {
+      const urlEl = findElement(imageEl, 'url');
+      if (urlEl && urlEl.textContent && isValidImageUrl(urlEl.textContent.trim())) {
+        return urlEl.textContent.trim();
+      }
+    }
+
+    // 6. Try to extract from description/content HTML - find best image
+    const desc = getNodeText(item, 'description') || getNodeText(item, 'content:encoded') || getNodeText(item, 'content') || getNodeText(item, 'summary');
+    if (desc) {
+      // Find all img tags
+      const imgRegex = /<img[^>]+>/gi;
+      const imgTags = desc.match(imgRegex) || [];
+
+      let bestImg = null;
+      let bestScore = -Infinity;
+
+      for (const imgTag of imgTags) {
+        // Extract src
+        const srcMatch = imgTag.match(/src=["']([^"']+)["']/i);
+        if (!srcMatch) continue;
+        let src = srcMatch[1];
+
+        // Check srcset for better quality
+        const srcsetMatch = imgTag.match(/srcset=["']([^"']+)["']/i);
+        if (srcsetMatch) {
+          const betterSrc = getBestFromSrcset(srcsetMatch[1]);
+          if (betterSrc) src = betterSrc;
+        }
+
+        if (!isValidImageUrl(src)) continue;
+
+        const score = extractImageScore(imgTag, src);
+        if (score > bestScore) {
+          bestScore = score;
+          bestImg = src;
+        }
+      }
+
+      if (bestImg && bestScore > -500) return bestImg;
+
+      // Fallback: try figure > img pattern
+      const figureMatch = desc.match(/<figure[^>]*>.*?<img[^>]+src=["']([^"']+)["'][^>]*>.*?<\/figure>/is);
+      if (figureMatch && isValidImageUrl(figureMatch[1]) && !isLikelyTrackingOrIcon(figureMatch[1])) {
+        return figureMatch[1];
+      }
+    }
 
     return '';
   };
@@ -4710,7 +4923,7 @@
         art.unread = false;
         save();
         Mem.log('article_opened', id, { source: art.feedId, link: art.link });
-        if (art.link) window.open(art.link, '_blank');
+        openArticleLink(art.link);
         renderAll();
       }
     }
@@ -5474,7 +5687,7 @@
       Mem.log('article_opened', id, { source: art.feedId, link: art.link });
       art.unread = false;
       save();
-      if (art.link) window.open(art.link, '_blank');
+      openArticleLink(art.link);
       renderNews();
     }
   };
@@ -5507,7 +5720,7 @@
         Mem.log('article_opened', id, { source: art.feedId, link: art.link });
         art.unread = false;
         save();
-        if (art.link) window.open(art.link, '_blank');
+        openArticleLink(art.link);
         if (state.currentSourcePage) renderSourcePage(state.currentSourcePage);
       }
       return;
@@ -5522,7 +5735,7 @@
         Mem.log('article_opened', id, { source: art.feedId, link: art.link });
         art.unread = false;
         save();
-        if (art.link) window.open(art.link, '_blank');
+        openArticleLink(art.link);
         if (state.currentSourcePage) renderSourcePage(state.currentSourcePage);
       }
     }
@@ -5720,6 +5933,19 @@
   el.modal.onclick = e => { if (e.target === el.modal) el.modal.classList.remove('active'); };
   $('tNews').onclick = () => { state.feedType = 'news'; $('tNews').classList.add('active'); $('tPodcast').classList.remove('active'); };
   $('tPodcast').onclick = () => { state.feedType = 'podcast'; $('tPodcast').classList.add('active'); $('tNews').classList.remove('active'); };
+
+  // Settings modal handlers
+  el.settingsBtn.onclick = () => {
+    el.openLinksToggle.checked = state.openLinksInNewTab;
+    el.settingsModal.classList.add('active');
+  };
+  el.settingsClose.onclick = () => el.settingsModal.classList.remove('active');
+  el.settingsModal.onclick = e => { if (e.target === el.settingsModal) el.settingsModal.classList.remove('active'); };
+  el.openLinksToggle.onchange = () => {
+    state.openLinksInNewTab = el.openLinksToggle.checked;
+    save();
+    toast(state.openLinksInNewTab ? 'Links will open in new tab' : 'Links will open in same tab');
+  };
 
   // Form validation and state
   let metadataFetched = false;
