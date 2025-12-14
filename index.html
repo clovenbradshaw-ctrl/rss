@@ -3041,6 +3041,263 @@
       z-index: 109;
       backdrop-filter: blur(4px);
     }
+
+    /* ===========================================
+       FORCE MOBILE MODE - Hide desktop version
+       Always show mobile UI regardless of screen size
+       =========================================== */
+
+    /* Constrain app to mobile-like width and center on large screens */
+    .app {
+      max-width: 480px;
+      margin: 0 auto;
+      position: relative;
+      box-shadow: 0 0 60px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Background for desktop to show app is mobile-only */
+    html {
+      background: #000;
+    }
+
+    /* Force mobile tap behaviors */
+    * {
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+    }
+
+    /* Force mobile header - hide desktop elements */
+    .header {
+      padding: var(--mobile-space-sm) var(--mobile-space-md);
+      padding-top: max(var(--mobile-space-sm), var(--sat));
+      gap: var(--mobile-space-sm);
+      position: sticky;
+      top: 0;
+      z-index: var(--z-mobile-header);
+      backdrop-filter: blur(12px);
+      background: rgba(26, 26, 26, 0.95);
+      min-height: auto;
+    }
+
+    .header .logo,
+    .header .spacer,
+    .header #refreshBtn,
+    .header #settingsBtn,
+    .header #addBtn,
+    .header .search-box {
+      display: none !important;
+    }
+
+    .header .hamburger {
+      margin-right: auto;
+      display: flex !important;
+    }
+
+    /* Force toggle bar to bottom navigation */
+    .main-toggle {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 480px;
+      background: var(--bg2);
+      border-top: 1px solid var(--border2);
+      border-radius: 0;
+      padding: 8px;
+      padding-bottom: max(8px, var(--sab));
+      z-index: var(--z-mobile-nav);
+      justify-content: space-around;
+      box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.3);
+    }
+
+    .toggle-btn {
+      flex: 1;
+      flex-direction: column;
+      gap: 4px;
+      padding: 8px 4px;
+      border-radius: 12px;
+      min-height: var(--mobile-touch-min);
+      font-size: var(--mobile-text-base);
+    }
+
+    .toggle-btn span:first-child {
+      font-size: 24px;
+      line-height: 1;
+    }
+
+    .toggle-btn span:last-child {
+      display: block !important;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    /* Force single column layouts */
+    .articles-cards,
+    .episodes-cards,
+    .all-cards {
+      grid-template-columns: 1fr !important;
+      gap: var(--mobile-space-md);
+    }
+
+    .articles-masonry,
+    .episodes-masonry,
+    .all-masonry {
+      column-count: 1 !important;
+      gap: var(--mobile-space-md);
+    }
+
+    /* Force mobile content padding */
+    .news-list,
+    .podcast-content,
+    .all-content {
+      padding: var(--mobile-space-md);
+      padding-bottom: calc(70px + var(--sab));
+    }
+
+    /* Extra padding when mini player is active */
+    body:has(.player.active) .news-list,
+    body:has(.player.active) .podcast-content,
+    body:has(.player.active) .podcast-inbox-content,
+    body:has(.player.active) .all-content {
+      padding-bottom: calc(100px + var(--sab));
+    }
+
+    /* Hide sidebars on all screens */
+    .news-sidebar,
+    .podcast-sidebar {
+      display: none !important;
+    }
+
+    /* Force mobile player styles */
+    .player {
+      position: fixed;
+      bottom: calc(56px + var(--sab));
+      left: 50%;
+      transform: translateX(-50%);
+      width: calc(100% - 16px);
+      max-width: 464px;
+      padding: 8px 12px;
+      border-radius: 12px;
+      z-index: var(--z-mobile-player);
+      background: linear-gradient(135deg, var(--bg3) 0%, var(--bg2) 100%);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+      cursor: pointer;
+    }
+
+    .player-center {
+      display: none !important;
+    }
+
+    .player-skip {
+      display: none !important;
+    }
+
+    .player-progress {
+      display: none !important;
+    }
+
+    .player-btn,
+    .speed-btn,
+    #pExpand {
+      display: none !important;
+    }
+
+    .player-art {
+      width: 44px;
+      height: 44px;
+      border-radius: 6px;
+      flex-shrink: 0;
+    }
+
+    .player-title {
+      font-size: var(--mobile-text-sm);
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .player-show {
+      font-size: var(--mobile-text-xs);
+    }
+
+    .player-play {
+      width: 40px;
+      height: 40px;
+      background: var(--blue);
+      border-radius: 50%;
+    }
+
+    .player-right .player-play {
+      display: flex !important;
+    }
+
+    /* Force mobile shows grid */
+    .shows-grid {
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important;
+      gap: var(--mobile-space-lg);
+    }
+
+    .show-card {
+      max-width: none;
+    }
+
+    /* Force drawer width for mobile */
+    .drawer {
+      width: 85vw;
+      max-width: 320px;
+    }
+
+    /* Force mobile typography */
+    .article-title {
+      font-size: var(--mobile-text-xl);
+      line-height: 1.4;
+    }
+
+    .episode-title {
+      font-size: var(--mobile-text-lg);
+      line-height: 1.4;
+    }
+
+    /* Force mobile hero pages */
+    .show-hero,
+    .source-hero {
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: var(--mobile-space-xl) var(--mobile-space-lg);
+    }
+
+    .show-hero-art,
+    .source-hero-art {
+      width: 180px;
+      height: 180px;
+      margin-bottom: var(--mobile-space-lg);
+    }
+
+    /* Force mobile modal sizing */
+    .modal-box {
+      width: calc(100% - 32px);
+      max-width: none;
+      margin: var(--mobile-space-md);
+    }
+
+    /* Force mobile panels to bottom sheets */
+    .speed-panel,
+    .bookmarks-panel {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%) translateY(100%);
+      width: 100%;
+      max-width: 480px;
+      max-height: 60vh;
+      border-radius: 20px 20px 0 0;
+    }
+
+    .speed-panel.active,
+    .bookmarks-panel.active {
+      transform: translateX(-50%) translateY(0);
+    }
   </style>
 </head>
 <body>
@@ -10667,49 +10924,20 @@
    * Call this in the main init() function
    */
   const initMobileEnhancements = () => {
-    // Check if mobile
-    const isMobile = window.innerWidth <= 640;
-    const isTablet = window.innerWidth > 640 && window.innerWidth <= 1024;
+    // Always use mobile mode - desktop version hidden for now
+    const isMobile = true;
 
-    if (isMobile) {
-      console.log('📱 Initializing mobile enhancements...');
+    console.log('📱 Initializing mobile enhancements (forced mobile mode)...');
 
-      ViewportFix.init();
-      initTouchFeedback();
-      PullToRefresh.init();
-      BottomSheet.init();
-      SmartScroll.init();
-      PreventOverscroll.init();
-      IOSInputFix.init();
+    ViewportFix.init();
+    initTouchFeedback();
+    PullToRefresh.init();
+    BottomSheet.init();
+    SmartScroll.init();
+    PreventOverscroll.init();
+    IOSInputFix.init();
 
-      console.log('✅ Mobile enhancements initialized');
-    } else if (isTablet) {
-      console.log('📱 Initializing tablet enhancements...');
-
-      ViewportFix.init();
-      initTouchFeedback();
-      PullToRefresh.init();
-
-      console.log('✅ Tablet enhancements initialized');
-    }
-
-    // Re-initialize on resize
-    let resizeTimer;
-    let wasMobile = isMobile;
-    window.addEventListener('resize', () => {
-      clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(() => {
-        const nowMobile = window.innerWidth <= 640;
-        if (nowMobile !== wasMobile) {
-          // Significant layout change - reinitialize
-          wasMobile = nowMobile;
-          if (nowMobile) {
-            ViewportFix.init();
-            PreventOverscroll.init();
-          }
-        }
-      }, 250);
-    });
+    console.log('✅ Mobile enhancements initialized');
   };
 
   // === INIT ===
