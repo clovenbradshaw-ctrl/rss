@@ -2423,8 +2423,32 @@
           console.warn('[StateSync] Server returned:', response.status);
           return null;
         }
-        const data = await response.json();
-        console.log('[StateSync] Fetched state from server');
+        const rawData = await response.json();
+        console.log('[StateSync] Raw server response:', rawData);
+
+        // Handle different possible response formats from Xano
+        let data = rawData;
+
+        // If response is an array, take the first/most recent record
+        if (Array.isArray(rawData)) {
+          data = rawData.length > 0 ? rawData[0] : null;
+          console.log('[StateSync] Response was array, using first item');
+        }
+
+        // If the response has a nested 'response' key (Xano sometimes wraps responses)
+        if (data && data.response) {
+          data = data.response;
+          console.log('[StateSync] Unwrapped response key');
+        }
+
+        // If the state data is directly in the response (not under 'data' key)
+        // Check for presence of expected state properties
+        if (data && !data.data && (data.feeds || data.articles || data.podcasts)) {
+          data = { data: data };
+          console.log('[StateSync] State was at root level, wrapped in data key');
+        }
+
+        console.log('[StateSync] Fetched state from server, has data:', !!data?.data);
         return data;
       } catch (e) {
         console.warn('[StateSync] Failed to fetch state:', e.message);
@@ -3048,7 +3072,7 @@
   const fmtLong = s => { if (isNaN(s) || s < 0) return '0:00'; const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = Math.floor(s % 60); return h > 0 ? h + ':' + String(m).padStart(2, '0') + ':' + String(sec).padStart(2, '0') : m + ':' + String(sec).padStart(2, '0'); };
   const toast = m => { el.toast.textContent = m; el.toast.classList.add('show'); setTimeout(() => el.toast.classList.remove('show'), 2500); };
   const openArticleLink = url => { if (url) state.openLinksInNewTab ? window.open(url, '_blank') : window.location.href = url; };
-  const save = () => {
+  const save = (immediate = false) => {
     const stateData = {
       feeds: state.feeds,
       articles: state.articles,
@@ -3065,8 +3089,16 @@
     };
     // Save to localStorage for immediate local access
     localStorage.setItem('feedr2', JSON.stringify(stateData));
-    // Also sync to server for cross-device consistency (debounced)
-    StateSync.saveState(stateData);
+    // Also sync to server for cross-device consistency
+    if (immediate) {
+      // Immediate sync for critical operations (feed add/remove)
+      StateSync.syncQueue = stateData;
+      StateSync._doSync();
+      console.log('[StateSync] Immediate sync triggered');
+    } else {
+      // Debounced sync for normal operations
+      StateSync.saveState(stateData);
+    }
   };
 
   // Helper to apply state data from either server or localStorage
@@ -3106,13 +3138,29 @@
     // ALWAYS try server first for cross-device consistency
     try {
       const serverData = await StateSync.fetchState();
+      console.log('[StateSync] Server response check:', {
+        hasServerData: !!serverData,
+        hasDataProperty: !!(serverData && serverData.data),
+        feedCount: serverData?.data?.feeds?.length || 0,
+        articleCount: serverData?.data?.articles?.length || 0
+      });
+
       if (serverData && serverData.data) {
-        // Server has stored state - use it as source of truth
-        loaded = applyStateData(serverData.data);
-        if (loaded) {
-          console.log('[StateSync] Using server state for consistency');
-          // Update localStorage to match server state
-          localStorage.setItem('feedr2', JSON.stringify(serverData.data));
+        // Verify we have actual content (not just empty arrays)
+        const hasContent = serverData.data.feeds?.length > 0 ||
+                          serverData.data.articles?.length > 0 ||
+                          serverData.data.podcasts?.length > 0;
+
+        if (hasContent) {
+          // Server has stored state - use it as source of truth
+          loaded = applyStateData(serverData.data);
+          if (loaded) {
+            console.log('[StateSync] Using server state for consistency');
+            // Update localStorage to match server state
+            localStorage.setItem('feedr2', JSON.stringify(serverData.data));
+          }
+        } else {
+          console.log('[StateSync] Server returned empty state, will check localStorage');
         }
       }
     } catch (e) {
@@ -4233,7 +4281,7 @@
       author: author || ''
     });
 
-    save();
+    save(true); // Immediate sync for feed addition
 
     toast('Adding feed...');
     const success = await fetchAndParseFeed(feed);
@@ -4244,7 +4292,7 @@
         const tagLabels = feed.tags.map(t => getTagInfo(t).label).join(', ');
         console.log(`Feed ${feed.name} auto-tagged: ${tagLabels}`);
       }
-      save();
+      save(true); // Immediate sync after content loaded
       renderNewsSources();
       renderCategories();
       renderNews();
