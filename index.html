@@ -8227,13 +8227,6 @@
     return 60;                            // Very long swipe: 60s
   };
 
-  const triggerHaptic = (intensity = 'light') => {
-    if ('vibrate' in navigator) {
-      const patterns = { light: 5, medium: 10, heavy: 20 };
-      navigator.vibrate(patterns[intensity] || 5);
-    }
-  };
-
   const updateSwipeIndicator = (distance, seekAmount) => {
     if (!el.swipeIndicator) return;
 
@@ -8279,11 +8272,6 @@
     swipeState.currentX = touch.clientX;
     const newSeekAmount = getSeekAmount(deltaX);
 
-    // Haptic feedback when crossing thresholds
-    if (newSeekAmount !== swipeState.seekAmount && newSeekAmount > 0) {
-      triggerHaptic(newSeekAmount >= 30 ? 'medium' : 'light');
-    }
-
     swipeState.seekAmount = newSeekAmount;
     updateSwipeIndicator(deltaX, newSeekAmount);
   };
@@ -8299,7 +8287,6 @@
       const seekSeconds = direction * seekAmount;
 
       skip(seekSeconds);
-      triggerHaptic('medium');
       Mem.log('swipe_seek', state.currentEp.id, {
         direction: deltaX > 0 ? 'rewind' : 'forward',
         amount: seekAmount,
@@ -9928,28 +9915,9 @@
 
   /**
    * Enhanced Touch Feedback System
-   * Provides visual and haptic feedback for all interactions
+   * Provides visual feedback for all interactions
    */
   const TouchFeedback = {
-    /**
-     * Haptic feedback wrapper with intensity levels
-     * @param {string} intensity - 'light' | 'medium' | 'heavy' | 'success' | 'error'
-     */
-    haptic(intensity = 'light') {
-      if (!('vibrate' in navigator)) return;
-
-      const patterns = {
-        light: 5,
-        medium: 10,
-        heavy: 20,
-        success: [5, 50, 5],
-        error: [10, 100, 10],
-        selection: 3
-      };
-
-      navigator.vibrate(patterns[intensity] || patterns.light);
-    },
-
     /**
      * Visual press feedback for elements
      * @param {HTMLElement} element - Element to apply feedback to
@@ -10004,7 +9972,7 @@
    * Apply touch feedback to all interactive elements
    */
   const initTouchFeedback = () => {
-    // Primary buttons get haptic + visual feedback
+    // Primary buttons get visual feedback
     const primaryButtons = document.querySelectorAll(`
       .toggle-btn,
       .ep-play,
@@ -10017,7 +9985,6 @@
 
     primaryButtons.forEach(btn => {
       btn.addEventListener('touchstart', (e) => {
-        TouchFeedback.haptic('medium');
         TouchFeedback.press(e.currentTarget);
       }, { passive: true });
 
@@ -10026,36 +9993,6 @@
       });
     });
 
-    // Secondary buttons get lighter feedback
-    const secondaryButtons = document.querySelectorAll(`
-      .icon-btn,
-      .chip,
-      .tag-chip,
-      .speed-btn,
-      .player-btn,
-      .back-btn
-    `);
-
-    secondaryButtons.forEach(btn => {
-      btn.addEventListener('touchstart', () => {
-        TouchFeedback.haptic('light');
-      }, { passive: true });
-    });
-
-    // List items get selection feedback
-    const listItems = document.querySelectorAll(`
-      .article,
-      .episode,
-      .source-item,
-      .show-card,
-      .drawer-item
-    `);
-
-    listItems.forEach(item => {
-      item.addEventListener('touchstart', () => {
-        TouchFeedback.haptic('selection');
-      }, { passive: true });
-    });
   };
 
   /**
@@ -10120,7 +10057,6 @@
             this.pulling = true;
             this.indicator.querySelector('.pull-spinner').classList.add('ready');
             this.indicator.querySelector('.pull-text').textContent = 'Release to refresh';
-            TouchFeedback.haptic('medium');
           } else if (pull < this.threshold && this.pulling) {
             this.pulling = false;
             this.indicator.querySelector('.pull-spinner').classList.remove('ready');
@@ -10131,7 +10067,6 @@
 
       document.addEventListener('touchend', async () => {
         if (this.pulling && this.indicator) {
-          TouchFeedback.haptic('success');
           this.indicator.querySelector('.pull-text').textContent = 'Refreshing...';
 
           // Perform refresh
