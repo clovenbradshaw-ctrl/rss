@@ -3011,6 +3011,35 @@
           </label>
         </div>
       </div>
+
+      <div class="settings-section">
+        <div class="settings-section-title">Activity Store</div>
+        <div class="settings-item" style="flex-direction:column;align-items:stretch;gap:12px">
+          <div id="activityStats" style="font-size:13px;color:var(--text2);padding:8px 12px;background:var(--bg2);border-radius:8px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+              <span>Total activities:</span>
+              <span id="activityStatTotal">-</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+              <span>Snapshots:</span>
+              <span id="activityStatSnapshots">-</span>
+            </div>
+            <div style="display:flex;justify-content:space-between">
+              <span>Potential savings:</span>
+              <span id="activityStatSavings">-</span>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="submit-btn" id="refreshActivityStats" style="flex:1;padding:8px 12px;font-size:13px">
+              <i class="ph ph-arrow-clockwise"></i> Refresh Stats
+            </button>
+            <button class="submit-btn" id="runActivityCleanup" style="flex:1;padding:8px 12px;font-size:13px;background:var(--accent2)">
+              <i class="ph ph-broom"></i> Run Cleanup
+            </button>
+          </div>
+          <div id="cleanupStatus" style="font-size:12px;color:var(--text2);text-align:center;display:none"></div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -3594,6 +3623,28 @@
           if (response.ok) {
             this.changeCounter = 0; // Reset counter
             console.log('[StateSync] Saved state snapshot with', stateData.feeds.length, 'feeds');
+
+            // Trigger cleanup after successful snapshot (non-blocking)
+            setTimeout(async () => {
+              try {
+                if (window.ActivityCleanup) {
+                  const stats = await ActivityCleanup.getStats();
+                  const totalPotential =
+                    stats.potentialSavings.duplicateProgress +
+                    stats.potentialSavings.oldEphemeral +
+                    stats.potentialSavings.redundantPairs;
+
+                  // Only run cleanup if there's significant savings (>20 activities)
+                  if (totalPotential > 20) {
+                    console.log('[StateSync] Running post-snapshot cleanup...');
+                    await ActivityCleanup.consolidateProgress();
+                    await ActivityCleanup.pruneOldSessions(7);
+                  }
+                }
+              } catch (e) {
+                console.warn('[StateSync] Post-snapshot cleanup failed:', e.message);
+              }
+            }, 5000); // Wait 5 seconds after snapshot before cleanup
           } else {
             console.warn('[StateSync] Snapshot failed:', response.status, await response.text());
           }
@@ -3622,6 +3673,380 @@
     }
   };
   window.StateSync = StateSync;
+
+  // === ACTIVITY CLEANUP - Delete and Prune Activities ===
+  const ActivityCleanup = {
+    endpoint: 'https://xvkq-pq7i-idtl.n7d.xano.io/api:Hj4C6PGO/activity',
+
+    // Actions that should NEVER be deleted (state-defining)
+    PROTECTED_ACTIONS: new Set([
+      'state_snapshot',
+      'feed_added',
+      'feed_removed'
+    ]),
+
+    // Actions safe to consolidate/prune aggressively
+    EPHEMERAL_ACTIONS: new Set([
+      'playback_progress',
+      'seek',
+      'play_pressed',
+      'pause_pressed'
+    ]),
+
+    // Delete a single activity by ID
+    async deleteActivity(activityId) {
+      try {
+        const response = await fetch(`${this.endpoint}/${activityId}`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        if (response.ok) {
+          console.log('[ActivityCleanup] Deleted activity:', activityId);
+          return true;
+        }
+        console.warn('[ActivityCleanup] Delete failed:', activityId, response.status);
+        return false;
+      } catch (e) {
+        console.error('[ActivityCleanup] Delete error:', e.message);
+        return false;
+      }
+    },
+
+    // Delete multiple activities with rate limiting
+    async deleteActivities(activityIds, delayMs = 100) {
+      let deleted = 0;
+      let failed = 0;
+
+      for (const id of activityIds) {
+        const success = await this.deleteActivity(id);
+        if (success) deleted++;
+        else failed++;
+
+        // Rate limit to avoid overwhelming the API
+        if (delayMs > 0 && activityIds.indexOf(id) < activityIds.length - 1) {
+          await new Promise(r => setTimeout(r, delayMs));
+        }
+      }
+
+      console.log(`[ActivityCleanup] Batch delete complete: ${deleted} deleted, ${failed} failed`);
+      return { deleted, failed };
+    },
+
+    // Fetch all activities from remote
+    async fetchActivities() {
+      try {
+        const response = await fetch(this.endpoint, {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        if (!response.ok) return [];
+
+        const data = await response.json();
+        if (!data || !data.items) return [];
+
+        // Sort by creation time
+        return data.items.sort((a, b) =>
+          new Date(a.created_at || 0) - new Date(b.created_at || 0)
+        );
+      } catch (e) {
+        console.error('[ActivityCleanup] Fetch failed:', e.message);
+        return [];
+      }
+    },
+
+    // Strategy 1: Prune all activities before the latest snapshot
+    // Keeps N most recent snapshots as safety buffer
+    async pruneBeforeSnapshot(keepSnapshots = 2) {
+      console.log('[ActivityCleanup] Starting snapshot-based cleanup...');
+      const activities = await this.fetchActivities();
+
+      if (activities.length === 0) {
+        console.log('[ActivityCleanup] No activities found');
+        return { deleted: 0, failed: 0 };
+      }
+
+      // Find all snapshots (from newest to oldest)
+      const snapshots = [];
+      for (let i = activities.length - 1; i >= 0; i--) {
+        if (activities[i].action === 'state_snapshot') {
+          snapshots.push({ index: i, activity: activities[i] });
+        }
+      }
+
+      if (snapshots.length <= keepSnapshots) {
+        console.log(`[ActivityCleanup] Only ${snapshots.length} snapshot(s) found, keeping all`);
+        return { deleted: 0, failed: 0 };
+      }
+
+      // Find the cutoff point (keep the N most recent snapshots)
+      const cutoffSnapshot = snapshots[keepSnapshots - 1];
+      const cutoffIndex = cutoffSnapshot.index;
+
+      // Collect activities to delete (everything before the cutoff snapshot)
+      // But NEVER delete protected actions that might be needed for reconstruction
+      const toDelete = [];
+      for (let i = 0; i < cutoffIndex; i++) {
+        const activity = activities[i];
+        // Skip protected actions unless they're superseded by a newer snapshot
+        if (!this.PROTECTED_ACTIONS.has(activity.action) || activity.action !== 'state_snapshot') {
+          toDelete.push(activity.id);
+        }
+      }
+
+      // Also delete old snapshots (except the buffer)
+      for (let i = keepSnapshots; i < snapshots.length; i++) {
+        toDelete.push(snapshots[i].activity.id);
+      }
+
+      if (toDelete.length === 0) {
+        console.log('[ActivityCleanup] Nothing to prune');
+        return { deleted: 0, failed: 0 };
+      }
+
+      console.log(`[ActivityCleanup] Pruning ${toDelete.length} activities before snapshot from ${cutoffSnapshot.activity.created_at}`);
+      return await this.deleteActivities(toDelete);
+    },
+
+    // Strategy 2: Consolidate progress - keep only most recent per episode
+    async consolidateProgress() {
+      console.log('[ActivityCleanup] Starting progress consolidation...');
+      const activities = await this.fetchActivities();
+
+      const progressByEpisode = new Map();
+      const toDelete = [];
+
+      // Walk through chronologically, track latest progress per episode
+      for (const activity of activities) {
+        if (activity.action === 'playback_progress') {
+          const key = activity.data?.episodeId || activity.content_url;
+          if (!key) continue;
+
+          // If we already have a progress for this episode, mark old one for deletion
+          if (progressByEpisode.has(key)) {
+            toDelete.push(progressByEpisode.get(key).id);
+          }
+          progressByEpisode.set(key, activity);
+        }
+      }
+
+      if (toDelete.length === 0) {
+        console.log('[ActivityCleanup] No duplicate progress entries found');
+        return { deleted: 0, failed: 0 };
+      }
+
+      console.log(`[ActivityCleanup] Consolidating ${toDelete.length} redundant progress entries`);
+      return await this.deleteActivities(toDelete);
+    },
+
+    // Strategy 3: Prune old session data (ephemeral actions only)
+    async pruneOldSessions(maxAgeDays = 7) {
+      console.log(`[ActivityCleanup] Pruning ephemeral actions older than ${maxAgeDays} days...`);
+      const activities = await this.fetchActivities();
+
+      const cutoff = Date.now() - (maxAgeDays * 24 * 60 * 60 * 1000);
+      const toDelete = [];
+
+      for (const activity of activities) {
+        const activityTime = new Date(activity.created_at).getTime();
+
+        // Only delete old ephemeral actions, never protected ones
+        if (activityTime < cutoff &&
+            this.EPHEMERAL_ACTIONS.has(activity.action) &&
+            !this.PROTECTED_ACTIONS.has(activity.action)) {
+          toDelete.push(activity.id);
+        }
+      }
+
+      if (toDelete.length === 0) {
+        console.log('[ActivityCleanup] No old ephemeral actions to prune');
+        return { deleted: 0, failed: 0 };
+      }
+
+      console.log(`[ActivityCleanup] Pruning ${toDelete.length} old ephemeral actions`);
+      return await this.deleteActivities(toDelete);
+    },
+
+    // Strategy 4: Remove cancelled-out actions (add + remove pairs)
+    async pruneRedundantPairs() {
+      console.log('[ActivityCleanup] Looking for redundant action pairs...');
+      const activities = await this.fetchActivities();
+
+      const feedAdds = new Map();  // url -> activity
+      const feedRemoves = new Map();
+      const bookmarkAdds = new Map();  // id -> activity
+      const bookmarkRemoves = new Map();
+      const toDelete = [];
+
+      for (const activity of activities) {
+        const url = activity.data?.url || activity.content_url;
+        const id = activity.data?.id;
+
+        switch (activity.action) {
+          case 'feed_added':
+            if (url) feedAdds.set(url, activity);
+            break;
+          case 'feed_removed':
+            if (url && feedAdds.has(url)) {
+              // Found a pair - both can be deleted
+              toDelete.push(feedAdds.get(url).id);
+              toDelete.push(activity.id);
+              feedAdds.delete(url);
+            }
+            break;
+          case 'bookmark_added':
+          case 'article_bookmarked':
+          case 'podcast_bookmarked':
+            if (id) bookmarkAdds.set(id, activity);
+            break;
+          case 'bookmark_removed':
+          case 'article_unbookmarked':
+          case 'podcast_unbookmarked':
+            if (id && bookmarkAdds.has(id)) {
+              toDelete.push(bookmarkAdds.get(id).id);
+              toDelete.push(activity.id);
+              bookmarkAdds.delete(id);
+            }
+            break;
+        }
+      }
+
+      if (toDelete.length === 0) {
+        console.log('[ActivityCleanup] No redundant pairs found');
+        return { deleted: 0, failed: 0 };
+      }
+
+      console.log(`[ActivityCleanup] Removing ${toDelete.length} activities from ${toDelete.length / 2} cancelled pairs`);
+      return await this.deleteActivities(toDelete);
+    },
+
+    // Get cleanup statistics without deleting
+    async getStats() {
+      const activities = await this.fetchActivities();
+
+      const stats = {
+        total: activities.length,
+        byAction: {},
+        snapshots: 0,
+        oldestActivity: null,
+        newestActivity: null,
+        potentialSavings: {
+          beforeSnapshot: 0,
+          duplicateProgress: 0,
+          oldEphemeral: 0,
+          redundantPairs: 0
+        }
+      };
+
+      if (activities.length === 0) return stats;
+
+      stats.oldestActivity = activities[0].created_at;
+      stats.newestActivity = activities[activities.length - 1].created_at;
+
+      // Count by action
+      const progressByEpisode = new Map();
+      const feedAdds = new Set();
+      const bookmarkAdds = new Set();
+      const cutoff = Date.now() - (7 * 24 * 60 * 60 * 1000);
+      let latestSnapshotIndex = -1;
+
+      activities.forEach((a, i) => {
+        stats.byAction[a.action] = (stats.byAction[a.action] || 0) + 1;
+
+        if (a.action === 'state_snapshot') {
+          stats.snapshots++;
+          latestSnapshotIndex = i;
+        }
+
+        // Count duplicate progress
+        if (a.action === 'playback_progress') {
+          const key = a.data?.episodeId || a.content_url;
+          if (key && progressByEpisode.has(key)) {
+            stats.potentialSavings.duplicateProgress++;
+          }
+          if (key) progressByEpisode.set(key, true);
+        }
+
+        // Count old ephemeral
+        if (this.EPHEMERAL_ACTIONS.has(a.action) && new Date(a.created_at).getTime() < cutoff) {
+          stats.potentialSavings.oldEphemeral++;
+        }
+
+        // Count redundant pairs
+        const url = a.data?.url || a.content_url;
+        const id = a.data?.id;
+        if (a.action === 'feed_added' && url) feedAdds.add(url);
+        if (a.action === 'feed_removed' && url && feedAdds.has(url)) {
+          stats.potentialSavings.redundantPairs += 2;
+          feedAdds.delete(url);
+        }
+        if (['bookmark_added', 'article_bookmarked', 'podcast_bookmarked'].includes(a.action) && id) {
+          bookmarkAdds.add(id);
+        }
+        if (['bookmark_removed', 'article_unbookmarked', 'podcast_unbookmarked'].includes(a.action) && id && bookmarkAdds.has(id)) {
+          stats.potentialSavings.redundantPairs += 2;
+          bookmarkAdds.delete(id);
+        }
+      });
+
+      // Count before snapshot (keeping 2 snapshots buffer)
+      if (stats.snapshots > 2) {
+        stats.potentialSavings.beforeSnapshot = latestSnapshotIndex;
+      }
+
+      return stats;
+    },
+
+    // Full cleanup routine - runs all strategies
+    async runFullCleanup() {
+      console.log('[ActivityCleanup] === Starting Full Cleanup ===');
+      const startTime = Date.now();
+
+      const results = {
+        redundantPairs: { deleted: 0, failed: 0 },
+        duplicateProgress: { deleted: 0, failed: 0 },
+        oldSessions: { deleted: 0, failed: 0 },
+        beforeSnapshot: { deleted: 0, failed: 0 },
+        totalDeleted: 0,
+        totalFailed: 0,
+        duration: 0
+      };
+
+      // Run strategies in order (least destructive first)
+
+      // 1. Remove redundant pairs first (safest)
+      results.redundantPairs = await this.pruneRedundantPairs();
+
+      // 2. Consolidate progress
+      results.duplicateProgress = await this.consolidateProgress();
+
+      // 3. Prune old ephemeral actions
+      results.oldSessions = await this.pruneOldSessions(7);
+
+      // 4. Snapshot-based cleanup (most aggressive)
+      results.beforeSnapshot = await this.pruneBeforeSnapshot(2);
+
+      results.totalDeleted =
+        results.redundantPairs.deleted +
+        results.duplicateProgress.deleted +
+        results.oldSessions.deleted +
+        results.beforeSnapshot.deleted;
+
+      results.totalFailed =
+        results.redundantPairs.failed +
+        results.duplicateProgress.failed +
+        results.oldSessions.failed +
+        results.beforeSnapshot.failed;
+
+      results.duration = Date.now() - startTime;
+
+      console.log('[ActivityCleanup] === Cleanup Complete ===');
+      console.log(`[ActivityCleanup] Total: ${results.totalDeleted} deleted, ${results.totalFailed} failed in ${results.duration}ms`);
+
+      return results;
+    }
+  };
+  window.ActivityCleanup = ActivityCleanup;
 
   // === DOWNLOAD STORAGE (IndexedDB) ===
   const DownloadDB = {
@@ -4612,6 +5037,10 @@
     // Settings modal
     settingsBtn: $('settingsBtn'), settingsModal: $('settingsModal'),
     settingsClose: $('settingsClose'), openLinksToggle: $('openLinksToggle'),
+    // Activity cleanup
+    refreshActivityStats: $('refreshActivityStats'), runActivityCleanup: $('runActivityCleanup'),
+    activityStatTotal: $('activityStatTotal'), activityStatSnapshots: $('activityStatSnapshots'),
+    activityStatSavings: $('activityStatSavings'), cleanupStatus: $('cleanupStatus'),
     // Snapshot modal
     snapshotModal: $('snapshotModal'), snapshotModalClose: $('snapshotModalClose'),
     snapshotList: $('snapshotList'), createSnapshotBtn: $('createSnapshotBtn')
@@ -8063,6 +8492,61 @@
     state.openLinksInNewTab = el.openLinksToggle.checked;
     save();
     toast(state.openLinksInNewTab ? 'Links will open in new tab' : 'Links will open in same tab');
+  };
+
+  // Activity cleanup handlers
+  const refreshActivityStats = async () => {
+    el.activityStatTotal.textContent = '...';
+    el.activityStatSnapshots.textContent = '...';
+    el.activityStatSavings.textContent = '...';
+
+    try {
+      const stats = await ActivityCleanup.getStats();
+      el.activityStatTotal.textContent = stats.total.toLocaleString();
+      el.activityStatSnapshots.textContent = stats.snapshots;
+      const totalSavings =
+        stats.potentialSavings.duplicateProgress +
+        stats.potentialSavings.oldEphemeral +
+        stats.potentialSavings.redundantPairs +
+        stats.potentialSavings.beforeSnapshot;
+      el.activityStatSavings.textContent = totalSavings > 0 ? `~${totalSavings} activities` : 'None';
+    } catch (e) {
+      el.activityStatTotal.textContent = 'Error';
+      console.error('Failed to fetch activity stats:', e);
+    }
+  };
+
+  el.refreshActivityStats.onclick = refreshActivityStats;
+
+  el.runActivityCleanup.onclick = async () => {
+    if (!confirm('Run activity cleanup? This will delete old/redundant activities from the server.')) return;
+
+    el.runActivityCleanup.disabled = true;
+    el.cleanupStatus.style.display = 'block';
+    el.cleanupStatus.textContent = 'Running cleanup...';
+    el.cleanupStatus.style.color = 'var(--text2)';
+
+    try {
+      const results = await ActivityCleanup.runFullCleanup();
+      el.cleanupStatus.textContent = `Done! Deleted ${results.totalDeleted} activities in ${(results.duration / 1000).toFixed(1)}s`;
+      el.cleanupStatus.style.color = 'var(--accent)';
+      toast(`Cleanup complete: ${results.totalDeleted} activities removed`);
+      refreshActivityStats();
+    } catch (e) {
+      el.cleanupStatus.textContent = 'Cleanup failed: ' + e.message;
+      el.cleanupStatus.style.color = '#e74c3c';
+      console.error('Cleanup failed:', e);
+    }
+
+    el.runActivityCleanup.disabled = false;
+    setTimeout(() => { el.cleanupStatus.style.display = 'none'; }, 5000);
+  };
+
+  // Load stats when settings modal opens
+  const originalSettingsOpen = el.settingsBtn.onclick;
+  el.settingsBtn.onclick = () => {
+    originalSettingsOpen();
+    refreshActivityStats();
   };
 
   // Form validation and state
