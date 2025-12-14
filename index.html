@@ -260,19 +260,32 @@
       height: 56px;
       border-radius: 8px;
       background: var(--bg3);
+      overflow: hidden;
+      flex-shrink: 0;
+      position: relative;
+    }
+    .spotify-ep-art .img-fallback {
+      position: absolute;
+      inset: 0;
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 24px;
       color: var(--text3);
-      overflow: hidden;
-      flex-shrink: 0;
-      position: relative;
     }
     .spotify-ep-art img {
+      position: relative;
+      z-index: 1;
       width: 100%;
       height: 100%;
       object-fit: cover;
+    }
+    .spotify-ep-art img.eager-img {
+      opacity: 0;
+      transition: opacity 0.15s ease-out;
+    }
+    .spotify-ep-art img.eager-img.loaded {
+      opacity: 1;
     }
     .spotify-ep-play-overlay {
       position: absolute;
@@ -971,7 +984,11 @@
     .episode-list { display: flex; flex-direction: column; gap: 12px; }
     .episode { display: flex; gap: 16px; padding: 16px; background: var(--bg3); border-radius: 16px; cursor: pointer; border: 1px solid var(--border2); transition: all 0.2s ease-out; }
     .episode:hover { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.15); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
-    .episode-art { width: 64px; height: 64px; border-radius: 12px; object-fit: cover; flex-shrink: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+    .episode-art-wrap { width: 64px; height: 64px; border-radius: 12px; flex-shrink: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.2); position: relative; background: var(--bg3); overflow: hidden; }
+    .episode-art-wrap .img-fallback { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 24px; color: var(--text3); }
+    .episode-art { width: 100%; height: 100%; object-fit: cover; position: relative; z-index: 1; }
+    .episode-art.eager-img { opacity: 0; transition: opacity 0.15s ease-out; }
+    .episode-art.eager-img.loaded { opacity: 1; }
     .episode-body { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
     .episode-show { font-size: 13px; color: var(--blue); font-weight: 500; margin-bottom: 4px; cursor: pointer; }
     .episode-show:hover { color: var(--blue2); }
@@ -1124,7 +1141,11 @@
     .episodes-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
     .episode-card { background: var(--bg3); border-radius: 16px; overflow: hidden; cursor: pointer; border: 1px solid var(--border2); transition: all 0.2s ease-out; }
     .episode-card:hover { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.15); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
-    .episode-card-art { width: 100%; aspect-ratio: 1; object-fit: cover; }
+    .episode-card-art-wrap { width: 100%; aspect-ratio: 1; position: relative; background: var(--bg3); overflow: hidden; }
+    .episode-card-art-wrap .img-fallback { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 48px; color: var(--text3); }
+    .episode-card-art { width: 100%; height: 100%; object-fit: cover; position: relative; z-index: 1; }
+    .episode-card-art.eager-img { opacity: 0; transition: opacity 0.15s ease-out; }
+    .episode-card-art.eager-img.loaded { opacity: 1; }
     .episode-card-body { padding: 18px; }
     .episode-card-title { font-size: 15px; font-weight: 600; margin-bottom: 8px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
     .episode-card-meta { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text3); }
@@ -1132,7 +1153,11 @@
     .episodes-masonry { column-count: 3; column-gap: 20px; }
     .episode-masonry { break-inside: avoid; margin-bottom: 20px; background: var(--bg3); border-radius: 16px; overflow: hidden; cursor: pointer; border: 1px solid var(--border2); transition: all 0.2s ease-out; }
     .episode-masonry:hover { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.15); box-shadow: 0 4px 16px rgba(0,0,0,0.2); }
-    .episode-masonry-art { width: 100%; object-fit: cover; }
+    .episode-masonry-art-wrap { width: 100%; position: relative; background: var(--bg3); min-height: 150px; }
+    .episode-masonry-art-wrap .img-fallback { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 48px; color: var(--text3); }
+    .episode-masonry-art { width: 100%; object-fit: cover; position: relative; z-index: 1; }
+    .episode-masonry-art.eager-img { opacity: 0; transition: opacity 0.15s ease-out; }
+    .episode-masonry-art.eager-img.loaded { opacity: 1; }
     .episode-masonry-body { padding: 18px; }
     .episode-masonry-title { font-size: 15px; font-weight: 600; margin-bottom: 8px; }
     .episode-masonry-desc { font-size: 13px; color: var(--text2); line-height: 1.5; margin-bottom: 10px; }
@@ -1730,7 +1755,7 @@
         margin-bottom: var(--mobile-space-md);
       }
 
-      .episode-art {
+      .episode-art-wrap {
         width: 72px;
         height: 72px;
       }
@@ -1754,9 +1779,10 @@
       }
 
       .article-card-image,
-      .episode-card-art,
+      .episode-card-art-wrap,
       .all-card-image {
         height: 200px;
+        aspect-ratio: auto;
       }
 
       .article-card-body,
@@ -2678,35 +2704,49 @@
       opacity: 0.6;
     }
 
-    /* Lazy loading images - show placeholder initially, fade when real image loads */
-    img[data-src] {
-      transition: opacity 0.3s ease-in-out;
+    /* Image loading - immediate display with smooth fade-in */
+    .img-container {
+      position: relative;
       background: var(--bg3);
+      overflow: hidden;
     }
 
-    /* Fade in effect when loaded */
-    img[data-src].loaded, img.loaded {
+    .img-container img {
+      opacity: 0;
+      transition: opacity 0.2s ease-out;
+    }
+
+    .img-container img.loaded {
       opacity: 1;
     }
 
-    /* Image loading placeholder */
-    .img-placeholder {
-      background: linear-gradient(135deg, var(--bg3) 0%, var(--bg4) 100%);
+    .img-container .img-fallback {
+      position: absolute;
+      inset: 0;
       display: flex;
       align-items: center;
       justify-content: center;
       color: var(--text3);
+      font-size: 24px;
+      pointer-events: none;
     }
 
-    /* Progressive image loading blur effect */
-    img.loading {
-      filter: blur(5px);
-      transition: filter 0.3s ease-out;
+    /* Direct image loading - no lazy loading flicker */
+    img.eager-img {
+      opacity: 0;
+      transition: opacity 0.15s ease-out;
     }
 
-    img.loaded {
-      filter: blur(0);
+    img.eager-img.loaded {
+      opacity: 1;
     }
+
+    /* Legacy lazy-img support - works with new ImageLoader */
+    .lazy-img {
+      opacity: 0;
+      transition: opacity 0.15s ease-out;
+    }
+    .lazy-img.loaded { opacity: 1; }
 
     /* Content loading states */
     .content-loading {
@@ -4429,185 +4469,172 @@
     }
   };
 
-  // === IMAGE LOADER WITH CACHING ===
-  // Loads images with caching, lazy loading, and error handling
+  // === IMAGE LOADER - SIMPLE & RELIABLE ===
+  // Loads images immediately with proper fallbacks - no lazy loading flicker
   const ImageLoader = {
-    observer: null,
-    loadingImages: new Map(), // Track loading promises for deduplication
-    objectUrls: new Map(), // Track object URLs for cleanup (prevents memory leaks)
+    loadedUrls: new Set(), // Track successfully loaded URLs
+    failedUrls: new Set(), // Track failed URLs to avoid retrying
+    preloadQueue: new Set(), // URLs being preloaded
 
     init() {
-      // Create intersection observer for lazy loading
-      this.observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            const img = entry.target;
-            const src = img.dataset.src;
-            if (src) {
-              this.loadImage(img, src);
-              this.observer.unobserve(img);
-            }
-          }
-        });
-      }, {
-        rootMargin: '100px', // Start loading 100px before visible
-        threshold: 0.01
-      });
-
-      // Clean up object URLs periodically to prevent memory leaks
-      setInterval(() => this.cleanupObjectUrls(), 60000); // Every minute
-    },
-
-    // Revoke old object URLs to free memory
-    cleanupObjectUrls() {
-      const maxAge = 5 * 60 * 1000; // 5 minutes
-      const now = Date.now();
-      for (const [url, data] of this.objectUrls.entries()) {
-        if (now - data.created > maxAge) {
-          try {
-            URL.revokeObjectURL(data.objectUrl);
-          } catch (e) {}
-          this.objectUrls.delete(url);
-        }
+      // Set up scroll-based preloading after DOM is ready
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => this.setupPreloader());
+      } else {
+        this.setupPreloader();
       }
     },
 
-    // Create an object URL and track it for cleanup
-    createTrackedObjectUrl(src, blob) {
-      const objectUrl = URL.createObjectURL(blob);
-      this.objectUrls.set(src, { objectUrl, created: Date.now() });
-      return objectUrl;
+    // Setup aggressive preloading on scroll
+    setupPreloader() {
+      let preloadTimeout = null;
+
+      const preloadVisible = () => {
+        // Find all images that need loading in viewport + buffer
+        document.querySelectorAll('img[data-src]:not(.loaded)').forEach(img => {
+          const rect = img.getBoundingClientRect();
+          const buffer = 500; // Preload 500px ahead
+          if (rect.top < window.innerHeight + buffer && rect.bottom > -buffer) {
+            this.loadImage(img, img.dataset.src);
+          }
+        });
+      };
+
+      // Debounced preload on scroll
+      const onScroll = () => {
+        if (preloadTimeout) clearTimeout(preloadTimeout);
+        preloadTimeout = setTimeout(preloadVisible, 50);
+      };
+
+      // Use MutationObserver to watch for new scroll containers
+      const attachScrollListener = (container) => {
+        if (container && !container._imageLoaderAttached) {
+          container.addEventListener('scroll', onScroll, { passive: true });
+          container._imageLoaderAttached = true;
+        }
+      };
+
+      // Watch for container changes
+      const observer = new MutationObserver(() => {
+        ['podcastInboxList', 'newsList', 'feedScroll', 'showPageContent'].forEach(id => {
+          attachScrollListener(document.getElementById(id));
+        });
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+
+      // Also listen to window scroll
+      window.addEventListener('scroll', onScroll, { passive: true });
+
+      // Initial preload after short delay
+      setTimeout(preloadVisible, 100);
+
+      // Periodic check for unloaded images (backup)
+      setInterval(preloadVisible, 2000);
     },
 
-    async loadImage(imgElement, src) {
-      // If src is empty or invalid, show fallback
-      if (!src) {
-        imgElement.classList.add('loaded');
-        if (imgElement.parentElement) {
-          imgElement.parentElement.innerHTML = '<i class="ph ph-microphone-stage"></i>';
-        }
+    // Load an image - simple and direct
+    loadImage(imgElement, src) {
+      if (!imgElement || imgElement.classList.contains('loaded')) return;
+
+      // Invalid source - show fallback immediately
+      if (!src || src === 'undefined' || src === 'null') {
+        this.showFallback(imgElement);
         return;
       }
 
-      // Data URLs don't need fetching - load directly
+      // Already failed - show fallback
+      if (this.failedUrls.has(src)) {
+        this.showFallback(imgElement);
+        return;
+      }
+
+      // Data URLs - load immediately
       if (src.startsWith('data:')) {
         imgElement.src = src;
         imgElement.classList.add('loaded');
         return;
       }
 
-      // Check if we already have an object URL for this source
-      const existing = this.objectUrls.get(src);
-      if (existing) {
-        imgElement.src = existing.objectUrl;
+      // Already loaded successfully - reuse
+      if (this.loadedUrls.has(src)) {
+        imgElement.src = src;
         imgElement.classList.add('loaded');
         return;
       }
 
-      // If already loading this URL, wait for it and reuse result
-      if (this.loadingImages.has(src)) {
-        try {
-          const objectUrl = await this.loadingImages.get(src);
-          if (objectUrl) {
-            imgElement.src = objectUrl;
-            imgElement.classList.add('loaded');
-          } else {
-            this.showFallback(imgElement);
-          }
-        } catch (e) {
-          this.showFallback(imgElement);
+      // Set up load handlers
+      imgElement.onload = () => {
+        imgElement.classList.add('loaded');
+        this.loadedUrls.add(src);
+        // Keep set size manageable
+        if (this.loadedUrls.size > 500) {
+          const first = this.loadedUrls.values().next().value;
+          this.loadedUrls.delete(first);
         }
-        return;
-      }
+      };
 
-      // Create a promise for this load that can be shared
-      const loadPromise = this.fetchImage(src);
-      this.loadingImages.set(src, loadPromise);
-
-      try {
-        const objectUrl = await loadPromise;
-        if (objectUrl) {
-          imgElement.src = objectUrl;
-          imgElement.classList.add('loaded');
-        } else {
-          // Fall back to direct loading
-          this.loadDirect(imgElement, src);
+      imgElement.onerror = () => {
+        this.failedUrls.add(src);
+        this.showFallback(imgElement);
+        // Clear failed URLs periodically to allow retries
+        if (this.failedUrls.size > 100) {
+          this.failedUrls.clear();
         }
-      } catch (e) {
-        // On error, try loading directly (CORS issues)
-        this.loadDirect(imgElement, src);
-      } finally {
-        this.loadingImages.delete(src);
-      }
-    },
+      };
 
-    // Fetch and cache image, returns object URL or null
-    async fetchImage(src) {
-      try {
-        // Check cache first
-        const cachedBlob = await ContentCache.getCachedImage(src);
-        if (cachedBlob) {
-          return this.createTrackedObjectUrl(src, cachedBlob);
-        }
-
-        // Fetch and cache
-        const response = await fetch(src, { mode: 'cors' });
-        if (response.ok) {
-          const blob = await response.blob();
-          if (blob.type.startsWith('image/')) {
-            // Cache the image
-            ContentCache.cacheImage(src, blob).catch(() => {});
-            return this.createTrackedObjectUrl(src, blob);
-          }
-        }
-        return null;
-      } catch (e) {
-        return null;
-      }
-    },
-
-    // Load image directly (bypasses CORS fetch, lets browser handle it)
-    loadDirect(imgElement, src) {
-      imgElement.onload = () => imgElement.classList.add('loaded');
-      imgElement.onerror = () => this.showFallback(imgElement);
+      // Load directly - let browser handle caching
       imgElement.src = src;
     },
 
     // Show fallback icon
     showFallback(imgElement) {
-      imgElement.classList.add('loaded');
-      if (imgElement.parentElement) {
-        imgElement.parentElement.innerHTML = '<i class="ph ph-microphone-stage"></i>';
+      imgElement.classList.add('loaded', 'failed');
+      const parent = imgElement.parentElement;
+      if (parent && !parent.querySelector('.img-fallback')) {
+        // Don't replace the img, just add a fallback icon behind it
+        const fallback = document.createElement('i');
+        fallback.className = 'ph ph-microphone-stage img-fallback';
+        fallback.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--text3);';
+        parent.style.position = 'relative';
+        parent.insertBefore(fallback, imgElement);
       }
     },
 
-    // Observe an image for lazy loading
+    // Observe an image for loading (backwards compatibility)
     observe(imgElement) {
-      if (this.observer && imgElement) {
-        this.observer.observe(imgElement);
+      if (imgElement && imgElement.dataset.src) {
+        // Load immediately if in viewport, otherwise queue
+        const rect = imgElement.getBoundingClientRect();
+        if (rect.top < window.innerHeight + 300 && rect.bottom > -300) {
+          this.loadImage(imgElement, imgElement.dataset.src);
+        }
       }
     },
 
-    // Preload images in advance
-    async preloadImages(urls) {
-      const promises = urls.slice(0, 10).map(async url => {
-        if (!url) return;
-        const cached = await ContentCache.getCachedImage(url);
-        if (!cached) {
-          try {
-            const response = await fetch(url, { mode: 'cors' });
-            if (response.ok) {
-              const blob = await response.blob();
-              if (blob.type.startsWith('image/')) {
-                await ContentCache.cacheImage(url, blob);
-              }
-            }
-          } catch (e) {
-            // Ignore preload errors
-          }
-        }
+    // Preload images in advance (for upcoming content)
+    preloadImages(urls) {
+      urls.forEach(url => {
+        if (!url || this.loadedUrls.has(url) || this.failedUrls.has(url) || this.preloadQueue.has(url)) return;
+        if (url.startsWith('data:')) return;
+
+        this.preloadQueue.add(url);
+        const img = new Image();
+        img.onload = () => {
+          this.loadedUrls.add(url);
+          this.preloadQueue.delete(url);
+        };
+        img.onerror = () => {
+          this.preloadQueue.delete(url);
+        };
+        img.src = url;
       });
-      await Promise.allSettled(promises);
+    },
+
+    // Load all visible images immediately
+    loadAllVisible() {
+      document.querySelectorAll('img[data-src]:not(.loaded)').forEach(img => {
+        this.loadImage(img, img.dataset.src);
+      });
     }
   };
 
@@ -6999,7 +7026,7 @@
 
     // Setup lazy loading for newly rendered images
     requestAnimationFrame(() => {
-      el.newsList.querySelectorAll('img[data-src]').forEach(img => ImageLoader.observe(img));
+      el.newsList.querySelectorAll('img[data-src]:not(.loaded)').forEach(img => ImageLoader.loadImage(img, img.dataset.src));
     });
 
     // Set up IntersectionObserver for infinite scroll
@@ -7080,7 +7107,8 @@
 
     return `<div class="spotify-ep ${inProgress ? 'in-progress' : ''} ${done ? 'played' : ''} ${isPlaying ? 'now-playing' : ''}" data-ep="${ep.id}">
       <div class="spotify-ep-art">
-        <img src="${imgSrc}" loading="lazy" onerror="this.src='${placeholderImg}'">
+        <i class="ph ph-microphone-stage img-fallback"></i>
+        <img data-src="${imgSrc}" class="eager-img" onload="this.classList.add('loaded')" onerror="this.style.display='none'">
         <button class="spotify-ep-play-overlay" data-ep="${ep.id}">
           ${isPlaying ? '<i class="ph-fill ph-pause"></i>' : '<i class="ph-fill ph-play"></i>'}
         </button>
@@ -7207,9 +7235,11 @@
       Perf.trackScroll(el.podcastInboxList);
     }
 
-    // Setup lazy loading for newly rendered images
+    // Load images immediately
     requestAnimationFrame(() => {
-      el.podcastInboxList.querySelectorAll('img[data-src]').forEach(img => ImageLoader.observe(img));
+      el.podcastInboxList.querySelectorAll('img[data-src]:not(.loaded)').forEach(img => {
+        ImageLoader.loadImage(img, img.dataset.src);
+      });
     });
 
     // Set up IntersectionObserver for infinite scroll
@@ -7290,7 +7320,7 @@
       dlBtnContent = `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>`;
     }
 
-    return `<div class="episode" data-ep="${ep.id}"><img class="episode-art" src="${imgSrc}" loading="lazy" onerror="this.src='${placeholderImg}'"><div class="episode-body"><div class="episode-show">${show?.name || ''}</div><div class="episode-title">${ep.title}</div><div class="episode-footer"><button class="ep-play" data-ep="${ep.id}"><svg width="10" height="10" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button><div class="ep-progress"><div class="ep-bar"><div class="ep-fill" style="width:${pct}%"></div></div><span class="ep-time">${done ? 'Played' : pr > 0 ? fmt(rem) + ' left' : fmt(ep.duration)}</span></div><button class="ep-dl ${ep.downloaded ? 'active' : ''} ${isDownloading ? 'downloading' : ''}" data-dl="${ep.id}" ${isDownloading ? 'disabled' : ''}>${dlBtnContent}</button></div></div></div>`;
+    return `<div class="episode" data-ep="${ep.id}"><div class="episode-art-wrap"><i class="ph ph-microphone-stage img-fallback"></i><img class="episode-art eager-img" data-src="${imgSrc}" onload="this.classList.add('loaded')" onerror="this.style.display='none'"></div><div class="episode-body"><div class="episode-show">${show?.name || ''}</div><div class="episode-title">${ep.title}</div><div class="episode-footer"><button class="ep-play" data-ep="${ep.id}"><svg width="10" height="10" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button><div class="ep-progress"><div class="ep-bar"><div class="ep-fill" style="width:${pct}%"></div></div><span class="ep-time">${done ? 'Played' : pr > 0 ? fmt(rem) + ' left' : fmt(ep.duration)}</span></div><button class="ep-dl ${ep.downloaded ? 'active' : ''} ${isDownloading ? 'downloading' : ''}" data-dl="${ep.id}" ${isDownloading ? 'disabled' : ''}>${dlBtnContent}</button></div></div></div>`;
   };
   
   // View options HTML generator
@@ -7348,7 +7378,7 @@
     const imgSrc = ep.image || show?.image || placeholderImg;
     const pr = state.progress[ep.id] || 0;
     return `<div class="episode-card" data-ep="${ep.id}">
-      <img class="episode-card-art" src="${imgSrc}" loading="lazy" onerror="this.src='${placeholderImg}'">
+      <div class="episode-card-art-wrap"><i class="ph ph-microphone-stage img-fallback"></i><img class="episode-card-art eager-img" data-src="${imgSrc}" onload="this.classList.add('loaded')" onerror="this.style.display='none'"></div>
       <div class="episode-card-body">
         <div class="episode-card-title">${ep.title}</div>
         <div class="episode-card-meta">
@@ -7363,7 +7393,7 @@
     const show = state.feeds.find(f => f.id === ep.feedId);
     const imgSrc = ep.image || show?.image || placeholderImg;
     return `<div class="episode-masonry" data-ep="${ep.id}">
-      <img class="episode-masonry-art" src="${imgSrc}" loading="lazy" onerror="this.src='${placeholderImg}'">
+      <div class="episode-masonry-art-wrap"><i class="ph ph-microphone-stage img-fallback"></i><img class="episode-masonry-art eager-img" data-src="${imgSrc}" onload="this.classList.add('loaded')" onerror="this.style.display='none'"></div>
       <div class="episode-masonry-body">
         <div class="episode-masonry-title">${ep.title}</div>
         ${ep.desc ? `<div class="episode-masonry-desc">${ep.desc}</div>` : ''}
@@ -7500,7 +7530,7 @@
 
     // Setup lazy loading for newly rendered images
     requestAnimationFrame(() => {
-      el.showPage.querySelectorAll('img[data-src]').forEach(img => ImageLoader.observe(img));
+      el.showPage.querySelectorAll('img[data-src]:not(.loaded)').forEach(img => ImageLoader.loadImage(img, img.dataset.src));
     });
   };
 
@@ -7624,7 +7654,7 @@
 
     // Setup lazy loading for images
     requestAnimationFrame(() => {
-      el.episodePage.querySelectorAll('img[data-src]').forEach(img => ImageLoader.observe(img));
+      el.episodePage.querySelectorAll('img[data-src]:not(.loaded)').forEach(img => ImageLoader.loadImage(img, img.dataset.src));
     });
   };
 
@@ -7887,7 +7917,7 @@
 
     // Setup lazy loading for newly rendered images
     requestAnimationFrame(() => {
-      el.feedScroll.querySelectorAll('img[data-src]').forEach(img => ImageLoader.observe(img));
+      el.feedScroll.querySelectorAll('img[data-src]:not(.loaded)').forEach(img => ImageLoader.loadImage(img, img.dataset.src));
     });
 
     // Set up IntersectionObserver for infinite scroll
@@ -10556,7 +10586,7 @@
     setTimeout(() => {
       ContentPreloader.preloadVisibleImages();
       // Setup lazy loading for all images currently in DOM
-      document.querySelectorAll('img[data-src]').forEach(img => ImageLoader.observe(img));
+      document.querySelectorAll('img[data-src]:not(.loaded)').forEach(img => ImageLoader.loadImage(img, img.dataset.src));
     }, 1000);
 
     // Auto-refresh if we have feeds - fetch new content in background
