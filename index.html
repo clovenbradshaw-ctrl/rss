@@ -208,6 +208,516 @@
     .podcast-episode-play:hover { background: var(--blue2); transform: scale(1.05); }
     .podcast-episode-image { width: 100px; height: 70px; border-radius: 10px; object-fit: cover; flex-shrink: 0; }
 
+    /* === SPOTIFY-STYLE PODCAST EPISODES === */
+    .podcast-inbox-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0;
+      background: var(--bg);
+    }
+
+    .spotify-ep {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      cursor: pointer;
+      transition: background 0.15s;
+      border-bottom: 1px solid var(--border);
+    }
+    .spotify-ep:hover { background: rgba(255,255,255,0.05); }
+    .spotify-ep:active { background: rgba(255,255,255,0.08); }
+    .spotify-ep.now-playing { background: rgba(59,130,246,0.1); }
+    .spotify-ep.played { opacity: 0.6; }
+    .spotify-ep.played:hover { opacity: 0.8; }
+
+    .spotify-ep-art {
+      width: 56px;
+      height: 56px;
+      border-radius: 8px;
+      background: var(--bg3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      color: var(--text3);
+      overflow: hidden;
+      flex-shrink: 0;
+      position: relative;
+    }
+    .spotify-ep-art img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .spotify-ep-play-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.15s;
+      border: none;
+      cursor: pointer;
+      color: #fff;
+      font-size: 22px;
+    }
+    .spotify-ep:hover .spotify-ep-play-overlay,
+    .spotify-ep.now-playing .spotify-ep-play-overlay { opacity: 1; }
+    .spotify-ep.now-playing .spotify-ep-play-overlay {
+      background: rgba(59,130,246,0.8);
+      opacity: 1;
+    }
+
+    .spotify-ep-info {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .spotify-ep-title {
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--text);
+      line-height: 1.3;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .spotify-ep.now-playing .spotify-ep-title { color: var(--blue); }
+    .spotify-ep.played .spotify-ep-title { color: var(--text2); font-weight: 400; }
+
+    .spotify-ep-meta {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--text3);
+    }
+    .spotify-ep-show { color: var(--text2); }
+    .spotify-ep-dot { opacity: 0.5; }
+    .spotify-ep-date { opacity: 0.8; }
+
+    .spotify-ep-progress {
+      width: 100%;
+      height: 3px;
+      background: var(--bg4);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-top: 4px;
+    }
+    .spotify-ep-progress-fill {
+      height: 100%;
+      background: var(--blue);
+      border-radius: 2px;
+    }
+
+    .spotify-ep-duration {
+      font-size: 12px;
+      color: var(--text3);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .spotify-ep-duration i { font-size: 14px; color: var(--blue); }
+
+    /* Mobile-optimized podcast inbox */
+    .podcast-inbox-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: var(--bg);
+    }
+
+    /* === SPOTIFY-STYLE MINI PLAYER === */
+    .player {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(180deg, var(--bg3) 0%, var(--bg2) 100%);
+      border-top: 1px solid var(--border2);
+      display: none;
+      flex-direction: column;
+      z-index: 100;
+      transition: transform 0.3s ease, opacity 0.3s ease;
+    }
+    .player.active { display: flex; }
+    .player.hidden { transform: translateY(100%); opacity: 0; pointer-events: none; }
+    .player.mini { padding: 8px 12px; }
+
+    .player-main {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px 8px;
+    }
+
+    .player-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
+      min-width: 0;
+      cursor: pointer;
+    }
+
+    .player-art {
+      width: 48px;
+      height: 48px;
+      border-radius: 6px;
+      object-fit: cover;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      flex-shrink: 0;
+    }
+
+    .player-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .player-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 2px;
+    }
+
+    .player-show {
+      font-size: 12px;
+      color: var(--text3);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .player-center {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .player-skip {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: transparent;
+      border: none;
+      color: var(--text2);
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+    }
+    .player-skip:hover { color: var(--text); background: rgba(255,255,255,0.05); }
+
+    .player-play {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: #fff;
+      border: none;
+      color: #000;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.1s;
+      flex-shrink: 0;
+    }
+    .player-play:hover { transform: scale(1.05); }
+    .player-play:active { transform: scale(0.95); }
+
+    .player-right {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .player-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: transparent;
+      border: none;
+      color: var(--text3);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+      position: relative;
+    }
+    .player-btn:hover { color: var(--text); }
+    .player-btn.active { color: var(--blue); }
+
+    .player-progress {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 16px 12px;
+    }
+
+    .player-time {
+      font-size: 11px;
+      color: var(--text3);
+      font-variant-numeric: tabular-nums;
+      min-width: 36px;
+    }
+    .player-time.right { text-align: right; }
+
+    .player-bar {
+      flex: 1;
+      height: 4px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 2px;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+    .player-bar:hover { height: 6px; margin: -1px 0; }
+
+    .player-fill {
+      height: 100%;
+      background: var(--blue);
+      border-radius: 2px;
+      position: relative;
+    }
+    .player-bar:hover .player-fill { background: #1ed760; }
+
+    /* Player hide toggle */
+    .player-hide-btn {
+      position: absolute;
+      top: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 40px;
+      height: 20px;
+      background: var(--bg3);
+      border: 1px solid var(--border2);
+      border-bottom: none;
+      border-radius: 8px 8px 0 0;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text3);
+      font-size: 12px;
+      z-index: 1;
+    }
+    .player-hide-btn:hover { color: var(--text); }
+
+    /* === SPOTIFY-STYLE EXPANDED PLAYER === */
+    .expanded {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      z-index: 200;
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .expanded.active { display: flex; }
+
+    .expanded-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      padding-top: max(16px, env(safe-area-inset-top));
+    }
+
+    .expanded-close {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: transparent;
+      border: none;
+      color: var(--text);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .expanded-label {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text3);
+    }
+
+    .expanded-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      padding-bottom: max(40px, env(safe-area-inset-bottom));
+      gap: 24px;
+    }
+
+    .swipe-container {
+      position: relative;
+      width: min(320px, 80vw);
+      aspect-ratio: 1;
+    }
+
+    .expanded-art {
+      width: 100%;
+      height: 100%;
+      border-radius: 12px;
+      object-fit: cover;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    }
+
+    .swipe-indicator {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0.7);
+      border-radius: 12px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.15s;
+    }
+    .swipe-indicator.active { opacity: 1; }
+
+    .expanded-info {
+      text-align: center;
+      max-width: 100%;
+      padding: 0 20px;
+    }
+
+    .expanded-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.3;
+      margin-bottom: 8px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .expanded-show {
+      font-size: 14px;
+      color: var(--text2);
+    }
+
+    .expanded-progress {
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .expanded-bar {
+      width: 100%;
+      height: 4px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 2px;
+      cursor: pointer;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+    .expanded-bar:active { height: 6px; margin-bottom: 6px; }
+
+    .expanded-fill {
+      height: 100%;
+      background: #fff;
+      border-radius: 2px;
+    }
+
+    .expanded-times {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--text3);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .expanded-controls {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+    }
+
+    .expanded-skip {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: transparent;
+      border: none;
+      color: var(--text);
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+    }
+    .expanded-skip:hover { transform: scale(1.1); }
+    .expanded-skip:active { transform: scale(0.95); }
+
+    .expanded-play {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: #fff;
+      border: none;
+      color: #000;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.1s;
+    }
+    .expanded-play:hover { transform: scale(1.05); }
+    .expanded-play:active { transform: scale(0.95); }
+
+    .expanded-extra {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 32px;
+      margin-top: 16px;
+    }
+
+    .expanded-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      background: none;
+      border: none;
+      color: var(--text3);
+      cursor: pointer;
+      padding: 8px;
+      transition: color 0.15s;
+    }
+    .expanded-btn:hover { color: var(--text); }
+    .expanded-btn.active { color: var(--blue); }
+    .expanded-btn i { font-size: 22px; }
+    .expanded-btn span { font-size: 10px; font-weight: 600; text-transform: uppercase; }
+
     /* === ALL VIEW === */
     .all-view { display: none; height: 100%; flex-direction: column; }
     .all-view.active { display: flex; }
@@ -1695,6 +2205,210 @@
         min-height: var(--mobile-touch-min);
         padding: 12px 24px;
       }
+
+      /* ==================
+         PHASE 20: SPOTIFY-STYLE MOBILE
+         ================== */
+
+      /* Episode list - full width, minimal padding */
+      .podcast-inbox-list {
+        padding: 0;
+        padding-bottom: calc(160px + var(--sab));
+      }
+
+      .spotify-ep {
+        padding: 12px 16px;
+        gap: 12px;
+      }
+
+      .spotify-ep-art {
+        width: 52px;
+        height: 52px;
+        border-radius: 6px;
+      }
+
+      .spotify-ep-play-overlay {
+        opacity: 0;
+      }
+
+      .spotify-ep:active .spotify-ep-play-overlay,
+      .spotify-ep.now-playing .spotify-ep-play-overlay {
+        opacity: 1;
+      }
+
+      .spotify-ep-title {
+        font-size: 14px;
+        -webkit-line-clamp: 2;
+      }
+
+      .spotify-ep-meta {
+        font-size: 12px;
+      }
+
+      .spotify-ep-duration {
+        font-size: 11px;
+      }
+
+      /* Mini player - mobile optimized */
+      .player {
+        bottom: calc(70px + var(--sab));
+        border-radius: 12px 12px 0 0;
+        margin: 0 8px;
+        width: calc(100% - 16px);
+        box-shadow: 0 -4px 20px rgba(0,0,0,0.5);
+      }
+
+      .player-main {
+        padding: 10px 12px 6px;
+        gap: 10px;
+      }
+
+      .player-art {
+        width: 44px;
+        height: 44px;
+        border-radius: 6px;
+      }
+
+      .player-title {
+        font-size: 13px;
+      }
+
+      .player-show {
+        font-size: 11px;
+      }
+
+      .player-center {
+        gap: 4px;
+      }
+
+      .player-skip {
+        width: 32px;
+        height: 32px;
+        font-size: 11px;
+        display: none; /* Hide skip buttons on mini player mobile */
+      }
+
+      .player-play {
+        width: 40px;
+        height: 40px;
+      }
+
+      .player-play svg {
+        width: 16px;
+        height: 16px;
+      }
+
+      .player-right {
+        display: none; /* Hide extra buttons on mini player mobile */
+      }
+
+      .player-progress {
+        padding: 0 12px 10px;
+        gap: 6px;
+      }
+
+      .player-time {
+        font-size: 10px;
+        min-width: 32px;
+      }
+
+      .player-bar {
+        height: 3px;
+      }
+
+      /* Expanded player - full mobile experience */
+      .expanded-header {
+        padding: 12px 16px;
+        padding-top: max(12px, var(--sat));
+      }
+
+      .expanded-body {
+        padding: 16px;
+        padding-bottom: max(32px, var(--sab));
+        gap: 20px;
+        justify-content: flex-start;
+        padding-top: 0;
+      }
+
+      .swipe-container {
+        width: min(280px, 70vw);
+        margin-top: 20px;
+      }
+
+      .expanded-art {
+        border-radius: 8px;
+      }
+
+      .expanded-info {
+        padding: 0;
+      }
+
+      .expanded-title {
+        font-size: 18px;
+        margin-bottom: 6px;
+      }
+
+      .expanded-show {
+        font-size: 13px;
+      }
+
+      .expanded-progress {
+        max-width: 100%;
+        padding: 0 8px;
+      }
+
+      .expanded-bar {
+        height: 4px;
+        margin-bottom: 6px;
+      }
+
+      .expanded-times {
+        font-size: 11px;
+      }
+
+      .expanded-controls {
+        gap: 20px;
+        margin-top: 8px;
+      }
+
+      .expanded-skip {
+        width: 48px;
+        height: 48px;
+        font-size: 13px;
+      }
+
+      .expanded-play {
+        width: 64px;
+        height: 64px;
+      }
+
+      .expanded-play svg {
+        width: 24px;
+        height: 24px;
+      }
+
+      .expanded-extra {
+        gap: 24px;
+        margin-top: 24px;
+      }
+
+      .expanded-btn i {
+        font-size: 20px;
+      }
+
+      .expanded-btn span {
+        font-size: 9px;
+      }
+
+      /* Hide podcast sidebar on mobile */
+      .podcast-sidebar {
+        display: none;
+      }
+
+      /* Bottom nav adjustments when player is visible */
+      .main-toggle {
+        z-index: 90;
+      }
     }
 
     /* ==================
@@ -1880,16 +2594,6 @@
         <div class="sidebar-content" id="podcastSources"></div>
       </aside>
       <div class="podcast-inbox-content" id="podcastInboxContent">
-        <div class="podcast-inbox-header">
-          <div class="podcast-inbox-title" id="podcastInboxTitle">All Episodes</div>
-          <div class="category-chips" id="podcastCategoryChips"></div>
-        </div>
-        <div class="tag-filter-section" id="podcastTagFilterSection">
-          <div class="tag-filter-header">
-            <span class="tag-filter-title">Filter by Topic</span>
-          </div>
-          <div class="tag-chips" id="podcastTagChips"></div>
-        </div>
         <div class="podcast-inbox-list" id="podcastInboxList"></div>
       </div>
       <div class="show-page" id="showPage"></div>
@@ -2006,6 +2710,20 @@
         <button class="expanded-skip" id="expBack">-15</button>
         <button class="expanded-play" id="expPlay"><svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24" id="expPlayIcon"><path d="M8 5v14l11-7z"/></svg></button>
         <button class="expanded-skip" id="expFwd">+30</button>
+      </div>
+      <div class="expanded-extra">
+        <button class="expanded-btn" id="expSpeed">
+          <i class="ph ph-gauge"></i>
+          <span id="expSpeedLabel">1x</span>
+        </button>
+        <button class="expanded-btn" id="expSleep">
+          <i class="ph ph-moon"></i>
+          <span>Sleep</span>
+        </button>
+        <button class="expanded-btn" id="expBookmark">
+          <i class="ph ph-bookmark-simple"></i>
+          <span>Save</span>
+        </button>
       </div>
     </div>
   </div>
@@ -3068,10 +3786,9 @@
     newsContent: $('newsContent'), sourcePage: $('sourcePage'),
     tagFilterSection: $('tagFilterSection'), tagChips: $('tagChips'),
     // Podcast inbox elements
-    podcastSources: $('podcastSources'), podcastInboxTitle: $('podcastInboxTitle'),
-    podcastCategoryChips: $('podcastCategoryChips'), podcastInboxList: $('podcastInboxList'),
-    podcastInboxContent: $('podcastInboxContent'), podcastTagFilterSection: $('podcastTagFilterSection'),
-    podcastTagChips: $('podcastTagChips'),
+    podcastSources: $('podcastSources'),
+    podcastInboxList: $('podcastInboxList'),
+    podcastInboxContent: $('podcastInboxContent'),
     showPage: $('showPage'),
     player: $('player'), playerArt: $('playerArt'), playerTitle: $('playerTitle'),
     playerShow: $('playerShow'), pPlay: $('pPlay'), pPlayIcon: $('pPlayIcon'),
@@ -4537,58 +5254,6 @@
       }).join('');
   };
 
-  const renderPodcastCategories = () => {
-    // Collect categories from podcast feeds
-    const podcastFeeds = state.feeds.filter(f => f.type === 'podcast');
-    const cats = ['All', ...new Set(podcastFeeds.map(f => f.category).filter(c => c && c !== 'All'))];
-    el.podcastCategoryChips.innerHTML = cats.map(c => `<button class="chip ${state.selectedPodcastCat === c ? 'active' : ''}" data-cat="${c}">${c}</button>`).join('');
-  };
-
-  const renderPodcastTagFilters = () => {
-    // Collect all tags from podcast episodes and feeds
-    const tagCounts = {};
-    state.podcasts.forEach(p => {
-      if (p.tags) {
-        p.tags.forEach(tag => {
-          tagCounts[tag] = (tagCounts[tag] || 0) + 1;
-        });
-      }
-    });
-
-    // Also include tags from podcast feeds
-    state.feeds.filter(f => f.type === 'podcast').forEach(f => {
-      if (f.tags) {
-        f.tags.forEach(tag => {
-          if (!tagCounts[tag]) tagCounts[tag] = 0;
-        });
-      }
-    });
-
-    // Sort tags by count descending
-    const sortedTags = Object.entries(tagCounts)
-      .filter(([_, count]) => count > 0)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 12);
-
-    if (sortedTags.length === 0) {
-      el.podcastTagFilterSection.style.display = 'none';
-      return;
-    }
-
-    el.podcastTagFilterSection.style.display = 'block';
-    el.podcastTagChips.innerHTML = `
-      <button class="tag-chip ${state.selectedPodcastTag === 'all' ? 'active' : ''}" data-tag="all">
-        <span class="tag-icon"><i class="ph ph-tag"></i></span>All
-      </button>
-      ${sortedTags.map(([tag, count]) => {
-        const info = getTagInfo(tag);
-        return `<button class="tag-chip ${state.selectedPodcastTag === tag ? 'active' : ''}" data-tag="${tag}">
-          <span class="tag-icon">${info.icon}</span>${info.label}<span class="tag-count">${count}</span>
-        </button>`;
-      }).join('')}
-    `;
-  };
-
   const renderPodcastEpisodeItem = (ep) => {
     const show = state.feeds.find(f => f.id === ep.feedId);
     const pr = state.progress[ep.id] || 0;
@@ -4596,27 +5261,25 @@
     const done = pr >= ep.duration * 0.95;
     const inProgress = pr > 0 && !done;
     const imgSrc = ep.image || show?.image || placeholderImg;
+    const isPlaying = state.currentEp?.id === ep.id && state.playing;
 
-    return `<div class="podcast-episode-item ${inProgress ? 'in-progress' : ''}" data-ep="${ep.id}">
-      <div class="podcast-episode-icon"><img src="${imgSrc}" onerror="this.parentElement.innerHTML='<i class=\\'ph ph-microphone-stage\\'></i>'"></div>
-      <div class="podcast-episode-body">
-        <div class="podcast-episode-meta">
-          <span class="podcast-episode-show" data-show="${ep.feedId}">${show?.name || ''}</span>
-          <span class="podcast-episode-time">· ${ep.date}</span>
-          ${inProgress ? '<span class="podcast-episode-new">IN PROGRESS</span>' : ''}
-        </div>
-        <div class="podcast-episode-title">${ep.title}</div>
-        ${ep.desc ? `<div class="podcast-episode-desc">${ep.desc}</div>` : ''}
-        <div class="podcast-episode-footer">
-          <button class="podcast-episode-play" data-ep="${ep.id}">
-            <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-          </button>
-          <span class="podcast-episode-duration"><i class="ph ph-clock"></i> ${done ? 'Played' : pr > 0 ? fmt(ep.duration - pr) + ' left' : fmt(ep.duration)}</span>
-          ${pr > 0 && !done ? `<div class="podcast-episode-progress"><div class="podcast-episode-progress-fill" style="width:${pct}%"></div></div>` : ''}
-          ${renderItemTags(ep.tags)}
-        </div>
+    return `<div class="spotify-ep ${inProgress ? 'in-progress' : ''} ${done ? 'played' : ''} ${isPlaying ? 'now-playing' : ''}" data-ep="${ep.id}">
+      <div class="spotify-ep-art">
+        <img src="${imgSrc}" onerror="this.parentElement.innerHTML='<i class=\\'ph ph-microphone-stage\\'></i>'">
+        <button class="spotify-ep-play-overlay" data-ep="${ep.id}">
+          ${isPlaying ? '<i class="ph-fill ph-pause"></i>' : '<i class="ph-fill ph-play"></i>'}
+        </button>
       </div>
-      ${ep.image ? `<img class="podcast-episode-image" src="${ep.image}" onerror="this.style.display='none'">` : ''}
+      <div class="spotify-ep-info">
+        <div class="spotify-ep-title">${ep.title}</div>
+        <div class="spotify-ep-meta">
+          <span class="spotify-ep-show">${show?.name || ''}</span>
+          <span class="spotify-ep-dot">·</span>
+          <span class="spotify-ep-date">${ep.date}</span>
+        </div>
+        ${inProgress ? `<div class="spotify-ep-progress"><div class="spotify-ep-progress-fill" style="width:${pct}%"></div></div>` : ''}
+        <div class="spotify-ep-duration">${done ? '<i class="ph ph-check-circle"></i> Played' : pr > 0 ? fmt(ep.duration - pr) + ' left' : fmt(ep.duration)}</div>
+      </div>
     </div>`;
   };
 
@@ -4628,16 +5291,6 @@
       items = items.filter(i => i.feedId === state.selectedPodcastSource);
     }
 
-    // Apply category filter
-    if (state.selectedPodcastCat !== 'All') {
-      items = fuzzy(state.selectedPodcastCat, items, ['feed.category']);
-    }
-
-    // Apply tag filter
-    if (state.selectedPodcastTag && state.selectedPodcastTag !== 'all') {
-      items = filterByTag(items, state.selectedPodcastTag);
-    }
-
     // Apply search query
     if (state.query) {
       items = fuzzy(state.query, items, ['title', 'desc', 'feed.name']);
@@ -4645,9 +5298,8 @@
 
     if (!items.length) {
       const hasFeeds = state.feeds.filter(f => f.type === 'podcast').length > 0;
-      const hasTagFilter = state.selectedPodcastTag && state.selectedPodcastTag !== 'all';
       el.podcastInboxList.innerHTML = hasFeeds
-        ? `<div class="empty"><div class="empty-icon"><i class="ph ph-tray"></i></div><div class="empty-title">No episodes found</div><div style="color:var(--text3);margin-top:8px">${hasTagFilter ? 'Try selecting a different topic' : 'Try refreshing your feeds'}</div></div>`
+        ? `<div class="empty"><div class="empty-icon"><i class="ph ph-tray"></i></div><div class="empty-title">No episodes found</div><div style="color:var(--text3);margin-top:8px">Try refreshing your feeds</div></div>`
         : '<div class="empty"><div class="empty-icon"><i class="ph ph-microphone-stage"></i></div><div class="empty-title">No podcasts yet</div><div style="color:var(--text3);margin-top:8px">Click + to add your first podcast</div></div>';
       return;
     }
@@ -4660,8 +5312,6 @@
     el.podcastInboxContent.style.display = 'flex';
 
     renderPodcastSources();
-    renderPodcastCategories();
-    renderPodcastTagFilters();
     renderPodcastInbox();
   };
 
@@ -5103,6 +5753,9 @@
     el.pPlayIcon.innerHTML = icon;
     el.expPlayIcon.innerHTML = icon;
     el.pSpeed.textContent = state.speed + 'x';
+    // Update expanded player speed label
+    const expSpeedLabel = $('expSpeedLabel');
+    if (expSpeedLabel) expSpeedLabel.textContent = state.speed + 'x';
   };
   
   let progStart = 0;
@@ -5914,50 +6567,33 @@
     }
   };
 
-  el.podcastCategoryChips.onclick = e => {
-    const chip = e.target.closest('.chip');
-    if (!chip) return;
-    const prev = state.selectedPodcastCat;
-    state.selectedPodcastCat = chip.dataset.cat;
-    Mem.log('podcast_category_changed', 'cat_' + state.selectedPodcastCat, { prev });
-    renderPodcastCategories();
-    renderPodcastInbox();
-  };
-
-  el.podcastTagChips.onclick = e => {
-    const chip = e.target.closest('.tag-chip');
-    if (!chip) return;
-    const prev = state.selectedPodcastTag;
-    state.selectedPodcastTag = chip.dataset.tag;
-    Mem.log('podcast_tag_filter_changed', 'tag_' + state.selectedPodcastTag, { prev });
-    renderPodcastTagFilters();
-    renderPodcastInbox();
-  };
-
   el.podcastInboxList.onclick = e => {
-    // Show name click - navigate to show page
-    const showEl = e.target.closest('.podcast-episode-show');
-    if (showEl) {
-      const showId = parseInt(showEl.dataset.show);
-      if (showId) {
-        renderShowPage(showId);
-        return;
-      }
-    }
-
-    // Play button click
-    const playBtn = e.target.closest('.podcast-episode-play');
+    // Play button overlay click
+    const playBtn = e.target.closest('.spotify-ep-play-overlay');
     if (playBtn) {
+      e.stopPropagation();
       const epId = parseInt(playBtn.dataset.ep);
-      playEp(epId);
+      // If already playing this episode, toggle play/pause
+      if (state.currentEp?.id === epId) {
+        togglePlay();
+      } else {
+        playEp(epId);
+      }
+      renderPodcastInbox(); // Re-render to update play states
       return;
     }
 
     // Episode item click - play episode
-    const item = e.target.closest('.podcast-episode-item');
+    const item = e.target.closest('.spotify-ep');
     if (item) {
       const epId = parseInt(item.dataset.ep);
-      playEp(epId);
+      // If already playing this episode, open expanded player
+      if (state.currentEp?.id === epId) {
+        el.expanded.classList.add('active');
+      } else {
+        playEp(epId);
+        renderPodcastInbox();
+      }
     }
   };
 
@@ -6090,7 +6726,24 @@
   $('pExpand').onclick = () => el.expanded.classList.add('active');
   $('expClose').onclick = () => el.expanded.classList.remove('active');
   el.playerArt.onclick = () => el.expanded.classList.add('active');
-  
+
+  // Expanded player extra controls
+  $('expSpeed').onclick = () => {
+    cycleSpeed();
+    $('expSpeedLabel').textContent = state.speed + 'x';
+  };
+  $('expSleep').onclick = () => {
+    el.expanded.classList.remove('active');
+    el.sleepTimerModal.classList.add('active');
+  };
+  $('expBookmark').onclick = () => {
+    addBookmark();
+    toast('Bookmark saved');
+  };
+
+  // Tapping the player left side opens expanded player
+  document.querySelector('.player-left').onclick = () => el.expanded.classList.add('active');
+
   $('refreshBtn').onclick = () => refreshAllFeeds();
   $('addBtn').onclick = () => el.modal.classList.add('active');
   $('addNewsBtn').onclick = () => { $('tNews').click(); el.modal.classList.add('active'); };
