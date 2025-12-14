@@ -907,6 +907,9 @@
     .feed-nav-btn .feed-nav-count { font-size: 11px; background: var(--bg4); padding: 2px 8px; border-radius: 10px; color: var(--text3); }
     .feed-nav-btn.active .feed-nav-count { background: rgba(59,130,246,0.2); color: var(--blue); }
 
+    /* Hide mobile view toggle on desktop */
+    .mobile-view-toggle { display: none; }
+
     .feed-container { flex: 1; overflow-y: auto; display: flex; justify-content: center; background: var(--bg); }
     .feed-scroll { max-width: 600px; width: 100%; padding: 0; padding-bottom: 140px; }
 
@@ -2313,21 +2316,21 @@
       }
 
       /* ==================
-         PHASE 12: CATEGORY CHIPS
+         PHASE 12: CATEGORY CHIPS - HIDDEN ON MOBILE
          ================== */
 
+      /* Hide category chips on mobile - they show All/Uncategorized which is useless */
       .category-chips {
-        gap: 8px;
+        display: none;
       }
 
       .news-header {
-        padding: var(--mobile-space-lg) var(--mobile-space-md);
-        flex-wrap: wrap;
+        padding: var(--mobile-space-md);
       }
 
       .news-title {
-        flex: 1 0 100%;
-        margin-bottom: var(--mobile-space-sm);
+        font-size: var(--mobile-text-lg);
+        margin-bottom: 0;
       }
 
       /* ==================
@@ -2450,39 +2453,285 @@
         padding-bottom: calc(80px + var(--sab));
       }
 
+      /* Compact feed-nav on mobile - icon-only pills */
       .feed-nav {
-        padding: 0 var(--mobile-space-sm);
+        padding: 6px 12px;
+        gap: 4px;
+        background: var(--bg);
+        border-bottom: 1px solid var(--border);
+        justify-content: center;
       }
 
       .feed-nav-btn {
-        padding: var(--mobile-space-sm) var(--mobile-space-md);
-        min-height: var(--mobile-touch-min);
+        padding: 6px 14px;
+        min-height: 36px;
+        border-radius: 18px;
+        border-bottom: none;
+        background: var(--bg3);
+        gap: 6px;
+        font-size: 12px;
       }
 
+      .feed-nav-btn.active {
+        background: var(--blue);
+        color: #fff;
+        border-bottom: none;
+      }
+
+      .feed-nav-btn.active .feed-nav-count {
+        background: rgba(255,255,255,0.2);
+        color: #fff;
+      }
+
+      /* Hide text labels, show only icons and counts on mobile */
+      .feed-nav-btn span:not(.feed-nav-icon):not(.feed-nav-count) {
+        display: none;
+      }
+
+      .feed-nav-btn .feed-nav-icon {
+        font-size: 16px;
+      }
+
+      .feed-nav-btn .feed-nav-count {
+        font-size: 11px;
+        padding: 1px 6px;
+      }
+
+      /* Default mobile view - more compact than desktop */
       .feed-post-inner {
-        padding: var(--mobile-space-md);
+        padding: 12px;
+      }
+
+      .feed-post-header {
+        gap: 10px;
+        margin-bottom: 8px;
       }
 
       .feed-post-avatar {
-        width: 44px;
-        height: 44px;
+        width: 36px;
+        height: 36px;
+        font-size: 16px;
+      }
+
+      .feed-post-source {
+        font-size: 14px;
+      }
+
+      .feed-post-handle {
+        font-size: 12px;
+        margin-top: 1px;
       }
 
       .feed-post-body {
-        padding-left: 56px;
+        padding-left: 46px;
       }
 
       .feed-post-title {
-        font-size: var(--mobile-text-lg);
+        font-size: 15px;
+        margin-bottom: 6px;
+        -webkit-line-clamp: 2;
       }
 
       .feed-post-summary {
-        font-size: var(--mobile-text-base);
+        font-size: 14px;
+        -webkit-line-clamp: 3;
+        line-height: 1.4;
+      }
+
+      .feed-post-media {
+        margin-bottom: 10px;
+        border-radius: 12px;
+      }
+
+      .feed-post-media img {
+        max-height: 220px;
       }
 
       .feed-post-play {
         min-height: var(--mobile-touch-min);
         padding: 12px 24px;
+      }
+
+      /* ==================
+         MOBILE CARD DISPLAY MODES
+         ================== */
+
+      /* View toggle button in feed nav */
+      .mobile-view-toggle {
+        display: flex;
+        margin-left: auto;
+        background: var(--bg3);
+        border: none;
+        color: var(--text2);
+        padding: 6px 10px;
+        border-radius: 18px;
+        font-size: 16px;
+        cursor: pointer;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .mobile-view-toggle:active {
+        background: var(--bg4);
+      }
+
+      /* === COMPACT MODE - More preview text, smaller elements === */
+      .feed-scroll.mobile-compact .feed-post-inner {
+        padding: 12px;
+      }
+
+      .feed-scroll.mobile-compact .feed-post-header {
+        gap: 10px;
+        margin-bottom: 6px;
+      }
+
+      .feed-scroll.mobile-compact .feed-post-avatar {
+        width: 32px;
+        height: 32px;
+        font-size: 14px;
+      }
+
+      .feed-scroll.mobile-compact .feed-post-source {
+        font-size: 13px;
+      }
+
+      .feed-scroll.mobile-compact .feed-post-handle {
+        font-size: 11px;
+      }
+
+      .feed-scroll.mobile-compact .feed-post-body {
+        padding-left: 42px;
+      }
+
+      .feed-scroll.mobile-compact .feed-post-title {
+        font-size: 14px;
+        margin-bottom: 4px;
+        -webkit-line-clamp: 2;
+      }
+
+      .feed-scroll.mobile-compact .feed-post-summary {
+        font-size: 13px;
+        -webkit-line-clamp: 4;
+        line-height: 1.4;
+      }
+
+      .feed-scroll.mobile-compact .feed-post-media {
+        margin-bottom: 8px;
+        border-radius: 12px;
+      }
+
+      .feed-scroll.mobile-compact .feed-post-media img {
+        max-height: 200px;
+      }
+
+      .feed-scroll.mobile-compact .feed-post-play {
+        padding: 8px 16px;
+        font-size: 13px;
+        min-height: 36px;
+      }
+
+      /* === DENSE MODE - Maximum content density, text-focused === */
+      .feed-scroll.mobile-dense .feed-post-inner {
+        padding: 10px 12px;
+      }
+
+      .feed-scroll.mobile-dense .feed-post-header {
+        display: none;
+      }
+
+      .feed-scroll.mobile-dense .feed-post-body {
+        padding-left: 0;
+      }
+
+      .feed-scroll.mobile-dense .feed-post-title {
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 2px;
+        -webkit-line-clamp: 2;
+      }
+
+      .feed-scroll.mobile-dense .feed-post-summary {
+        font-size: 12px;
+        -webkit-line-clamp: 2;
+        line-height: 1.3;
+        margin-bottom: 4px;
+      }
+
+      .feed-scroll.mobile-dense .feed-post-media {
+        display: none;
+      }
+
+      .feed-scroll.mobile-dense .feed-post-actions {
+        display: none;
+      }
+
+      .feed-scroll.mobile-dense .feed-post-play {
+        display: none;
+      }
+
+      .feed-scroll.mobile-dense .feed-post-duration {
+        display: none;
+      }
+
+      /* Add source/time inline in dense mode */
+      .feed-scroll.mobile-dense .feed-post {
+        position: relative;
+      }
+
+      .feed-scroll.mobile-dense .feed-post::before {
+        content: attr(data-source) " · " attr(data-time);
+        display: block;
+        font-size: 11px;
+        color: var(--text3);
+        margin-bottom: 2px;
+      }
+
+      /* Dense mode type badge */
+      .feed-scroll.mobile-dense .feed-post-type-badge {
+        position: absolute;
+        top: 10px;
+        right: 12px;
+        font-size: 9px;
+        padding: 2px 6px;
+      }
+
+      /* === LIST MODE - Super compact, headlines only === */
+      .feed-scroll.mobile-list .feed-post {
+        border-bottom: 1px solid var(--border);
+      }
+
+      .feed-scroll.mobile-list .feed-post-inner {
+        padding: 8px 12px;
+      }
+
+      .feed-scroll.mobile-list .feed-post-header {
+        display: none;
+      }
+
+      .feed-scroll.mobile-list .feed-post-body {
+        padding-left: 0;
+      }
+
+      .feed-scroll.mobile-list .feed-post-title {
+        font-size: 14px;
+        font-weight: 500;
+        margin-bottom: 0;
+        -webkit-line-clamp: 1;
+      }
+
+      .feed-scroll.mobile-list .feed-post-summary {
+        display: none;
+      }
+
+      .feed-scroll.mobile-list .feed-post-media {
+        display: none;
+      }
+
+      .feed-scroll.mobile-list .feed-post-actions,
+      .feed-scroll.mobile-list .feed-post-tags,
+      .feed-scroll.mobile-list .feed-post-play,
+      .feed-scroll.mobile-list .feed-post-duration {
+        display: none;
       }
 
       /* ==================
@@ -3119,6 +3368,9 @@
           <span class="feed-nav-icon"><i class="ph ph-books"></i></span>
           <span>All</span>
           <span class="feed-nav-count" id="feedCountAll">0</span>
+        </button>
+        <button class="mobile-view-toggle" id="mobileViewToggle" title="Change card layout">
+          <i class="ph ph-rows" id="mobileViewIcon"></i>
         </button>
       </nav>
       <div class="feed-container">
@@ -5426,6 +5678,7 @@
     selectedPodcastCat: 'All', // Category filter for podcasts
     selectedPodcastTag: 'all', // Tag filter for podcasts
     feedFilter: 'podcast', // Feed filter: 'all', 'news', 'podcast'
+    mobileCardView: 'default', // Mobile card view: 'default', 'compact', 'dense', 'list'
     query: '',
     searchScope: null, // null = all feeds, or feedId to search within specific feed
     feedType: 'news',
@@ -5456,6 +5709,7 @@
   const el = {
     newsView: $('newsView'), podcastView: $('podcastView'), allView: $('allView'),
     feedNav: $('feedNav'), feedScroll: $('feedScroll'),
+    mobileViewToggle: $('mobileViewToggle'), mobileViewIcon: $('mobileViewIcon'),
     feedCountAll: $('feedCountAll'), feedCountNews: $('feedCountNews'), feedCountPodcast: $('feedCountPodcast'),
     newsSources: $('newsSources'), newsTitle: $('newsTitle'),
     categoryChips: $('categoryChips'), newsList: $('newsList'),
@@ -8088,7 +8342,7 @@
       </div>
     ` : '';
 
-    return `<article class="feed-post${isUnread ? ' unread' : ''}" data-type="${type}" data-id="${item.id}">
+    return `<article class="feed-post${isUnread ? ' unread' : ''}" data-type="${type}" data-id="${item.id}" data-source="${feedName}" data-time="${item.time || item.date}">
       <div class="feed-post-inner">
         <div class="feed-post-header">
           <div class="feed-post-avatar">${avatar}</div>
@@ -8288,6 +8542,50 @@
       renderAll();
     }
   };
+
+  // Mobile card view toggle (cycles through: default -> compact -> dense -> list -> default)
+  const mobileViewModes = ['default', 'compact', 'dense', 'list'];
+  const mobileViewIcons = {
+    default: 'ph-rows',
+    compact: 'ph-squares-four',
+    dense: 'ph-list-bullets',
+    list: 'ph-list'
+  };
+
+  const applyMobileCardView = () => {
+    const mode = state.mobileCardView;
+    el.feedScroll.classList.remove('mobile-compact', 'mobile-dense', 'mobile-list');
+    if (mode !== 'default') {
+      el.feedScroll.classList.add('mobile-' + mode);
+    }
+    // Update icon
+    if (el.mobileViewIcon) {
+      el.mobileViewIcon.className = 'ph ' + mobileViewIcons[mode];
+    }
+    // Save preference
+    try { localStorage.setItem('mobileCardView', mode); } catch (e) {}
+  };
+
+  // Load saved preference
+  try {
+    const savedView = localStorage.getItem('mobileCardView');
+    if (savedView && mobileViewModes.includes(savedView)) {
+      state.mobileCardView = savedView;
+    }
+  } catch (e) {}
+
+  // Toggle handler
+  if (el.mobileViewToggle) {
+    el.mobileViewToggle.onclick = () => {
+      const currentIdx = mobileViewModes.indexOf(state.mobileCardView);
+      const nextIdx = (currentIdx + 1) % mobileViewModes.length;
+      state.mobileCardView = mobileViewModes[nextIdx];
+      applyMobileCardView();
+      showToast(`View: ${state.mobileCardView.charAt(0).toUpperCase() + state.mobileCardView.slice(1)}`);
+    };
+    // Apply initial view
+    applyMobileCardView();
+  }
 
   // Handle clicks in feed scroll
   el.feedScroll.onclick = e => {
