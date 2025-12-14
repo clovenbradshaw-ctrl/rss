@@ -921,6 +921,11 @@
     .remove-feed-btn:hover { background: rgba(239,68,68,0.1); border-color: #ef4444; color: #ef4444; }
     .remove-feed-btn svg { width: 16px; height: 16px; }
 
+    /* Edit Feed Button */
+    .edit-feed-btn { background: transparent; border: 1px solid var(--border2); color: var(--text2); cursor: pointer; padding: 10px 14px; border-radius: 10px; font-size: 12px; font-weight: 500; font-family: inherit; transition: all 0.15s; display: flex; align-items: center; gap: 6px; }
+    .edit-feed-btn:hover { background: rgba(59,130,246,0.1); border-color: #3b82f6; color: #3b82f6; }
+    .edit-feed-btn svg { width: 16px; height: 16px; }
+
     /* Cards View */
     .articles-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
     .article-card { background: var(--bg3); border-radius: 16px; overflow: hidden; cursor: pointer; border: 1px solid var(--border2); transition: all 0.2s ease-out; display: flex; flex-direction: column; }
@@ -2760,6 +2765,25 @@
 </div>
 <div class="toast" id="toast"></div>
 
+<!-- Edit Feed Modal -->
+<div class="modal" id="editModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2>Edit Feed</h2>
+      <button class="modal-close" id="editModalClose"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 5L5 15M5 5l10 10"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="editFeedId">
+      <div class="form-group"><label class="form-label">Name</label><input type="text" class="form-input" id="editName" placeholder="Feed name"></div>
+      <div class="form-group"><label class="form-label">Creator / Author</label><input type="text" class="form-input" id="editAuthor" placeholder="Author name"></div>
+      <div class="form-group"><label class="form-label">Category</label><input type="text" class="form-input" id="editCat" placeholder="Tech, News..."></div>
+      <div class="form-group"><label class="form-label">Header Image URL</label><input type="url" class="form-input" id="editImage" placeholder="https://example.com/image.jpg"></div>
+      <div class="fetch-status" id="editStatus"></div>
+      <button class="submit-btn" id="editSubmit">Save Changes</button>
+    </div>
+  </div>
+</div>
+
 <!-- Mobile Drawer -->
 <div class="drawer-overlay" id="drawerOverlay"></div>
 <div class="drawer" id="drawer">
@@ -3804,6 +3828,10 @@
     swipeIcon: $('swipeIcon'), swipeText: $('swipeText'), swipeLabel: $('swipeLabel'),
     modal: $('modal'), fUrl: $('fUrl'), fName: $('fName'), fAuthor: $('fAuthor'), fCat: $('fCat'),
     fFetch: $('fFetch'), fStatus: $('fStatus'), fSubmit: $('fSubmit'),
+    // Edit feed modal
+    editModal: $('editModal'), editFeedId: $('editFeedId'), editName: $('editName'),
+    editAuthor: $('editAuthor'), editCat: $('editCat'), editImage: $('editImage'),
+    editStatus: $('editStatus'), editSubmit: $('editSubmit'), editModalClose: $('editModalClose'),
     toast: $('toast'), searchInput: $('searchInput'),
     audio: $('audioPlayer'),
     // New elements
@@ -5494,6 +5522,7 @@
       <div class="source-actions">
         <span style="font-size:14px;color:var(--text2)">${articles.length} articles</span>
         ${renderViewOptions('news_' + id, viewMode)}
+        <button class="edit-feed-btn" data-feed-id="${id}"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Edit</button>
         <button class="remove-feed-btn" data-feed-id="${id}"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg> Remove</button>
       </div>
       <div class="source-articles">
@@ -5536,6 +5565,7 @@
       <div class="show-actions">
         <button class="show-play" data-show="${id}"><svg width="22" height="22" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button>
         ${renderViewOptions('podcast_' + id, viewMode)}
+        <button class="edit-feed-btn" data-feed-id="${id}"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Edit</button>
         <button class="remove-feed-btn" data-feed-id="${id}"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg> Remove</button>
       </div>
       <div class="show-episodes">
@@ -6513,6 +6543,14 @@
       return;
     }
 
+    // Edit feed button
+    const editBtn = e.target.closest('.edit-feed-btn');
+    if (editBtn) {
+      const feedId = editBtn.dataset.feedId;
+      if (feedId) openEditFeedModal(feedId);
+      return;
+    }
+
     // Remove feed button
     const removeBtn = e.target.closest('.remove-feed-btn');
     if (removeBtn) {
@@ -6667,6 +6705,14 @@
       return;
     }
 
+    // Edit feed button
+    const editBtn = e.target.closest('.edit-feed-btn');
+    if (editBtn) {
+      const feedId = editBtn.dataset.feedId;
+      if (feedId) openEditFeedModal(feedId);
+      return;
+    }
+
     // Remove feed button
     const removeBtn = e.target.closest('.remove-feed-btn');
     if (removeBtn) {
@@ -6751,6 +6797,48 @@
   el.modal.onclick = e => { if (e.target === el.modal) el.modal.classList.remove('active'); };
   $('tNews').onclick = () => { state.feedType = 'news'; $('tNews').classList.add('active'); $('tPodcast').classList.remove('active'); };
   $('tPodcast').onclick = () => { state.feedType = 'podcast'; $('tPodcast').classList.add('active'); $('tNews').classList.remove('active'); };
+
+  // Edit feed modal handlers
+  const openEditFeedModal = feedId => {
+    const feed = state.feeds.find(f => f.id === feedId);
+    if (!feed) return;
+    el.editFeedId.value = feedId;
+    el.editName.value = feed.name || '';
+    el.editAuthor.value = feed.author || '';
+    el.editCat.value = feed.category || '';
+    el.editImage.value = feed.image || '';
+    el.editStatus.textContent = '';
+    el.editStatus.className = 'fetch-status';
+    el.editModal.classList.add('active');
+  };
+
+  el.editModalClose.onclick = () => el.editModal.classList.remove('active');
+  el.editModal.onclick = e => { if (e.target === el.editModal) el.editModal.classList.remove('active'); };
+
+  el.editSubmit.onclick = () => {
+    const feedId = el.editFeedId.value;
+    const feed = state.feeds.find(f => f.id === feedId);
+    if (!feed) return;
+
+    // Update feed properties
+    feed.name = el.editName.value.trim() || feed.name;
+    feed.author = el.editAuthor.value.trim();
+    feed.category = el.editCat.value.trim() || 'Uncategorized';
+    feed.image = el.editImage.value.trim();
+
+    // Update categories set
+    state.categories = new Set(state.feeds.map(f => f.category || 'Uncategorized'));
+
+    save();
+    el.editModal.classList.remove('active');
+    toast('Feed updated');
+
+    // Re-render the current page to show changes
+    if (state.currentSourcePage === feedId) renderSourcePage(feedId);
+    if (state.currentShowPage === feedId) renderShowPage(feedId);
+    renderNewsSources();
+    renderPodcastSources();
+  };
 
   // Settings modal handlers
   el.settingsBtn.onclick = () => {
