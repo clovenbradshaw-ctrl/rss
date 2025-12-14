@@ -8116,7 +8116,8 @@
     const addBtn = el.mobileShowsHeader.querySelector('#mobileAddShowBtn');
     if (addBtn) {
       addBtn.onclick = () => {
-        openModal('podcast');
+        document.getElementById('tPodcast').click();
+        el.modal.classList.add('active');
       };
     }
   };
