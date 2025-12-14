@@ -75,17 +75,17 @@
     .app { display: flex; flex-direction: column; height: 100vh; }
     
     /* Header - Soft dark with subtle border */
-    .header { background: var(--bg3); border-bottom: 1px solid var(--border2); padding: 16px 24px; display: flex; align-items: center; gap: 16px; }
+    .header { background: var(--bg3); border-bottom: 1px solid var(--border2); padding: 10px 24px; display: flex; align-items: center; gap: 16px; }
     .logo { display: flex; align-items: center; }
-    .logo img { height: 36px; width: auto; }
+    .logo img { height: 32px; width: auto; }
     .logo-rss { color: var(--orange); }
-    .main-toggle { display: flex; background: var(--bg4); border-radius: 28px; padding: 4px; border: 1px solid var(--border2); }
-    .toggle-btn { padding: 10px 20px; background: transparent; border: none; border-radius: 24px; color: var(--text2); font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; display: flex; align-items: center; gap: 8px; transition: all 0.2s ease-out; }
+    .main-toggle { display: flex; background: var(--bg4); border-radius: 24px; padding: 3px; border: 1px solid var(--border2); }
+    .toggle-btn { padding: 8px 18px; background: transparent; border: none; border-radius: 20px; color: var(--text2); font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; display: flex; align-items: center; gap: 6px; transition: all 0.2s ease-out; }
     .toggle-btn.active { background: var(--blue); color: #fff; box-shadow: 0 2px 8px rgba(59,130,246,0.3); }
     .toggle-btn:not(.active):hover { background: rgba(255,255,255,0.05); color: var(--text); }
     .spacer { flex: 1; }
     .search-box { max-width: 280px; flex: 1; position: relative; }
-    .search-box input { width: 100%; padding: 10px 16px 10px 40px; background: var(--bg4); border: 1px solid var(--border2); border-radius: 24px; color: var(--text); font-size: 14px; font-family: inherit; transition: all 0.2s; }
+    .search-box input { width: 100%; padding: 8px 16px 8px 38px; background: var(--bg4); border: 1px solid var(--border2); border-radius: 20px; color: var(--text); font-size: 13px; font-family: inherit; transition: all 0.2s; }
     .search-box input:focus { outline: none; border-color: var(--blue); background: var(--bg); }
     .search-box input::placeholder { color: var(--text3); }
     .search-box svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text3); }
@@ -108,7 +108,7 @@
     .search-results-info strong { color: var(--text); }
     .search-results-info .search-scope-tag { background: var(--blue); color: #fff; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; }
     .search-highlight { background: rgba(59,130,246,0.3); color: var(--text); border-radius: 2px; padding: 0 2px; }
-    .icon-btn { background: none; border: none; color: var(--text2); cursor: pointer; padding: 10px; border-radius: 50%; transition: all 0.15s ease-out; display: flex; align-items: center; justify-content: center; }
+    .icon-btn { background: none; border: none; color: var(--text2); cursor: pointer; padding: 8px 12px; border-radius: 8px; transition: all 0.15s ease-out; display: flex; align-items: center; justify-content: center; }
     .icon-btn:hover { background: rgba(255,255,255,0.05); color: var(--text); }
     
     /* Main */
@@ -119,7 +119,7 @@
     .news-view.active { display: flex; }
 
     .news-sidebar { width: 260px; background: var(--bg2); border-right: 1px solid var(--border2); display: flex; flex-direction: column; }
-    .sidebar-header { padding: 16px 20px; border-bottom: 1px solid var(--border2); display: flex; align-items: center; justify-content: space-between; }
+    .sidebar-header { padding: 12px 20px; border-bottom: 1px solid var(--border2); display: flex; align-items: center; justify-content: space-between; }
     .sidebar-header h2 { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text2); }
     .add-btn { background: var(--blue); border: none; color: #fff; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 18px; transition: all 0.15s; box-shadow: 0 2px 6px rgba(59,130,246,0.3); display: inline-flex; align-items: center; justify-content: center; }
     .add-btn:hover { background: var(--blue2); transform: scale(1.05); }
@@ -154,7 +154,7 @@
 
     .news-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
     .news-list-view { display: flex; flex-direction: column; gap: 12px; }
-    .news-header { padding: 16px 24px; border-bottom: 1px solid var(--border2); display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+    .news-header { padding: 12px 24px; border-bottom: 1px solid var(--border2); display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
     .news-title { font-size: 20px; font-weight: 600; letter-spacing: -0.02em; }
     .news-view-options { display: flex; gap: 4px; margin-right: auto; }
     .category-chips { display: flex; gap: 8px; overflow-x: auto; flex: 1; min-width: 200px; }
@@ -208,7 +208,7 @@
     /* Podcast Inbox Layout (similar to news) */
     .podcast-sidebar { width: 260px; background: var(--bg2); border-right: 1px solid var(--border2); display: flex; flex-direction: column; }
     .podcast-inbox-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-    .podcast-inbox-header { padding: 16px 24px; border-bottom: 1px solid var(--border2); display: flex; align-items: center; gap: 16px; }
+    .podcast-inbox-header { padding: 12px 24px; border-bottom: 1px solid var(--border2); display: flex; align-items: center; gap: 16px; }
     .podcast-inbox-header .inbox-title { font-size: 20px; font-weight: 600; letter-spacing: -0.02em; }
     .podcast-view-options { display: flex; gap: 4px; margin-left: auto; }
     .podcast-inbox-list { flex: 1; overflow-y: auto; padding: 16px 24px 120px; }
@@ -905,7 +905,7 @@
 
     /* Social Media Feed Styles */
     .feed-nav { display: flex; background: var(--bg2); border-bottom: 1px solid var(--border2); padding: 0 24px; gap: 4px; }
-    .feed-nav-btn { padding: 14px 20px; background: none; border: none; border-bottom: 3px solid transparent; color: var(--text2); font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.2s; display: flex; align-items: center; gap: 8px; }
+    .feed-nav-btn { padding: 10px 20px; background: none; border: none; border-bottom: 3px solid transparent; color: var(--text2); font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.2s; display: flex; align-items: center; gap: 8px; }
     .feed-nav-btn:hover { color: var(--text); background: rgba(255,255,255,0.03); }
     .feed-nav-btn.active { color: var(--text); border-bottom-color: var(--blue); }
     .feed-nav-btn .feed-nav-icon { font-size: 16px; }
@@ -980,7 +980,7 @@
     }
 
     .podcast-nav { display: flex; background: var(--bg2); border-bottom: 1px solid var(--border2); padding: 0 24px; }
-    .nav-btn { padding: 16px 20px; background: none; border: none; border-bottom: 2px solid transparent; color: var(--text2); font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+    .nav-btn { padding: 12px 20px; background: none; border: none; border-bottom: 2px solid transparent; color: var(--text2); font-size: 13px; font-weight: 500; cursor: pointer; font-family: inherit; transition: all 0.15s; }
     .nav-btn:hover { color: var(--text); }
     .nav-btn.active { color: var(--blue); border-bottom-color: var(--blue); }
 
@@ -1293,7 +1293,7 @@
     .toast.show { opacity: 1; }
 
     /* Mobile Hamburger & Drawer */
-    .hamburger { display: none; background: none; border: none; color: var(--text); cursor: pointer; padding: 10px; border-radius: 50%; transition: all 0.15s; }
+    .hamburger { display: none; background: none; border: none; color: var(--text); cursor: pointer; padding: 8px 12px; border-radius: 8px; transition: all 0.15s; }
     .hamburger:hover { background: rgba(255,255,255,0.05); }
     @media (max-width: 768px) { .hamburger { display: flex; } }
     .drawer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 150; opacity: 0; pointer-events: none; transition: opacity 0.3s; backdrop-filter: blur(4px); }
