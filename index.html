@@ -406,6 +406,11 @@
     .view-btn:hover { background: rgba(255,255,255,0.08); color: var(--text); }
     .view-btn.active { background: var(--blue); border-color: var(--blue); color: #fff; box-shadow: 0 2px 8px rgba(59,130,246,0.3); }
 
+    /* Remove Feed Button */
+    .remove-feed-btn { background: transparent; border: 1px solid var(--border2); color: var(--text2); cursor: pointer; padding: 10px 14px; border-radius: 10px; font-size: 12px; font-weight: 500; font-family: inherit; transition: all 0.15s; display: flex; align-items: center; gap: 6px; margin-left: auto; }
+    .remove-feed-btn:hover { background: rgba(239,68,68,0.1); border-color: #ef4444; color: #ef4444; }
+    .remove-feed-btn svg { width: 16px; height: 16px; }
+
     /* Cards View */
     .articles-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
     .article-card { background: var(--bg3); border-radius: 16px; overflow: hidden; cursor: pointer; border: 1px solid var(--border2); transition: all 0.2s ease-out; display: flex; flex-direction: column; }
@@ -4307,7 +4312,69 @@
 
     return success;
   };
-  
+
+  // Remove a feed from the app
+  const removeFeed = (feedId) => {
+    const feed = state.feeds.find(f => f.id === feedId);
+    if (!feed) return;
+
+    const feedName = feed.name;
+    const feedType = feed.type;
+
+    // Confirm deletion
+    if (!confirm(`Remove "${feedName}" from your feeds?\n\nThis will also remove all ${feedType === 'news' ? 'articles' : 'episodes'} from this feed.`)) {
+      return;
+    }
+
+    // Remove the feed from state
+    state.feeds = state.feeds.filter(f => f.id !== feedId);
+
+    // Remove associated content
+    if (feedType === 'news') {
+      // Move articles to archived before removing (preserves history)
+      const feedArticles = state.articles.filter(a => a.feedId === feedId);
+      state.archivedArticles.push(...feedArticles);
+      state.articles = state.articles.filter(a => a.feedId !== feedId);
+    } else {
+      // Move episodes to archived before removing (preserves history)
+      const feedPodcasts = state.podcasts.filter(p => p.feedId === feedId);
+      state.archivedPodcasts.push(...feedPodcasts);
+      state.podcasts = state.podcasts.filter(p => p.feedId !== feedId);
+    }
+
+    // Track subscription removal for user behavior API
+    state.userBehavior.subscriptions.push({
+      feedId: feedId,
+      timestamp: new Date().toISOString(),
+      action: 'remove',
+      feedType: feedType
+    });
+
+    // Log feed removal to Xano memory for cross-device tracking
+    Mem.log('feed_removed', feedId, {
+      name: feedName,
+      type: feedType
+    });
+
+    // Save state
+    save();
+
+    // Close detail page and re-render
+    if (feedType === 'news') {
+      closeSourcePage();
+      renderNewsSources();
+      renderNews();
+      renderCategories();
+      renderTagFilters();
+    } else {
+      closeShowPage();
+      renderPodcastSources();
+      renderPodcasts();
+    }
+
+    toast(`Removed: ${feedName}`);
+  };
+
   // === RENDER NEWS ===
   const renderNewsSources = () => {
     const news = state.feeds.filter(f => f.type === 'news');
@@ -4746,6 +4813,7 @@
       <div class="source-actions">
         <span style="font-size:14px;color:var(--text2)">${articles.length} articles</span>
         ${renderViewOptions('news_' + id, viewMode)}
+        <button class="remove-feed-btn" data-feed-id="${id}"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg> Remove</button>
       </div>
       <div class="source-articles">
         <div class="source-articles-content">${renderArticlesContent(articles, viewMode, id)}</div>
@@ -4787,6 +4855,7 @@
       <div class="show-actions">
         <button class="show-play" data-show="${id}"><svg width="22" height="22" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button>
         ${renderViewOptions('podcast_' + id, viewMode)}
+        <button class="remove-feed-btn" data-feed-id="${id}"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg> Remove</button>
       </div>
       <div class="show-episodes">
         <div class="show-episodes-title">Episodes</div>
@@ -5760,6 +5829,14 @@
       return;
     }
 
+    // Remove feed button
+    const removeBtn = e.target.closest('.remove-feed-btn');
+    if (removeBtn) {
+      const feedId = removeBtn.dataset.feedId;
+      if (feedId) removeFeed(feedId);
+      return;
+    }
+
     // Article clicks (all view modes)
     const articleEl = e.target.closest('.article, .article-card, .article-masonry, [data-id]');
     if (articleEl && articleEl.dataset.id) {
@@ -5920,6 +5997,14 @@
       const newView = viewBtn.dataset.view;
       setViewPref(sourceKey, newView);
       if (state.currentShowPage) renderShowPage(state.currentShowPage);
+      return;
+    }
+
+    // Remove feed button
+    const removeBtn = e.target.closest('.remove-feed-btn');
+    if (removeBtn) {
+      const feedId = removeBtn.dataset.feedId;
+      if (feedId) removeFeed(feedId);
       return;
     }
 
