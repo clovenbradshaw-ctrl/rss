@@ -1,6 +1,6 @@
-// BURSST Service Worker - Offline caching and performance optimization
-const CACHE_NAME = 'bursst-v1';
-const RUNTIME_CACHE = 'bursst-runtime';
+// BRSST Service Worker - Offline caching and performance optimization
+const CACHE_NAME = 'brsst-v1';
+const RUNTIME_CACHE = 'brsst-runtime';
 
 // Resources to cache immediately on install
 const PRECACHE_URLS = [
