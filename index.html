@@ -345,6 +345,81 @@
     }
     .spotify-ep-duration i { font-size: 14px; color: var(--blue); }
 
+    /* === SKELETON LOADING === */
+    @keyframes shimmer {
+      0% { background-position: -200px 0; }
+      100% { background-position: calc(200px + 100%) 0; }
+    }
+
+    .skeleton {
+      background: linear-gradient(90deg, var(--bg3) 0%, var(--bg4) 50%, var(--bg3) 100%);
+      background-size: 200px 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 4px;
+    }
+
+    .skeleton-ep {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .skeleton-ep-art { width: 56px; height: 56px; border-radius: 8px; }
+    .skeleton-ep-info { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+    .skeleton-ep-title { height: 16px; width: 70%; }
+    .skeleton-ep-meta { height: 12px; width: 50%; }
+    .skeleton-ep-duration { height: 12px; width: 60px; }
+
+    /* === LOAD MORE BUTTON === */
+    .load-more-container {
+      padding: 16px;
+      display: flex;
+      justify-content: center;
+    }
+    .load-more-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border2);
+      color: var(--text);
+      padding: 12px 32px;
+      border-radius: 24px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+    .load-more-btn:hover { background: var(--bg4); border-color: var(--blue); }
+    .load-more-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .load-more-btn.loading { position: relative; color: transparent; }
+    .load-more-btn.loading::after {
+      content: '';
+      position: absolute;
+      width: 16px; height: 16px;
+      top: 50%; left: 50%;
+      margin: -8px 0 0 -8px;
+      border: 2px solid var(--text3);
+      border-top-color: var(--blue);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Lazy image fade-in */
+    .lazy-img {
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .lazy-img.loaded { opacity: 1; }
+
+    /* Search highlight in compact view */
+    .spotify-ep mark.search-highlight {
+      background: rgba(59, 130, 246, 0.3);
+      color: var(--text);
+      padding: 0 2px;
+      border-radius: 2px;
+    }
+
     /* Mobile-optimized podcast inbox */
     .podcast-inbox-content {
       flex: 1;
@@ -2966,6 +3041,95 @@
 <script>
 (function() {
   'use strict';
+
+  // === PERFORMANCE MONITORING ===
+  const Perf = {
+    marks: {},
+    measures: [],
+
+    mark(name) {
+      this.marks[name] = performance.now();
+    },
+
+    measure(name, startMark) {
+      const end = performance.now();
+      const start = this.marks[startMark] || end;
+      const duration = end - start;
+      this.measures.push({ name, duration, timestamp: Date.now() });
+      if (duration > 100) console.log(`[Perf] ${name}: ${duration.toFixed(1)}ms`);
+      return duration;
+    },
+
+    // Track scroll performance
+    scrollFPS: { frames: 0, lastTime: 0, fps: 60 },
+
+    trackScroll(container) {
+      let ticking = false;
+      container.addEventListener('scroll', () => {
+        if (!ticking) {
+          requestAnimationFrame(() => {
+            this.scrollFPS.frames++;
+            const now = performance.now();
+            if (now - this.scrollFPS.lastTime >= 1000) {
+              this.scrollFPS.fps = this.scrollFPS.frames;
+              this.scrollFPS.frames = 0;
+              this.scrollFPS.lastTime = now;
+            }
+            ticking = false;
+          });
+          ticking = true;
+        }
+      }, { passive: true });
+    }
+  };
+
+  // === IMAGE CACHE ===
+  const ImageCache = {
+    cache: new Map(),
+    maxSize: 100, // Max cached images
+
+    get(url) {
+      const entry = this.cache.get(url);
+      if (entry) {
+        entry.lastAccess = Date.now();
+        return entry.loaded;
+      }
+      return false;
+    },
+
+    set(url) {
+      if (this.cache.size >= this.maxSize) {
+        // Evict least recently accessed
+        let oldest = null;
+        let oldestTime = Infinity;
+        for (const [key, val] of this.cache) {
+          if (val.lastAccess < oldestTime) {
+            oldestTime = val.lastAccess;
+            oldest = key;
+          }
+        }
+        if (oldest) this.cache.delete(oldest);
+      }
+      this.cache.set(url, { loaded: true, lastAccess: Date.now() });
+    },
+
+    preload(urls) {
+      urls.forEach(url => {
+        if (url && !this.get(url)) {
+          const img = new Image();
+          img.onload = () => this.set(url);
+          img.src = url;
+        }
+      });
+    }
+  };
+
+  // === VIRTUAL LIST STATE ===
+  const VirtualList = {
+    podcast: { rendered: 0, batchSize: 30, total: 0, loading: false },
+    news: { rendered: 0, batchSize: 30, total: 0, loading: false },
+    feed: { rendered: 0, batchSize: 30, total: 0, loading: false }
+  };
 
   // === GUID GENERATION UTILITIES ===
   // Generates stable, deterministic GUIDs based on content
@@ -5909,24 +6073,40 @@
     }).join('')}</div>`;
   };
   
-  const renderNews = () => {
-    let items = state.articles.map(a => ({ ...a, feed: state.feeds.find(f => f.id === a.feedId) }));
-    if (state.selectedSource) items = items.filter(i => i.feedId === state.selectedSource);
-    if (state.selectedCat !== 'All') items = fuzzy(state.selectedCat, items, ['feed.category']);
-    // Apply tag filter
-    if (state.selectedTag && state.selectedTag !== 'all') {
-      items = filterByTag(items, state.selectedTag);
+  // Store filtered items for news pagination
+  let newsInboxItems = [];
+
+  const renderNews = (append = false) => {
+    Perf.mark('renderNews');
+
+    // Only recalculate items on fresh render
+    if (!append) {
+      let items = state.articles.map(a => ({ ...a, feed: state.feeds.find(f => f.id === a.feedId) }));
+      if (state.selectedSource) items = items.filter(i => i.feedId === state.selectedSource);
+      if (state.selectedCat !== 'All') items = fuzzy(state.selectedCat, items, ['feed.category']);
+      // Apply tag filter
+      if (state.selectedTag && state.selectedTag !== 'all') {
+        items = filterByTag(items, state.selectedTag);
+      }
+      // Apply search scope filter (search within specific feed)
+      if (state.searchScope) {
+        items = items.filter(i => i.feedId === state.searchScope);
+      }
+      // Apply search query
+      if (state.query) items = fuzzy(state.query, items, ['title', 'summary', 'feed.name']);
+
+      // Store for pagination
+      newsInboxItems = items;
+      VirtualList.news.rendered = 0;
+      VirtualList.news.total = items.length;
     }
-    // Apply search scope filter (search within specific feed)
-    if (state.searchScope) {
-      items = items.filter(i => i.feedId === state.searchScope);
-    }
-    // Apply search query
-    if (state.query) items = fuzzy(state.query, items, ['title', 'summary', 'feed.name']);
+
+    const items = newsInboxItems;
+    const q = state.query;
 
     // Build search results info
     let searchInfo = '';
-    if (state.query) {
+    if (state.query && !append) {
       const scopeFeed = state.searchScope ? state.feeds.find(f => f.id === state.searchScope) : null;
       searchInfo = `<div class="search-results-info">
         <i class="ph ph-magnifying-glass"></i>
@@ -5945,17 +6125,79 @@
       return;
     }
 
-    const q = state.query;
-    el.newsList.innerHTML = searchInfo + items.map(i => {
+    // Calculate slice for current batch
+    const start = VirtualList.news.rendered;
+    const end = Math.min(start + VirtualList.news.batchSize, items.length);
+    const batch = items.slice(start, end);
+    VirtualList.news.rendered = end;
+
+    const batchHtml = batch.map(i => {
       const title = q ? highlightSearch(i.title, q) : i.title;
       const summary = i.summary ? (q ? highlightSearch(i.summary, q) : i.summary) : '';
-      return `<div class="article ${i.unread ? 'unread' : ''}" data-id="${i.id}"><div class="article-icon">${i.feed?.image ? `<img data-src="${i.feed.image}" src="${placeholderImg}" class="lazy-img">` : '<i class="ph ph-article"></i>'}</div><div class="article-body"><div class="article-meta"><span class="article-source">${i.feed?.name || ''}</span><span class="article-time">· ${i.time}</span>${i.unread ? '<span class="article-new">NEW</span>' : ''}</div><div class="article-title">${title}</div>${summary ? `<div class="article-summary">${summary}</div>` : ''}${renderItemTags(i.tags)}</div>${i.image ? `<img class="article-image lazy-img" data-src="${i.image}" src="${placeholderImg}">` : ''}</div>`;
+      return `<div class="article ${i.unread ? 'unread' : ''}" data-id="${i.id}"><div class="article-icon">${i.feed?.image ? `<img data-src="${i.feed.image}" src="${placeholderImg}" class="lazy-img">` : '<i class="ph ph-article"></i>'}</div><div class="article-body"><div class="article-meta"><span class="article-source">${i.feed?.name || ''}</span><span class="article-time">· ${i.time}</span>${i.unread ? '<span class="article-new">NEW</span>' : ''}</div><div class="article-title">${title}</div>${summary ? `<div class="article-summary">${summary}</div>` : ''}${renderItemTags(i.tags)}</div>${i.image ? `<img class="article-image lazy-img" data-src="${i.image}" src="${placeholderImg}" onerror="this.style.display='none'">` : ''}</div>`;
     }).join('');
+
+    // Add load more button if there are more items
+    const hasMore = end < items.length;
+    const loadMoreHtml = hasMore ? `
+      <div class="load-more-container" id="newsLoadMore">
+        <button class="load-more-btn" onclick="loadMoreNews()">
+          Load More (${items.length - end} remaining)
+        </button>
+      </div>
+    ` : '';
+
+    if (append) {
+      const oldLoadMore = el.newsList.querySelector('.load-more-container');
+      if (oldLoadMore) oldLoadMore.remove();
+      el.newsList.insertAdjacentHTML('beforeend', batchHtml + loadMoreHtml);
+    } else {
+      el.newsList.innerHTML = searchInfo + batchHtml + loadMoreHtml;
+      Perf.trackScroll(el.newsList);
+    }
 
     // Setup lazy loading for newly rendered images
     requestAnimationFrame(() => {
       el.newsList.querySelectorAll('img[data-src]').forEach(img => ImageLoader.observe(img));
     });
+
+    // Set up IntersectionObserver for infinite scroll
+    if (hasMore && !append) {
+      setupNewsInfiniteScroll();
+    }
+
+    Perf.measure('renderNews', 'renderNews');
+  };
+
+  // Load more news
+  window.loadMoreNews = () => {
+    const btn = document.querySelector('#newsLoadMore .load-more-btn');
+    if (btn) {
+      btn.classList.add('loading');
+      btn.disabled = true;
+    }
+    setTimeout(() => renderNews(true), 100);
+  };
+
+  // Infinite scroll observer for news
+  let newsScrollObserver = null;
+  const setupNewsInfiniteScroll = () => {
+    if (newsScrollObserver) newsScrollObserver.disconnect();
+
+    newsScrollObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting && VirtualList.news.rendered < VirtualList.news.total) {
+          loadMoreNews();
+        }
+      });
+    }, {
+      root: el.newsList,
+      rootMargin: '200px',
+      threshold: 0
+    });
+
+    const loadMoreEl = document.getElementById('newsLoadMore');
+    if (loadMoreEl) newsScrollObserver.observe(loadMoreEl);
   };
   
 // === RENDER PODCASTS (Inbox Style) ===
@@ -5981,7 +6223,7 @@
       }).join('');
   };
 
-  const renderPodcastEpisodeItem = (ep) => {
+  const renderPodcastEpisodeItem = (ep, searchQuery = null) => {
     const show = state.feeds.find(f => f.id === ep.feedId);
     const pr = state.progress[ep.id] || 0;
     const pct = ep.duration ? (pr / ep.duration) * 100 : 0;
@@ -5989,6 +6231,11 @@
     const inProgress = pr > 0 && !done;
     const imgSrc = ep.image || show?.image || placeholderImg;
     const isPlaying = state.currentEp?.id === ep.id && state.playing;
+    const isCached = ImageCache.get(imgSrc);
+
+    // Apply search highlighting if query provided
+    const title = searchQuery ? highlightSearch(ep.title, searchQuery) : ep.title;
+    const showName = show?.name || '';
 
     return `<div class="spotify-ep ${inProgress ? 'in-progress' : ''} ${done ? 'played' : ''} ${isPlaying ? 'now-playing' : ''}" data-ep="${ep.id}">
       <div class="spotify-ep-art">
@@ -5998,9 +6245,9 @@
         </button>
       </div>
       <div class="spotify-ep-info">
-        <div class="spotify-ep-title">${ep.title}</div>
+        <div class="spotify-ep-title">${title}</div>
         <div class="spotify-ep-meta">
-          <span class="spotify-ep-show">${show?.name || ''}</span>
+          <span class="spotify-ep-show" data-show="${ep.feedId}">${showName}</span>
           <span class="spotify-ep-dot">·</span>
           <span class="spotify-ep-date">${ep.date}</span>
         </div>
@@ -6010,37 +6257,67 @@
     </div>`;
   };
 
-  const renderPodcastInbox = () => {
-    let items = state.podcasts.map(p => ({ ...p, feed: state.feeds.find(f => f.id === p.feedId) }));
+  // Generate skeleton loading placeholders
+  const renderSkeletonEpisodes = (count = 5) => {
+    return Array(count).fill(0).map(() => `
+      <div class="skeleton-ep">
+        <div class="skeleton skeleton-ep-art"></div>
+        <div class="skeleton-ep-info">
+          <div class="skeleton skeleton-ep-title"></div>
+          <div class="skeleton skeleton-ep-meta"></div>
+          <div class="skeleton skeleton-ep-duration"></div>
+        </div>
+      </div>
+    `).join('');
+  };
 
-    // Apply source filter
-    if (state.selectedPodcastSource) {
-      items = items.filter(i => i.feedId === state.selectedPodcastSource);
+  // Store filtered items for pagination
+  let podcastInboxItems = [];
+
+  const renderPodcastInbox = (append = false) => {
+    Perf.mark('renderPodcastInbox');
+
+    // Only recalculate items on fresh render
+    if (!append) {
+      let items = state.podcasts.map(p => ({ ...p, feed: state.feeds.find(f => f.id === p.feedId) }));
+
+      // Apply source filter
+      if (state.selectedPodcastSource) {
+        items = items.filter(i => i.feedId === state.selectedPodcastSource);
+      }
+
+      // Apply category filter
+      if (state.selectedPodcastCat !== 'All') {
+        items = fuzzy(state.selectedPodcastCat, items, ['feed.category']);
+      }
+
+      // Apply tag filter
+      if (state.selectedPodcastTag && state.selectedPodcastTag !== 'all') {
+        items = filterByTag(items, state.selectedPodcastTag);
+      }
+
+      // Apply search scope filter (search within specific feed)
+      if (state.searchScope) {
+        items = items.filter(i => i.feedId === state.searchScope);
+      }
+
+      // Apply search query
+      if (state.query) {
+        items = fuzzy(state.query, items, ['title', 'desc', 'feed.name']);
+      }
+
+      // Store for pagination
+      podcastInboxItems = items;
+      VirtualList.podcast.rendered = 0;
+      VirtualList.podcast.total = items.length;
     }
 
-    // Apply category filter
-    if (state.selectedPodcastCat !== 'All') {
-      items = fuzzy(state.selectedPodcastCat, items, ['feed.category']);
-    }
-
-    // Apply tag filter
-    if (state.selectedPodcastTag && state.selectedPodcastTag !== 'all') {
-      items = filterByTag(items, state.selectedPodcastTag);
-    }
-
-    // Apply search scope filter (search within specific feed)
-    if (state.searchScope) {
-      items = items.filter(i => i.feedId === state.searchScope);
-    }
-
-    // Apply search query
-    if (state.query) {
-      items = fuzzy(state.query, items, ['title', 'desc', 'feed.name']);
-    }
+    const items = podcastInboxItems;
+    const q = state.query;
 
     // Build search results info
     let searchInfo = '';
-    if (state.query) {
+    if (state.query && !append) {
       const scopeFeed = state.searchScope ? state.feeds.find(f => f.id === state.searchScope) : null;
       searchInfo = `<div class="search-results-info">
         <i class="ph ph-magnifying-glass"></i>
@@ -6059,45 +6336,86 @@
       return;
     }
 
-    const q = state.query;
-    el.podcastInboxList.innerHTML = searchInfo + items.map(ep => {
-      const show = state.feeds.find(f => f.id === ep.feedId);
-      const pr = state.progress[ep.id] || 0;
-      const pct = ep.duration ? (pr / ep.duration) * 100 : 0;
-      const done = pr >= ep.duration * 0.95;
-      const inProgress = pr > 0 && !done;
-      const imgSrc = ep.image || show?.image || placeholderImg;
+    // Calculate slice for current batch
+    const start = VirtualList.podcast.rendered;
+    const end = Math.min(start + VirtualList.podcast.batchSize, items.length);
+    const batch = items.slice(start, end);
+    VirtualList.podcast.rendered = end;
 
-      const title = q ? highlightSearch(ep.title, q) : ep.title;
-      const desc = ep.desc ? (q ? highlightSearch(ep.desc, q) : ep.desc) : '';
+    // Render using compact Spotify-style renderer
+    const batchHtml = batch.map(ep => renderPodcastEpisodeItem(ep, q)).join('');
 
-      return `<div class="podcast-episode-item ${inProgress ? 'in-progress' : ''}" data-ep="${ep.id}">
-        <div class="podcast-episode-icon"><img data-src="${imgSrc}" src="${placeholderImg}" class="lazy-img" onerror="this.parentElement.innerHTML='<i class=\\'ph ph-microphone-stage\\'></i>'"></div>
-        <div class="podcast-episode-body">
-          <div class="podcast-episode-meta">
-            <span class="podcast-episode-show" data-show="${ep.feedId}">${show?.name || ''}</span>
-            <span class="podcast-episode-time">· ${ep.date}</span>
-            ${inProgress ? '<span class="podcast-episode-new">IN PROGRESS</span>' : ''}
-          </div>
-          <div class="podcast-episode-title">${title}</div>
-          ${desc ? `<div class="podcast-episode-desc">${desc}</div>` : ''}
-          <div class="podcast-episode-footer">
-            <button class="podcast-episode-play" data-ep="${ep.id}">
-              <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-            </button>
-            <span class="podcast-episode-duration"><i class="ph ph-clock"></i> ${done ? 'Played' : pr > 0 ? fmt(ep.duration - pr) + ' left' : fmt(ep.duration)}</span>
-            ${pr > 0 && !done ? `<div class="podcast-episode-progress"><div class="podcast-episode-progress-fill" style="width:${pct}%"></div></div>` : ''}
-            ${renderItemTags(ep.tags)}
-          </div>
-        </div>
-        ${ep.image ? `<img class="podcast-episode-image lazy-img" data-src="${ep.image}" src="${placeholderImg}" onerror="this.style.display='none'">` : ''}
-      </div>`;
-    }).join('');
+    // Add load more button if there are more items
+    const hasMore = end < items.length;
+    const loadMoreHtml = hasMore ? `
+      <div class="load-more-container" id="podcastLoadMore">
+        <button class="load-more-btn" onclick="loadMorePodcasts()">
+          Load More (${items.length - end} remaining)
+        </button>
+      </div>
+    ` : '';
+
+    if (append) {
+      // Remove old load more button and append new content
+      const oldLoadMore = el.podcastInboxList.querySelector('.load-more-container');
+      if (oldLoadMore) oldLoadMore.remove();
+      el.podcastInboxList.insertAdjacentHTML('beforeend', batchHtml + loadMoreHtml);
+    } else {
+      el.podcastInboxList.innerHTML = searchInfo + batchHtml + loadMoreHtml;
+      // Set up scroll tracking
+      Perf.trackScroll(el.podcastInboxList);
+    }
 
     // Setup lazy loading for newly rendered images
     requestAnimationFrame(() => {
       el.podcastInboxList.querySelectorAll('img[data-src]').forEach(img => ImageLoader.observe(img));
     });
+
+    // Set up IntersectionObserver for infinite scroll
+    if (hasMore && !append) {
+      setupPodcastInfiniteScroll();
+    }
+
+    Perf.measure('renderPodcastInbox', 'renderPodcastInbox');
+  };
+
+  // Load more podcasts
+  window.loadMorePodcasts = () => {
+    const btn = document.querySelector('#podcastLoadMore .load-more-btn');
+    if (btn) {
+      btn.classList.add('loading');
+      btn.disabled = true;
+    }
+    // Small delay for visual feedback
+    setTimeout(() => {
+      renderPodcastInbox(true);
+    }, 100);
+  };
+
+  // Infinite scroll observer
+  let podcastScrollObserver = null;
+  const setupPodcastInfiniteScroll = () => {
+    if (podcastScrollObserver) {
+      podcastScrollObserver.disconnect();
+    }
+
+    podcastScrollObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting && VirtualList.podcast.rendered < VirtualList.podcast.total) {
+          loadMorePodcasts();
+        }
+      });
+    }, {
+      root: el.podcastInboxList,
+      rootMargin: '200px', // Start loading 200px before reaching bottom
+      threshold: 0
+    });
+
+    // Observe the load more container
+    const loadMoreEl = document.getElementById('podcastLoadMore');
+    if (loadMoreEl) {
+      podcastScrollObserver.observe(loadMoreEl);
+    }
   };
 
   const renderPodcasts = () => {
@@ -6362,7 +6680,11 @@
     const title = searchQuery ? highlightSearch(item.title, searchQuery) : item.title;
     const summary = rawSummary ? (searchQuery ? highlightSearch(rawSummary, searchQuery) : rawSummary) : '';
 
-    // Generate avatar
+    // Check cache status for images
+    const avatarCached = feedImage && ImageCache.get(feedImage);
+    const mediaCached = image && ImageCache.get(image);
+
+    // Generate avatar with lazy loading
     const podcastIcon = '<i class="ph ph-headphones"></i>';
     const newsIcon = '<i class="ph ph-newspaper"></i>';
     const avatar = feedImage
@@ -6440,38 +6762,54 @@
     });
   };
 
-  const renderAll = () => {
-    const articles = state.articles.map(a => ({ ...a, sortDate: new Date(a.pubDate), type: 'news' }));
-    const episodes = state.podcasts.map(p => ({ ...p, sortDate: new Date(p.pubDate), type: 'podcast' }));
+  // Store filtered items for feed pagination
+  let feedAllItems = [];
 
-    // Count items for nav
-    const newsCount = articles.length;
-    const podcastCount = episodes.length;
-    updateFeedNav(newsCount, podcastCount);
+  const renderAll = (append = false) => {
+    Perf.mark('renderAll');
 
-    // Combine and sort by date
-    let allItems = [...articles, ...episodes].sort((a, b) => b.sortDate - a.sortDate);
+    // Only recalculate items on fresh render
+    if (!append) {
+      const articles = state.articles.map(a => ({ ...a, sortDate: new Date(a.pubDate), type: 'news' }));
+      const episodes = state.podcasts.map(p => ({ ...p, sortDate: new Date(p.pubDate), type: 'podcast' }));
 
-    // Apply content type filter
-    if (state.feedFilter === 'news') {
-      allItems = allItems.filter(item => item.type === 'news');
-    } else if (state.feedFilter === 'podcast') {
-      allItems = allItems.filter(item => item.type === 'podcast');
+      // Count items for nav
+      const newsCount = articles.length;
+      const podcastCount = episodes.length;
+      updateFeedNav(newsCount, podcastCount);
+
+      // Combine and sort by date
+      let allItems = [...articles, ...episodes].sort((a, b) => b.sortDate - a.sortDate);
+
+      // Apply content type filter
+      if (state.feedFilter === 'news') {
+        allItems = allItems.filter(item => item.type === 'news');
+      } else if (state.feedFilter === 'podcast') {
+        allItems = allItems.filter(item => item.type === 'podcast');
+      }
+
+      // Apply search scope filter (search within specific feed)
+      if (state.searchScope) {
+        allItems = allItems.filter(item => item.feedId === state.searchScope);
+      }
+
+      // Apply search filter if present
+      if (state.query) {
+        allItems = fuzzy(state.query, allItems, ['title', 'summary', 'desc']);
+      }
+
+      // Store for pagination
+      feedAllItems = allItems;
+      VirtualList.feed.rendered = 0;
+      VirtualList.feed.total = allItems.length;
     }
 
-    // Apply search scope filter (search within specific feed)
-    if (state.searchScope) {
-      allItems = allItems.filter(item => item.feedId === state.searchScope);
-    }
-
-    // Apply search filter if present
-    if (state.query) {
-      allItems = fuzzy(state.query, allItems, ['title', 'summary', 'desc']);
-    }
+    const allItems = feedAllItems;
+    const q = state.query;
 
     // Build search results info
     let searchInfo = '';
-    if (state.query) {
+    if (state.query && !append) {
       const scopeFeed = state.searchScope ? state.feeds.find(f => f.id === state.searchScope) : null;
       searchInfo = `<div class="search-results-info" style="margin: 16px;">
         <i class="ph ph-magnifying-glass"></i>
@@ -6500,14 +6838,76 @@
       return;
     }
 
+    // Calculate slice for current batch
+    const start = VirtualList.feed.rendered;
+    const end = Math.min(start + VirtualList.feed.batchSize, allItems.length);
+    const batch = allItems.slice(start, end);
+    VirtualList.feed.rendered = end;
+
     // Render social media style feed with search highlighting
-    const q = state.query;
-    el.feedScroll.innerHTML = searchInfo + allItems.slice(0, 100).map(item => renderFeedPost(item, item.type, q)).join('');
+    const batchHtml = batch.map(item => renderFeedPost(item, item.type, q)).join('');
+
+    // Add load more button if there are more items
+    const hasMore = end < allItems.length;
+    const loadMoreHtml = hasMore ? `
+      <div class="load-more-container" id="feedLoadMore">
+        <button class="load-more-btn" onclick="loadMoreFeed()">
+          Load More (${allItems.length - end} remaining)
+        </button>
+      </div>
+    ` : '';
+
+    if (append) {
+      const oldLoadMore = el.feedScroll.querySelector('.load-more-container');
+      if (oldLoadMore) oldLoadMore.remove();
+      el.feedScroll.insertAdjacentHTML('beforeend', batchHtml + loadMoreHtml);
+    } else {
+      el.feedScroll.innerHTML = searchInfo + batchHtml + loadMoreHtml;
+      Perf.trackScroll(el.feedScroll);
+    }
 
     // Setup lazy loading for newly rendered images
     requestAnimationFrame(() => {
       el.feedScroll.querySelectorAll('img[data-src]').forEach(img => ImageLoader.observe(img));
     });
+
+    // Set up IntersectionObserver for infinite scroll
+    if (hasMore && !append) {
+      setupFeedInfiniteScroll();
+    }
+
+    Perf.measure('renderAll', 'renderAll');
+  };
+
+  // Load more feed items
+  window.loadMoreFeed = () => {
+    const btn = document.querySelector('#feedLoadMore .load-more-btn');
+    if (btn) {
+      btn.classList.add('loading');
+      btn.disabled = true;
+    }
+    setTimeout(() => renderAll(true), 100);
+  };
+
+  // Infinite scroll observer for feed
+  let feedScrollObserver = null;
+  const setupFeedInfiniteScroll = () => {
+    if (feedScrollObserver) feedScrollObserver.disconnect();
+
+    feedScrollObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting && VirtualList.feed.rendered < VirtualList.feed.total) {
+          loadMoreFeed();
+        }
+      });
+    }, {
+      root: el.feedScroll,
+      rootMargin: '200px',
+      threshold: 0
+    });
+
+    const loadMoreEl = document.getElementById('feedLoadMore');
+    if (loadMoreEl) feedScrollObserver.observe(loadMoreEl);
   };
 
   // Handle feed nav filter clicks
