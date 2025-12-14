@@ -4288,7 +4288,8 @@
       'download_completed',  // Content acquisition
       'download_removed',    // Content removal
       'feed_added',          // Subscription change
-      'feed_removed'         // Subscription change
+      'feed_removed',        // Subscription change
+      'feed_updated'         // Feed metadata change (name, tags, category)
     ]),
 
     // Actions that stay local only - UI state, preferences, filtering
@@ -4376,6 +4377,14 @@
 
       if (success) {
         console.log('[Mem] Beacon sent', action, 'activity');
+
+        // Trigger immediate cross-tab/cross-device sync for feed changes
+        if (action === 'feed_added' || action === 'feed_removed' || action === 'feed_updated') {
+          try {
+            localStorage.setItem('feed_sync_trigger', Date.now().toString());
+            console.log('[Mem] Set cross-tab sync trigger for', action);
+          } catch(e) {}
+        }
       } else {
         // Fallback: queue for regular sync
         console.warn('[Mem] Beacon failed for', action, ', queuing for retry');
@@ -4410,6 +4419,14 @@
             })
           });
           this.pending.shift(); // Remove successfully synced item
+
+          // Trigger immediate cross-tab/cross-device sync for feed changes
+          if (action === 'feed_added' || action === 'feed_removed' || action === 'feed_updated') {
+            try {
+              localStorage.setItem('feed_sync_trigger', Date.now().toString());
+              console.log('[Mem] Set cross-tab sync trigger for', action);
+            } catch(e) {}
+          }
         } catch(e) {
           // On failure, stop and retry later
           console.warn('Activity sync failed, will retry:', e);
@@ -4649,6 +4666,21 @@
               }
               break;
 
+            case 'feed_updated':
+              const updateUrl = item.data.url || item.content_url;
+              if (updateUrl) {
+                const existingFeed = baseState.feeds.find(f => f.url === updateUrl);
+                if (existingFeed) {
+                  if (item.data.name) existingFeed.name = item.data.name;
+                  if (item.data.tags) existingFeed.tags = item.data.tags;
+                  if (item.data.category) existingFeed.category = item.data.category;
+                  if (item.data.description !== undefined) existingFeed.description = item.data.description;
+                  if (item.data.image !== undefined) existingFeed.image = item.data.image;
+                  console.log('[StateSync] Applied feed_updated:', item.data.name || updateUrl);
+                }
+              }
+              break;
+
             case 'article_bookmarked':
             case 'podcast_bookmarked':
               if (item.data.id) {
@@ -4784,26 +4816,46 @@
 
   // === FEED SCANNER - Detect new feeds from other devices ===
   const FeedScanner = {
-    scanInterval: 30000, // Scan every 30 seconds
+    baseScanInterval: 30000, // Base scan interval (30 seconds)
+    maxScanInterval: 300000, // Max scan interval (5 minutes)
+    currentScanInterval: 30000, // Current scan interval (starts at base)
     intervalId: null,
     scanning: false,
     lastScanTime: 0,
     minScanGap: 10000, // Minimum 10 seconds between scans
+    consecutiveNoChanges: 0, // Track consecutive scans with no changes
 
     // Start periodic scanning
     start() {
       if (this.intervalId) return;
 
-      console.log('[FeedScanner] Starting periodic scan (every', this.scanInterval / 1000, 'seconds)');
+      console.log('[FeedScanner] Starting periodic scan (every', this.currentScanInterval / 1000, 'seconds)');
 
       // Do initial scan after a short delay (let app fully load first)
       setTimeout(() => this.scan(), 3000);
 
-      // Set up periodic scanning
-      this.intervalId = setInterval(() => this.scan(), this.scanInterval);
+      // Set up periodic scanning with current interval
+      this.intervalId = setInterval(() => this.scan(), this.currentScanInterval);
 
       // Scan when tab becomes visible (user returns to app)
       document.addEventListener('visibilitychange', this._onVisibilityChange.bind(this));
+
+      // Listen for cross-tab feed sync triggers (immediate sync when feed added/removed)
+      window.addEventListener('storage', this._onStorageChange.bind(this));
+    },
+
+    // Update scan interval with exponential backoff
+    _updateScanInterval(newInterval) {
+      if (newInterval === this.currentScanInterval) return;
+
+      this.currentScanInterval = newInterval;
+
+      // Restart interval with new timing
+      if (this.intervalId) {
+        clearInterval(this.intervalId);
+        this.intervalId = setInterval(() => this.scan(), this.currentScanInterval);
+        console.log('[FeedScanner] Updated scan interval to', this.currentScanInterval / 1000, 'seconds');
+      }
     },
 
     // Stop scanning
@@ -4813,6 +4865,7 @@
         this.intervalId = null;
       }
       document.removeEventListener('visibilitychange', this._onVisibilityChange.bind(this));
+      window.removeEventListener('storage', this._onStorageChange.bind(this));
       console.log('[FeedScanner] Stopped');
     },
 
@@ -4823,6 +4876,21 @@
         const timeSinceLastScan = Date.now() - this.lastScanTime;
         if (timeSinceLastScan > this.minScanGap) {
           console.log('[FeedScanner] Tab visible, checking for new feeds...');
+          this.scan();
+        }
+      }
+    },
+
+    // Handle storage change - scan immediately when feed sync trigger is set
+    _onStorageChange(e) {
+      if (e.key === 'feed_sync_trigger') {
+        // Another tab/window synced a feed change, scan immediately
+        const timeSinceLastScan = Date.now() - this.lastScanTime;
+        if (timeSinceLastScan > this.minScanGap) {
+          console.log('[FeedScanner] Cross-tab feed sync detected, scanning immediately...');
+          // Reset backoff since we know a change occurred
+          this.consecutiveNoChanges = 0;
+          this._updateScanInterval(this.baseScanInterval);
           this.scan();
         }
       }
@@ -4862,6 +4930,14 @@
           if (hasProgressChanges || hasBookmarkChanges) {
             save();
           }
+
+          // No feed changes detected - apply exponential backoff
+          this.consecutiveNoChanges++;
+          const newInterval = Math.min(
+            this.baseScanInterval * Math.pow(2, this.consecutiveNoChanges),
+            this.maxScanInterval
+          );
+          this._updateScanInterval(newInterval);
 
           this.scanning = false;
           return;
@@ -4929,6 +5005,39 @@
           state.feeds = state.feeds.filter(f => f.id !== localFeed.id);
         }
 
+        // Update existing feeds with metadata changes from server
+        let updatedFeeds = 0;
+        for (const serverFeed of serverFeeds) {
+          const localFeed = state.feeds.find(f => f.url === serverFeed.url);
+          if (localFeed) {
+            let changed = false;
+            if (serverFeed.name && localFeed.name !== serverFeed.name) {
+              localFeed.name = serverFeed.name;
+              changed = true;
+            }
+            if (serverFeed.tags && JSON.stringify(localFeed.tags) !== JSON.stringify(serverFeed.tags)) {
+              localFeed.tags = serverFeed.tags;
+              changed = true;
+            }
+            if (serverFeed.category && localFeed.category !== serverFeed.category) {
+              localFeed.category = serverFeed.category;
+              changed = true;
+            }
+            if (serverFeed.description !== undefined && localFeed.description !== serverFeed.description) {
+              localFeed.description = serverFeed.description;
+              changed = true;
+            }
+            if (serverFeed.image !== undefined && localFeed.image !== serverFeed.image) {
+              localFeed.image = serverFeed.image;
+              changed = true;
+            }
+            if (changed) {
+              updatedFeeds++;
+              console.log('[FeedScanner] Updated metadata for feed:', localFeed.name);
+            }
+          }
+        }
+
         // Merge progress and bookmarks
         this._mergeProgress(serverState.data.progress);
         this._mergeBookmarks(serverState.data.bookmarks);
@@ -4937,7 +5046,7 @@
         localStorage.setItem('feedr2', JSON.stringify(state));
 
         // Re-render UI to show changes
-        if (newFeeds.length > 0 || removedFeeds.length > 0) {
+        if (newFeeds.length > 0 || removedFeeds.length > 0 || updatedFeeds > 0) {
           renderNewsSources();
           renderPodcastSources();
           renderCategories();
@@ -4950,12 +5059,29 @@
           if (state.view === 'all') renderAll();
 
           // Notify user of sync
-          if (newFeeds.length > 0) {
-            toast(`Synced ${newFeeds.length} feed${newFeeds.length > 1 ? 's' : ''} from another device`);
+          const changes = [];
+          if (newFeeds.length > 0) changes.push(`${newFeeds.length} added`);
+          if (removedFeeds.length > 0) changes.push(`${removedFeeds.length} removed`);
+          if (updatedFeeds > 0) changes.push(`${updatedFeeds} updated`);
+          if (changes.length > 0) {
+            toast(`Synced feeds: ${changes.join(', ')}`);
           }
-          if (removedFeeds.length > 0 && newFeeds.length === 0) {
-            toast(`Removed ${removedFeeds.length} feed${removedFeeds.length > 1 ? 's' : ''} (deleted on another device)`);
-          }
+        }
+
+        // Exponential backoff: adjust scan interval based on whether changes were detected
+        const anyChanges = newFeeds.length > 0 || removedFeeds.length > 0 || updatedFeeds > 0;
+        if (anyChanges) {
+          // Changes detected - reset to base interval
+          this.consecutiveNoChanges = 0;
+          this._updateScanInterval(this.baseScanInterval);
+        } else {
+          // No changes - increase interval with exponential backoff
+          this.consecutiveNoChanges++;
+          const newInterval = Math.min(
+            this.baseScanInterval * Math.pow(2, this.consecutiveNoChanges),
+            this.maxScanInterval
+          );
+          this._updateScanInterval(newInterval);
         }
 
       } catch (e) {
@@ -5004,7 +5130,8 @@
     PROTECTED_ACTIONS: new Set([
       'state_snapshot',
       'feed_added',
-      'feed_removed'
+      'feed_removed',
+      'feed_updated'
     ]),
 
     // Actions safe to consolidate/prune aggressively
@@ -6456,7 +6583,10 @@
         name: f.name,
         type: f.type,
         category: f.category,
-        author: f.author
+        author: f.author,
+        tags: f.tags,
+        description: f.description,
+        image: f.image
       })),
       progress: state.progress,
       bookmarks: state.bookmarks,
@@ -8003,8 +8133,8 @@
       type: feedType
     });
 
-    // Save state
-    save();
+    // Save state with immediate sync
+    save(true);
 
     // Close detail page and re-render
     if (feedType === 'news') {
