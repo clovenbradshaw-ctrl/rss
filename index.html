@@ -6856,7 +6856,7 @@
 
     return `<div class="spotify-ep ${inProgress ? 'in-progress' : ''} ${done ? 'played' : ''} ${isPlaying ? 'now-playing' : ''}" data-ep="${ep.id}">
       <div class="spotify-ep-art">
-        <img data-src="${imgSrc}" src="${placeholderImg}" class="lazy-img" onerror="this.parentElement.innerHTML='<i class=\\'ph ph-microphone-stage\\'></i>'">
+        <img src="${imgSrc}" loading="lazy" onerror="this.src='${placeholderImg}'">
         <button class="spotify-ep-play-overlay" data-ep="${ep.id}">
           ${isPlaying ? '<i class="ph-fill ph-pause"></i>' : '<i class="ph-fill ph-play"></i>'}
         </button>
@@ -7066,7 +7066,7 @@
       dlBtnContent = `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>`;
     }
 
-    return `<div class="episode" data-ep="${ep.id}"><img class="episode-art lazy-img" data-src="${imgSrc}" src="${placeholderImg}" onerror="this.src='${placeholderImg}'"><div class="episode-body"><div class="episode-show">${show?.name || ''}</div><div class="episode-title">${ep.title}</div><div class="episode-footer"><button class="ep-play" data-ep="${ep.id}"><svg width="10" height="10" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button><div class="ep-progress"><div class="ep-bar"><div class="ep-fill" style="width:${pct}%"></div></div><span class="ep-time">${done ? 'Played' : pr > 0 ? fmt(rem) + ' left' : fmt(ep.duration)}</span></div><button class="ep-dl ${ep.downloaded ? 'active' : ''} ${isDownloading ? 'downloading' : ''}" data-dl="${ep.id}" ${isDownloading ? 'disabled' : ''}>${dlBtnContent}</button></div></div></div>`;
+    return `<div class="episode" data-ep="${ep.id}"><img class="episode-art" src="${imgSrc}" loading="lazy" onerror="this.src='${placeholderImg}'"><div class="episode-body"><div class="episode-show">${show?.name || ''}</div><div class="episode-title">${ep.title}</div><div class="episode-footer"><button class="ep-play" data-ep="${ep.id}"><svg width="10" height="10" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button><div class="ep-progress"><div class="ep-bar"><div class="ep-fill" style="width:${pct}%"></div></div><span class="ep-time">${done ? 'Played' : pr > 0 ? fmt(rem) + ' left' : fmt(ep.duration)}</span></div><button class="ep-dl ${ep.downloaded ? 'active' : ''} ${isDownloading ? 'downloading' : ''}" data-dl="${ep.id}" ${isDownloading ? 'disabled' : ''}>${dlBtnContent}</button></div></div></div>`;
   };
   
   // View options HTML generator
@@ -7124,7 +7124,7 @@
     const imgSrc = ep.image || show?.image || placeholderImg;
     const pr = state.progress[ep.id] || 0;
     return `<div class="episode-card" data-ep="${ep.id}">
-      <img class="episode-card-art lazy-img" data-src="${imgSrc}" src="${placeholderImg}" onerror="this.src='${placeholderImg}'">
+      <img class="episode-card-art" src="${imgSrc}" loading="lazy" onerror="this.src='${placeholderImg}'">
       <div class="episode-card-body">
         <div class="episode-card-title">${ep.title}</div>
         <div class="episode-card-meta">
@@ -7139,7 +7139,7 @@
     const show = state.feeds.find(f => f.id === ep.feedId);
     const imgSrc = ep.image || show?.image || placeholderImg;
     return `<div class="episode-masonry" data-ep="${ep.id}">
-      <img class="episode-masonry-art lazy-img" data-src="${imgSrc}" src="${placeholderImg}" onerror="this.src='${placeholderImg}'">
+      <img class="episode-masonry-art" src="${imgSrc}" loading="lazy" onerror="this.src='${placeholderImg}'">
       <div class="episode-masonry-body">
         <div class="episode-masonry-title">${ep.title}</div>
         ${ep.desc ? `<div class="episode-masonry-desc">${ep.desc}</div>` : ''}
