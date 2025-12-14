@@ -2775,17 +2775,14 @@
         <button class="feed-nav-btn active" data-filter="podcast">
           <span class="feed-nav-icon"><i class="ph ph-headphones"></i></span>
           <span>Podcasts</span>
-          <span class="feed-nav-count" id="feedCountPodcast">0</span>
         </button>
         <button class="feed-nav-btn" data-filter="news">
           <span class="feed-nav-icon"><i class="ph ph-newspaper"></i></span>
           <span>News</span>
-          <span class="feed-nav-count" id="feedCountNews">0</span>
         </button>
         <button class="feed-nav-btn" data-filter="all">
           <span class="feed-nav-icon"><i class="ph ph-books"></i></span>
           <span>All</span>
-          <span class="feed-nav-count" id="feedCountAll">0</span>
         </button>
       </nav>
       <div class="feed-container">
@@ -4600,7 +4597,6 @@
   const el = {
     newsView: $('newsView'), podcastView: $('podcastView'), allView: $('allView'),
     feedNav: $('feedNav'), feedScroll: $('feedScroll'),
-    feedCountAll: $('feedCountAll'), feedCountNews: $('feedCountNews'), feedCountPodcast: $('feedCountPodcast'),
     newsSources: $('newsSources'), newsTitle: $('newsTitle'),
     categoryChips: $('categoryChips'), newsList: $('newsList'),
     newsContent: $('newsContent'), sourcePage: $('sourcePage'),
@@ -6750,12 +6746,7 @@
   };
 
   // Update feed filter nav buttons
-  const updateFeedNav = (newsCount, podcastCount) => {
-    const totalCount = newsCount + podcastCount;
-    el.feedCountAll.textContent = totalCount;
-    el.feedCountNews.textContent = newsCount;
-    el.feedCountPodcast.textContent = podcastCount;
-
+  const updateFeedNav = () => {
     // Update active state
     el.feedNav.querySelectorAll('.feed-nav-btn').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.filter === state.feedFilter);
@@ -6773,10 +6764,7 @@
       const articles = state.articles.map(a => ({ ...a, sortDate: new Date(a.pubDate), type: 'news' }));
       const episodes = state.podcasts.map(p => ({ ...p, sortDate: new Date(p.pubDate), type: 'podcast' }));
 
-      // Count new/unread items for nav
-      const newsCount = state.articles.filter(a => a.unread).length;
-      const podcastCount = state.podcasts.filter(p => !state.progress[p.id]).length;
-      updateFeedNav(newsCount, podcastCount);
+      updateFeedNav();
 
       // Combine and sort by date
       let allItems = [...articles, ...episodes].sort((a, b) => b.sortDate - a.sortDate);
