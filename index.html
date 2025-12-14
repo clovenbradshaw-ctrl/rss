@@ -2103,24 +2103,45 @@
   };
 
   // === MEMORY & USER BEHAVIOR SYSTEM ===
-  // Comprehensive tracking system for user behavior that can sync to API
+  // Comprehensive tracking system for user behavior that syncs to Xano API
   const Mem = {
     pending: [],
     session: 's_' + Date.now(),
-    endpoint: null,
+    endpoint: 'https://xvkq-pq7i-idtl.n7d.xano.io/api:Hj4C6PGO/activity',
     syncInterval: null,
+    syncing: false,
+
+    // Extract stable content_url from content
+    getContentUrl(data) {
+      if (data.link) return data.link;
+      if (data.audioUrl) return data.audioUrl;
+      if (data.url) return data.url;
+      // For episodes/articles, try to find the content
+      if (data.episodeId) {
+        const ep = state.podcasts.find(p => p.id === data.episodeId);
+        if (ep) return ep.audioUrl || ep.link;
+      }
+      if (data.articleId) {
+        const art = state.articles.find(a => a.id === data.articleId);
+        if (art) return art.link;
+      }
+      return null;
+    },
 
     log(action, target, data = {}) {
+      const content_url = this.getContentUrl(data);
       const m = {
         id: 'm_' + Date.now() + '_' + Math.random().toString(36).substr(2,4),
         ts: new Date().toISOString(),
         action,
         target,
+        content_url,
         session: this.session,
         ctx: { view: state.view, tab: state.tab },
         ...data
       };
       this.pending.push(m);
+      // Store locally as backup
       try {
         const a = JSON.parse(localStorage.getItem('mem') || '[]');
         a.push(m);
@@ -2130,29 +2151,55 @@
       this.sync();
     },
 
-    sync() {
-      if (!this.endpoint || !this.pending.length) return;
-      const t = [...this.pending];
-      this.pending = [];
-      fetch(this.endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          memories: t,
-          session: this.session,
-          timestamp: new Date().toISOString()
-        })
-      }).catch(() => this.pending = [...t, ...this.pending]);
+    async sync() {
+      if (!this.endpoint || !this.pending.length || this.syncing) return;
+      this.syncing = true;
+
+      while (this.pending.length > 0) {
+        const m = this.pending[0];
+        try {
+          // POST each activity individually (append-only)
+          const { id, ts, session, action, target, content_url, ctx, ...rest } = m;
+          await fetch(this.endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              session_id: session,
+              action,
+              content_url: content_url || null,
+              data: {
+                target,
+                ctx,
+                ts,
+                ...rest
+              }
+            })
+          });
+          this.pending.shift(); // Remove successfully synced item
+        } catch(e) {
+          // On failure, stop and retry later
+          console.warn('Activity sync failed, will retry:', e);
+          break;
+        }
+      }
+      this.syncing = false;
     },
 
     setEndpoint(u) {
       this.endpoint = u;
-      // Start periodic sync every 30 seconds if endpoint is set
+      // Start periodic sync every 30 seconds
       if (this.syncInterval) clearInterval(this.syncInterval);
       if (u) {
         this.syncInterval = setInterval(() => this.sync(), 30000);
       }
       this.sync();
+    },
+
+    init() {
+      // Start periodic sync on load
+      if (this.endpoint) {
+        this.syncInterval = setInterval(() => this.sync(), 30000);
+      }
     },
 
     getLocal() {
@@ -2858,7 +2905,7 @@
       ep.downloaded = true;
       downloadProgress[episodeId] = { progress: 100, status: 'done' };
       save();
-      Mem.log('download_completed', episodeId, { size: blob.size });
+      Mem.log('download_completed', episodeId, { size: blob.size, audioUrl: ep.audioUrl });
       toast('Download complete!');
     } catch (e) {
       console.error('Download failed:', e);
@@ -2880,7 +2927,7 @@
       ep.downloaded = false;
       delete downloadProgress[episodeId];
       save();
-      Mem.log('download_removed', episodeId);
+      Mem.log('download_removed', episodeId, { audioUrl: ep.audioUrl });
       toast('Download removed');
     } catch (e) {
       console.error('Failed to remove download:', e);
@@ -4229,7 +4276,7 @@
       if (art) {
         art.unread = false;
         save();
-        Mem.log('article_opened', id, { source: art.feedId });
+        Mem.log('article_opened', id, { source: art.feedId, link: art.link });
         if (art.link) window.open(art.link, '_blank');
         renderAll();
       }
@@ -4273,7 +4320,7 @@
 
     // Log progress every 30 seconds
     if (cur - progStart >= 30) {
-      Mem.log('playback_progress', state.currentEp.id, { from: progStart, to: cur });
+      Mem.log('playback_progress', state.currentEp.id, { from: progStart, to: cur, audioUrl: state.currentEp.audioUrl });
       progStart = cur;
     }
     updatePlayer();
@@ -4283,7 +4330,7 @@
 
   el.audio.addEventListener('ended', () => {
     if (state.currentEp) {
-      Mem.log('episode_completed', state.currentEp.id);
+      Mem.log('episode_completed', state.currentEp.id, { audioUrl: state.currentEp.audioUrl });
       state.progress[state.currentEp.id] = state.currentEp.duration;
     }
     state.playing = false;
@@ -4344,13 +4391,13 @@
     }
 
     if (state.currentEp && state.currentEp.id !== id) {
-      Mem.log('episode_exited', state.currentEp.id, { pos: state.progress[state.currentEp.id] || 0 });
+      Mem.log('episode_exited', state.currentEp.id, { pos: state.progress[state.currentEp.id] || 0, audioUrl: state.currentEp.audioUrl });
     }
 
     state.currentEp = ep;
     const pr = state.progress[id] || 0;
-    if (pr > 0) Mem.log('returned_to_episode', id, { prev_pos: pr });
-    Mem.log('play_pressed', id, { pos: pr });
+    if (pr > 0) Mem.log('returned_to_episode', id, { prev_pos: pr, audioUrl: ep.audioUrl });
+    Mem.log('play_pressed', id, { pos: pr, audioUrl: ep.audioUrl });
 
     progStart = pr;
 
@@ -4398,13 +4445,13 @@
 
     if (state.playing) {
       el.audio.pause();
-      Mem.log('pause_pressed', state.currentEp.id, { pos: pr });
+      Mem.log('pause_pressed', state.currentEp.id, { pos: pr, audioUrl: state.currentEp.audioUrl });
     } else {
       el.audio.play().catch(e => {
         console.error('Playback failed:', e);
         toast('Playback failed');
       });
-      Mem.log('play_pressed', state.currentEp.id, { pos: pr });
+      Mem.log('play_pressed', state.currentEp.id, { pos: pr, audioUrl: state.currentEp.audioUrl });
     }
   };
 
@@ -4413,7 +4460,7 @@
     const prev = state.progress[state.currentEp.id] || 0;
     const duration = el.audio.duration || state.currentEp.duration;
     const p = Math.max(0, Math.min(duration, pos));
-    Mem.log('seek', state.currentEp.id, { from: prev, to: p });
+    Mem.log('seek', state.currentEp.id, { from: prev, to: p, audioUrl: state.currentEp.audioUrl });
     el.audio.currentTime = p;
     state.progress[state.currentEp.id] = p;
     save();
@@ -4532,7 +4579,8 @@
       Mem.log('swipe_seek', state.currentEp.id, {
         direction: deltaX > 0 ? 'rewind' : 'forward',
         amount: seekAmount,
-        swipeDistance: Math.abs(deltaX)
+        swipeDistance: Math.abs(deltaX),
+        audioUrl: state.currentEp.audioUrl
       });
     }
 
@@ -4660,7 +4708,7 @@
     save();
     renderBookmarks();
     toast('Bookmark added at ' + fmt(time));
-    Mem.log('bookmark_added', epId, { time });
+    Mem.log('bookmark_added', epId, { time, audioUrl: state.currentEp.audioUrl });
   };
 
   const deleteBookmark = (epId, index) => {
@@ -4986,7 +5034,7 @@
     const id = parseInt(item.dataset.id);
     const art = state.articles.find(a => a.id === id);
     if (art) {
-      Mem.log('article_opened', id, { source: art.feedId });
+      Mem.log('article_opened', id, { source: art.feedId, link: art.link });
       art.unread = false;
       save();
       if (art.link) window.open(art.link, '_blank');
@@ -5019,7 +5067,7 @@
       const id = parseInt(articleEl.dataset.id);
       const art = state.articles.find(a => a.id === id);
       if (art) {
-        Mem.log('article_opened', id, { source: art.feedId });
+        Mem.log('article_opened', id, { source: art.feedId, link: art.link });
         art.unread = false;
         save();
         if (art.link) window.open(art.link, '_blank');
@@ -5034,7 +5082,7 @@
       const id = parseInt(tableRow.dataset.id);
       const art = state.articles.find(a => a.id === id);
       if (art) {
-        Mem.log('article_opened', id, { source: art.feedId });
+        Mem.log('article_opened', id, { source: art.feedId, link: art.link });
         art.unread = false;
         save();
         if (art.link) window.open(art.link, '_blank');
@@ -6092,10 +6140,13 @@
     // Initialize mobile enhancements AFTER initial render
     initMobileEnhancements();
 
+    // Initialize activity tracking (syncs to Xano)
+    Mem.init();
+
     console.log('BURSST loaded');
     console.log('[Mobile] Mobile optimizations active:', window.innerWidth <= 640);
+    console.log('[Activity] Syncing to Xano:', Mem.endpoint);
     console.log('[API] User Behavior API:');
-    console.log('  Memory.setEndpoint(url) - Set API endpoint for behavior sync');
     console.log('  Memory.getLocal() - Get all local behavior logs');
     console.log('  Memory.getStats() - Get aggregated behavior statistics');
     console.log('  Memory.exportForSync() - Export all data for API sync');
