@@ -5736,7 +5736,7 @@
     if (!post) return;
 
     const type = post.dataset.type;
-    const id = parseInt(post.dataset.id);
+    const id = post.dataset.id;
 
     // Check for specific action buttons
     const playBtn = e.target.closest('.feed-post-play');
@@ -6472,7 +6472,7 @@
       renderNewsSources(); renderNews();
     } else {
       // Open source page for individual sources
-      renderSourcePage(parseInt(id));
+      renderSourcePage(id);
     }
   };
   
@@ -6502,7 +6502,7 @@
     if (sourceEl) {
       const item = e.target.closest('.article');
       if (item) {
-        const id = parseInt(item.dataset.id);
+        const id = item.dataset.id;
         const art = state.articles.find(a => a.id === id);
         if (art && art.feedId) {
           renderSourcePage(art.feedId);
@@ -6513,7 +6513,7 @@
 
     const item = e.target.closest('.article');
     if (!item) return;
-    const id = parseInt(item.dataset.id);
+    const id = item.dataset.id;
     const art = state.articles.find(a => a.id === id);
     if (art) {
       Mem.log('article_opened', id, { source: art.feedId, link: art.link });
@@ -6562,7 +6562,7 @@
     // Article clicks (all view modes)
     const articleEl = e.target.closest('.article, .article-card, .article-masonry, [data-id]');
     if (articleEl && articleEl.dataset.id) {
-      const id = parseInt(articleEl.dataset.id);
+      const id = articleEl.dataset.id;
       const art = state.articles.find(a => a.id === id);
       if (art) {
         Mem.log('article_opened', id, { source: art.feedId, link: art.link });
@@ -6577,7 +6577,7 @@
     // Table row clicks
     const tableRow = e.target.closest('tr[data-id]');
     if (tableRow) {
-      const id = parseInt(tableRow.dataset.id);
+      const id = tableRow.dataset.id;
       const art = state.articles.find(a => a.id === id);
       if (art) {
         Mem.log('article_opened', id, { source: art.feedId, link: art.link });
@@ -6601,7 +6601,7 @@
       renderPodcastInbox();
     } else {
       // Open show page for individual sources
-      renderShowPage(parseInt(id));
+      renderShowPage(id);
     }
   };
 
@@ -6610,7 +6610,7 @@
     const playBtn = e.target.closest('.spotify-ep-play-overlay');
     if (playBtn) {
       e.stopPropagation();
-      const epId = parseInt(playBtn.dataset.ep);
+      const epId = playBtn.dataset.ep;
       // If already playing this episode, toggle play/pause
       if (state.currentEp?.id === epId) {
         togglePlay();
@@ -6624,7 +6624,7 @@
     // Episode item click - play episode
     const item = e.target.closest('.spotify-ep');
     if (item) {
-      const epId = parseInt(item.dataset.ep);
+      const epId = item.dataset.ep;
       // If already playing this episode, open expanded player
       if (state.currentEp?.id === epId) {
         el.expanded.classList.add('active');
@@ -6646,14 +6646,14 @@
   if (podcastContentEl) podcastContentEl.onclick = e => {
     // Show card click
     const card = e.target.closest('.show-card');
-    if (card) { renderShowPage(parseInt(card.dataset.show)); return; }
+    if (card) { renderShowPage(card.dataset.show); return; }
 
     // Show name click in episode - navigate to show page
     const showNameEl = e.target.closest('.episode-show');
     if (showNameEl) {
       const epEl = e.target.closest('.episode, .episode-card, .episode-masonry, tr[data-ep]');
       if (epEl && epEl.dataset.ep) {
-        const ep = state.podcasts.find(p => p.id === parseInt(epEl.dataset.ep));
+        const ep = state.podcasts.find(p => p.id === epEl.dataset.ep);
         if (ep && ep.feedId) {
           renderShowPage(ep.feedId);
           return;
@@ -6663,12 +6663,12 @@
 
     // Play button (list/table view)
     const playBtn = e.target.closest('.ep-play, .table-play-btn');
-    if (playBtn) { playEp(parseInt(playBtn.dataset.ep)); return; }
+    if (playBtn) { playEp(playBtn.dataset.ep); return; }
 
     // Download button
     const dl = e.target.closest('.ep-dl');
     if (dl) {
-      const id = parseInt(dl.dataset.dl);
+      const id = dl.dataset.dl;
       const p = state.podcasts.find(x => x.id === id);
       if (p) {
         if (p.downloaded) {
@@ -6683,7 +6683,7 @@
     // Episode clicks (all view modes - list, card, masonry, table row)
     const epEl = e.target.closest('.episode, .episode-card, .episode-masonry, tr[data-ep]');
     if (epEl && epEl.dataset.ep) {
-      playEp(parseInt(epEl.dataset.ep));
+      playEp(epEl.dataset.ep);
     }
   };
   
@@ -6723,16 +6723,16 @@
 
     // Play button (list view)
     const playBtn = e.target.closest('.ep-play, .table-play-btn');
-    if (playBtn) { playEp(parseInt(playBtn.dataset.ep)); return; }
+    if (playBtn) { playEp(playBtn.dataset.ep); return; }
 
     // Show play button
     const showPlay = e.target.closest('.show-play');
-    if (showPlay) { const eps = state.podcasts.filter(p => p.feedId === parseInt(showPlay.dataset.show)); if (eps.length) playEp(eps[0].id); return; }
+    if (showPlay) { const eps = state.podcasts.filter(p => p.feedId === showPlay.dataset.show); if (eps.length) playEp(eps[0].id); return; }
 
     // Download button
     const dl = e.target.closest('.ep-dl');
     if (dl) {
-      const id = parseInt(dl.dataset.dl);
+      const id = dl.dataset.dl;
       const p = state.podcasts.find(x => x.id === id);
       if (p) {
         if (p.downloaded) {
@@ -6747,7 +6747,7 @@
     // Episode clicks (all view modes - list, card, masonry, table row)
     const epEl = e.target.closest('.episode, .episode-card, .episode-masonry, tr[data-ep]');
     if (epEl && epEl.dataset.ep) {
-      playEp(parseInt(epEl.dataset.ep));
+      playEp(epEl.dataset.ep);
     }
   };
   
@@ -7058,7 +7058,7 @@
       return;
     }
     const type = item.dataset.type;
-    const id = parseInt(item.dataset.id);
+    const id = item.dataset.id;
     closeDrawer();
     if (type === 'podcast') {
       document.querySelectorAll('.toggle-btn').forEach(b => b.classList.toggle('active', b.dataset.view === 'podcasts'));
