@@ -3948,7 +3948,23 @@
     },
 
     async loadImage(imgElement, src) {
-      if (!src || this.loadingImages.has(src)) return;
+      // If src is empty or invalid, show fallback
+      if (!src) {
+        imgElement.classList.add('loaded');
+        if (imgElement.parentElement) {
+          imgElement.parentElement.innerHTML = '<i class="ph ph-microphone-stage"></i>';
+        }
+        return;
+      }
+
+      // Data URLs don't need fetching - load directly
+      if (src.startsWith('data:')) {
+        imgElement.src = src;
+        imgElement.classList.add('loaded');
+        return;
+      }
+
+      if (this.loadingImages.has(src)) return;
       this.loadingImages.add(src);
 
       try {
@@ -3973,24 +3989,38 @@
           } else {
             // Non-image response, fallback to direct loading
             imgElement.onload = () => imgElement.classList.add('loaded');
+            imgElement.onerror = () => {
+              imgElement.classList.add('loaded');
+              if (imgElement.parentElement) {
+                imgElement.parentElement.innerHTML = '<i class="ph ph-microphone-stage"></i>';
+              }
+            };
             imgElement.src = src;
           }
         } else {
           // Non-200 response, fallback to direct loading
           imgElement.onload = () => imgElement.classList.add('loaded');
+          imgElement.onerror = () => {
+            imgElement.classList.add('loaded');
+            if (imgElement.parentElement) {
+              imgElement.parentElement.innerHTML = '<i class="ph ph-microphone-stage"></i>';
+            }
+          };
           imgElement.src = src;
         }
       } catch (e) {
         // On error, try loading directly (CORS issues)
-        imgElement.onload = () => imgElement.classList.add('loaded');
-        imgElement.src = src;
-        // Add loaded class so image becomes visible, and handle load/error
+        // Set up handlers BEFORE setting src to avoid race condition
         imgElement.onload = () => imgElement.classList.add('loaded');
         imgElement.onerror = () => {
-          // If direct load also fails, trigger the existing onerror handler
-          // which will replace with an icon
-          imgElement.classList.add('loaded'); // Still show something
+          // If direct load also fails, show the placeholder and trigger fallback
+          imgElement.classList.add('loaded');
+          // Replace with microphone icon (same as inline onerror behavior)
+          if (imgElement.parentElement) {
+            imgElement.parentElement.innerHTML = '<i class="ph ph-microphone-stage"></i>';
+          }
         };
+        imgElement.src = src;
       }
 
       this.loadingImages.delete(src);
