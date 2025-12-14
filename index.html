@@ -1658,17 +1658,31 @@
          PHASE 4: SPACING & LAYOUT
          ================== */
 
-      /* Header */
+      /* Header - Minimal mobile header */
       .header {
-        padding: var(--mobile-space-md) var(--mobile-space-md);
-        padding-top: max(var(--mobile-space-md), var(--sat));
+        padding: var(--mobile-space-sm) var(--mobile-space-md);
+        padding-top: max(var(--mobile-space-sm), var(--sat));
         gap: var(--mobile-space-sm);
-        /* Make header fixed and add padding to content */
         position: sticky;
         top: 0;
         z-index: var(--z-mobile-header);
         backdrop-filter: blur(12px);
         background: rgba(26, 26, 26, 0.95);
+        min-height: auto;
+      }
+
+      /* Hide most header elements on mobile - just keep hamburger */
+      .header .logo,
+      .header .spacer,
+      .header #refreshBtn,
+      .header #settingsBtn,
+      .header #addBtn {
+        display: none !important;
+      }
+
+      /* Hamburger button is the main nav */
+      .header .hamburger {
+        margin-right: auto;
       }
 
       .main {
@@ -1717,7 +1731,18 @@
       .podcast-content,
       .all-content {
         padding: var(--mobile-space-md);
-        padding-bottom: calc(80px + var(--sab));
+        padding-bottom: calc(70px + var(--sab));
+      }
+
+      /* Extra padding when mini player is active */
+      .player.active ~ .main .news-list,
+      .player.active ~ .main .podcast-content,
+      .player.active ~ .main .all-content,
+      body:has(.player.active) .news-list,
+      body:has(.player.active) .podcast-content,
+      body:has(.player.active) .podcast-inbox-content,
+      body:has(.player.active) .all-content {
+        padding-bottom: calc(140px + var(--sab));
       }
 
       /* Articles */
@@ -1807,32 +1832,35 @@
       }
 
       /* ==================
-         PHASE 5: PLAYER REDESIGN
+         PHASE 5: MOBILE MINI PLAYER - SPOTIFY STYLE
          ================== */
 
+      /* Slim bottom bar - tapping opens fullscreen */
       .player {
         position: fixed;
-        bottom: calc(70px + var(--sab));
-        left: 0;
-        right: 0;
-        padding: var(--mobile-space-lg) var(--mobile-space-md);
-        border-radius: 20px 20px 0 0;
+        bottom: calc(56px + var(--sab));
+        left: 8px;
+        right: 8px;
+        padding: 8px 12px;
+        border-radius: 12px;
         z-index: var(--z-mobile-player);
-        /* Enhanced shadow for elevation */
-        box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.5);
+        background: linear-gradient(135deg, var(--bg3) 0%, var(--bg2) 100%);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+        cursor: pointer;
       }
 
       .player-main {
-        gap: var(--mobile-space-md);
-        margin-bottom: var(--mobile-space-sm);
+        gap: 12px;
+        margin-bottom: 0;
+        align-items: center;
       }
 
+      /* Smaller album art */
       .player-art {
-        width: 64px;
-        height: 64px;
-        border-radius: 12px;
-        /* Prevent tiny tap area */
-        cursor: pointer;
+        width: 44px;
+        height: 44px;
+        border-radius: 6px;
+        flex-shrink: 0;
       }
 
       .player-info {
@@ -1841,78 +1869,93 @@
       }
 
       .player-title {
-        font-size: var(--mobile-text-base);
+        font-size: var(--mobile-text-sm);
         font-weight: 600;
-        margin-bottom: 4px;
+        margin-bottom: 2px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
       .player-show {
-        font-size: var(--mobile-text-sm);
+        font-size: var(--mobile-text-xs);
+        color: var(--text3);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
+      /* Hide center controls - just keep play button on right */
+      .player-center {
+        display: none !important;
+      }
+
+      /* Minimal controls on right side */
       .player-controls {
-        gap: var(--mobile-space-md);
+        gap: 8px;
       }
 
+      /* Hide skip buttons in mini player */
       .player-skip {
-        min-width: var(--mobile-touch-min);
-        min-height: var(--mobile-touch-min);
-        padding: 10px 14px;
-        font-size: var(--mobile-text-base);
-        font-weight: 700;
+        display: none !important;
       }
 
+      /* Compact play button */
       .player-play {
-        width: var(--mobile-touch-large);
-        height: var(--mobile-touch-large);
+        width: 40px;
+        height: 40px;
+        background: var(--blue);
+        border-radius: 50%;
       }
 
       .player-play svg {
-        width: 20px;
-        height: 20px;
+        width: 16px;
+        height: 16px;
       }
 
+      /* Hide progress bar in mini player */
       .player-progress {
-        margin-top: var(--mobile-space-sm);
+        display: none !important;
       }
 
-      .player-bar {
-        height: 8px;
-        border-radius: 4px;
-        /* Increase tap area with padding */
-        padding: 8px 0;
-        margin: -8px 0;
-      }
-
-      .player-bar:active {
-        height: 10px;
-      }
-
-      .player-fill {
-        border-radius: 4px;
-      }
-
-      .player-time {
-        font-size: var(--mobile-text-sm);
-        font-weight: 500;
-      }
-
+      /* Hide all extra buttons - full controls in expanded view */
       .player-right {
-        gap: 6px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
       }
 
-      .player-btn {
-        min-width: var(--mobile-touch-min);
-        min-height: var(--mobile-touch-min);
-        padding: 12px;
+      .player-btn,
+      .speed-btn,
+      #pExpand {
+        display: none !important;
       }
 
-      .speed-btn {
-        min-width: var(--mobile-touch-min);
-        min-height: var(--mobile-touch-min);
-        padding: 10px 14px;
-        font-size: var(--mobile-text-sm);
-        font-weight: 700;
+      /* Show only play button in player-right area */
+      .player-right .player-play {
+        display: flex !important;
+      }
+
+      /* Mini progress bar at bottom of mini player */
+      .player::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 12px;
+        right: 12px;
+        height: 3px;
+        background: var(--bg4);
+        border-radius: 0 0 12px 12px;
+      }
+
+      .player .player-fill-indicator {
+        position: absolute;
+        bottom: 0;
+        left: 12px;
+        height: 3px;
+        background: var(--blue);
+        border-radius: 0 0 0 12px;
+        z-index: 1;
       }
 
       /* ==================
@@ -2444,7 +2487,12 @@
       /* Episode list - full width, minimal padding */
       .podcast-inbox-list {
         padding: 0;
-        padding-bottom: calc(160px + var(--sab));
+        padding-bottom: calc(70px + var(--sab));
+      }
+
+      /* Extra padding when player is active */
+      body:has(.player.active) .podcast-inbox-list {
+        padding-bottom: calc(140px + var(--sab));
       }
 
       .spotify-ep {
@@ -9114,8 +9162,17 @@
     toast('Bookmark saved');
   };
 
-  // Tapping the player left side opens expanded player
+  // Tapping the player opens expanded player on mobile
   document.querySelector('.player-left').onclick = () => el.expanded.classList.add('active');
+
+  // On mobile, make entire player clickable to expand (except play button)
+  el.player.addEventListener('click', e => {
+    // Check if we're on mobile (640px breakpoint)
+    if (window.innerWidth > 640) return;
+    // Don't expand if clicking play button
+    if (e.target.closest('.player-play') || e.target.closest('#pPlay')) return;
+    el.expanded.classList.add('active');
+  });
 
   $('refreshBtn').onclick = () => refreshAllFeeds();
   $('addBtn').onclick = () => el.modal.classList.add('active');
