@@ -2531,7 +2531,7 @@
         scroll-snap-type: x mandatory;
         -webkit-overflow-scrolling: touch;
         scrollbar-width: none;
-        padding-bottom: 4px;
+        padding: 4px 0;
       }
 
       .mobile-shows-scroll::-webkit-scrollbar {
@@ -2599,20 +2599,21 @@
       }
 
       /* New indicator for mobile show cards */
-      .mobile-show-card.has-new .show-art {
+      .mobile-show-card.has-new {
         position: relative;
       }
 
-      .mobile-show-card.has-new .show-art::after {
+      .mobile-show-card.has-new::after {
         content: '';
         position: absolute;
-        top: -2px;
-        right: -2px;
+        top: 2px;
+        right: 6px;
         width: 12px;
         height: 12px;
         background: var(--blue);
         border-radius: 50%;
         border: 2px solid var(--bg);
+        z-index: 1;
       }
 
       /* Episode list - full width, minimal padding */
