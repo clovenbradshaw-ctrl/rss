@@ -4643,7 +4643,7 @@
               const url = item.data.url || item.content_url;
               if (url && !baseState.feeds.find(f => f.url === url)) {
                 baseState.feeds.push({
-                  id: item.data.id || GUID.forFeed(url),
+                  id: item.data.target || GUID.forFeed(url),
                   url: url,
                   name: item.data.name || 'Unknown',
                   type: item.data.type || 'news',
@@ -4683,21 +4683,21 @@
 
             case 'article_bookmarked':
             case 'podcast_bookmarked':
-              if (item.data.id) {
-                baseState.bookmarks[item.data.id] = true;
+              if (item.data.target) {
+                baseState.bookmarks[item.data.target] = true;
               }
               break;
 
             case 'article_unbookmarked':
             case 'podcast_unbookmarked':
-              if (item.data.id) {
-                delete baseState.bookmarks[item.data.id];
+              if (item.data.target) {
+                delete baseState.bookmarks[item.data.target];
               }
               break;
 
             case 'progress_updated':
-              if (item.data.id && item.data.progress !== undefined) {
-                baseState.progress[item.data.id] = item.data.progress;
+              if (item.data.target && item.data.progress !== undefined) {
+                baseState.progress[item.data.target] = item.data.progress;
               }
               break;
           }
@@ -5329,7 +5329,7 @@
 
       for (const activity of activities) {
         const url = activity.data?.url || activity.content_url;
-        const id = activity.data?.id;
+        const id = activity.data?.target;
 
         switch (activity.action) {
           case 'feed_added':
@@ -5423,7 +5423,7 @@
 
         // Count redundant pairs
         const url = a.data?.url || a.content_url;
-        const id = a.data?.id;
+        const id = a.data?.target;
         if (a.action === 'feed_added' && url) feedAdds.add(url);
         if (a.action === 'feed_removed' && url && feedAdds.has(url)) {
           stats.potentialSavings.redundantPairs += 2;
