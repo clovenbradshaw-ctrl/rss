@@ -4011,6 +4011,15 @@
       feedType: type
     });
 
+    // Log feed subscription to Xano memory for cross-device tracking
+    Mem.log('feed_added', id, {
+      url: url,
+      name: name || 'Loading...',
+      type: type,
+      category: category || 'Uncategorized',
+      author: author || ''
+    });
+
     save();
 
     toast('Adding feed...');
