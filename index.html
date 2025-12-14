@@ -623,6 +623,23 @@
     .sleep-timer-cancel:hover { background: rgba(255,255,255,0.1); }
     .sleep-badge { position: absolute; top: -4px; right: -4px; background: var(--blue); color: #fff; font-size: 9px; font-weight: 700; padding: 3px 6px; border-radius: 10px; min-width: 18px; text-align: center; }
 
+    /* Snapshot List */
+    .snapshot-list { max-height: 400px; overflow-y: auto; }
+    .snapshot-item { display: flex; align-items: center; gap: 12px; padding: 14px; background: var(--bg4); border-radius: 12px; margin-bottom: 8px; border: 1px solid var(--border); transition: all 0.15s; }
+    .snapshot-item:hover { background: rgba(255,255,255,0.04); border-color: var(--border2); }
+    .snapshot-icon { width: 40px; height: 40px; background: rgba(59,130,246,0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--blue); font-size: 18px; flex-shrink: 0; }
+    .snapshot-info { flex: 1; min-width: 0; }
+    .snapshot-date { font-size: 14px; font-weight: 500; margin-bottom: 2px; }
+    .snapshot-reason { font-size: 12px; color: var(--text2); text-transform: capitalize; }
+    .snapshot-stats { font-size: 11px; color: var(--text3); margin-top: 2px; }
+    .snapshot-actions-row { display: flex; gap: 6px; flex-shrink: 0; }
+    .snapshot-btn { padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: 500; cursor: pointer; border: 1px solid var(--border2); background: var(--bg3); color: var(--text); transition: all 0.15s; font-family: inherit; }
+    .snapshot-btn:hover { background: rgba(255,255,255,0.08); }
+    .snapshot-btn.restore { background: var(--blue); border-color: var(--blue); color: #fff; }
+    .snapshot-btn.restore:hover { background: var(--blue2); }
+    .snapshot-btn.delete { color: var(--text2); }
+    .snapshot-btn.delete:hover { background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.3); color: #ef4444; }
+
     /* Speed Control Panel */
     .speed-panel { position: absolute; bottom: 100%; right: 0; background: var(--bg3); border: 1px solid var(--border2); border-radius: 16px; padding: 20px; width: 300px; display: none; z-index: 110; box-shadow: 0 -8px 32px rgba(0,0,0,0.4); }
     .speed-panel.active { display: block; }
@@ -2034,6 +2051,28 @@
   </div>
 </div>
 
+<!-- Snapshot/History Modal -->
+<div class="modal" id="snapshotModal">
+  <div class="modal-box" style="max-width:500px">
+    <div class="modal-header">
+      <h2><i class="ph ph-clock-counter-clockwise"></i> History Snapshots</h2>
+      <button class="modal-close" id="snapshotModalClose"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 5L5 15M5 5l10 10"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="snapshot-actions" style="display:flex;gap:8px;margin-bottom:16px">
+        <button class="submit-btn" id="createSnapshotBtn" style="flex:1"><i class="ph ph-camera"></i> Create Snapshot</button>
+      </div>
+      <div class="snapshot-list" id="snapshotList">
+        <div class="snapshot-empty" style="text-align:center;padding:32px;color:var(--text2)">
+          <i class="ph ph-clock-counter-clockwise" style="font-size:48px;opacity:0.3"></i>
+          <p style="margin-top:12px">No snapshots yet</p>
+          <p style="font-size:13px">Create a snapshot to save your current state</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Audio element for actual playback -->
 <audio id="audioPlayer" preload="metadata"></audio>
 
@@ -2103,13 +2142,36 @@
   };
 
   // === MEMORY & USER BEHAVIOR SYSTEM ===
-  // Comprehensive tracking system for user behavior that syncs to Xano API
+  // Optimized tracking: only sync meaningful content interactions to Xano
+  // Ephemeral UI state (view changes, filters) stays local only
   const Mem = {
     pending: [],
     session: 's_' + Date.now(),
     endpoint: 'https://xvkq-pq7i-idtl.n7d.xano.io/api:Hj4C6PGO/activity',
     syncInterval: null,
     syncing: false,
+
+    // Actions that represent meaningful content interactions - sync to DB
+    SYNC_ACTIONS: new Set([
+      'article_opened',      // User engaged with article content
+      'play_pressed',        // Started listening to episode
+      'pause_pressed',       // Paused playback (context for session)
+      'episode_completed',   // Finished an episode
+      'episode_exited',      // Left episode (captures exit point)
+      'playback_progress',   // Significant progress updates
+      'returned_to_episode', // Resumption patterns
+      'seek',                // Intentional navigation within content
+      'bookmark_added',      // User marked important moment
+      'download_completed',  // Content acquisition
+      'download_removed',    // Content removal
+      'feed_added',          // Subscription change
+      'feed_removed'         // Subscription change
+    ]),
+
+    // Actions that stay local only - UI state, preferences, filtering
+    // view_changed, feed_opened, feed_filter_changed, category_changed,
+    // tag_filter_changed, podcast_category_changed, podcast_tag_filter_changed,
+    // speed_changed, swipe_seek
 
     // Extract stable content_url from content
     getContentUrl(data) {
@@ -2128,8 +2190,14 @@
       return null;
     },
 
+    // Check if action should be synced to remote DB
+    shouldSync(action) {
+      return this.SYNC_ACTIONS.has(action);
+    },
+
     log(action, target, data = {}) {
       const content_url = this.getContentUrl(data);
+      const shouldSync = this.shouldSync(action);
       const m = {
         id: 'm_' + Date.now() + '_' + Math.random().toString(36).substr(2,4),
         ts: new Date().toISOString(),
@@ -2138,17 +2206,24 @@
         content_url,
         session: this.session,
         ctx: { view: state.view, tab: state.tab },
+        local_only: !shouldSync,
         ...data
       };
-      this.pending.push(m);
-      // Store locally as backup
+
+      // Always store locally for history/stats
       try {
         const a = JSON.parse(localStorage.getItem('mem') || '[]');
         a.push(m);
-        if (a.length > 1000) a.splice(0, a.length - 1000);
+        // Keep more local-only events (they're cheap), fewer synced ones cached
+        if (a.length > 500) a.splice(0, a.length - 500);
         localStorage.setItem('mem', JSON.stringify(a));
       } catch(e) {}
-      this.sync();
+
+      // Only queue for remote sync if it's a meaningful content interaction
+      if (shouldSync) {
+        this.pending.push(m);
+        this.sync();
+      }
     },
 
     async sync() {
@@ -2159,7 +2234,7 @@
         const m = this.pending[0];
         try {
           // POST each activity individually (append-only)
-          const { id, ts, session, action, target, content_url, ctx, ...rest } = m;
+          const { id, ts, session, action, target, content_url, ctx, local_only, ...rest } = m;
           await fetch(this.endpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -2207,11 +2282,24 @@
       catch(e) { return []; }
     },
 
+    // Get only synced (meaningful) events
+    getSynced() {
+      return this.getLocal().filter(l => !l.local_only);
+    },
+
+    // Get only local (ephemeral) events
+    getEphemeral() {
+      return this.getLocal().filter(l => l.local_only);
+    },
+
     // Get aggregated behavior stats
     getStats() {
       const logs = this.getLocal();
+      const syncedLogs = logs.filter(l => !l.local_only);
       const stats = {
         totalEvents: logs.length,
+        syncedEvents: syncedLogs.length,
+        localOnlyEvents: logs.length - syncedLogs.length,
         sessions: [...new Set(logs.map(l => l.session))].length,
         articleReads: logs.filter(l => l.action === 'article_opened').length,
         episodePlays: logs.filter(l => l.action === 'play_pressed').length,
@@ -2329,6 +2417,190 @@
         request.onerror = () => reject(request.error);
       });
     }
+  };
+
+  // === STATE SNAPSHOT SYSTEM (IndexedDB) ===
+  // Enables historical state restoration - keeps last N snapshots
+  const SnapshotDB = {
+    db: null,
+    DB_NAME: 'feedr_snapshots',
+    STORE_NAME: 'snapshots',
+    MAX_SNAPSHOTS: 20, // Keep last 20 snapshots
+
+    async init() {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open(this.DB_NAME, 1);
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => { this.db = request.result; resolve(); };
+        request.onupgradeneeded = (e) => {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains(this.STORE_NAME)) {
+            const store = db.createObjectStore(this.STORE_NAME, { keyPath: 'id' });
+            store.createIndex('timestamp', 'timestamp', { unique: false });
+          }
+        };
+      });
+    },
+
+    // Create a snapshot of the current state
+    async createSnapshot(reason = 'manual') {
+      if (!this.db) await this.init();
+
+      const snapshot = {
+        id: 'snap_' + Date.now(),
+        timestamp: Date.now(),
+        reason, // 'manual', 'auto', 'before_delete', 'before_refresh', etc.
+        state: {
+          feeds: JSON.parse(JSON.stringify(state.feeds)),
+          articles: JSON.parse(JSON.stringify(state.articles)),
+          podcasts: JSON.parse(JSON.stringify(state.podcasts)),
+          archivedArticles: JSON.parse(JSON.stringify(state.archivedArticles || [])),
+          archivedPodcasts: JSON.parse(JSON.stringify(state.archivedPodcasts || [])),
+          progress: JSON.parse(JSON.stringify(state.progress)),
+          bookmarks: JSON.parse(JSON.stringify(state.bookmarks)),
+          feedLastViewed: JSON.parse(JSON.stringify(state.feedLastViewed || {}))
+        },
+        stats: {
+          feedCount: state.feeds.length,
+          articleCount: state.articles.length,
+          podcastCount: state.podcasts.length,
+          bookmarkCount: Object.keys(state.bookmarks || {}).length
+        }
+      };
+
+      return new Promise(async (resolve, reject) => {
+        try {
+          const tx = this.db.transaction(this.STORE_NAME, 'readwrite');
+          const store = tx.objectStore(this.STORE_NAME);
+
+          await new Promise((res, rej) => {
+            const request = store.put(snapshot);
+            request.onsuccess = () => res();
+            request.onerror = () => rej(request.error);
+          });
+
+          // Prune old snapshots to keep only MAX_SNAPSHOTS
+          await this.pruneOldSnapshots();
+
+          resolve(snapshot.id);
+        } catch (e) {
+          reject(e);
+        }
+      });
+    },
+
+    // Get all snapshots (metadata only, not full state)
+    async listSnapshots() {
+      if (!this.db) await this.init();
+
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction(this.STORE_NAME, 'readonly');
+        const store = tx.objectStore(this.STORE_NAME);
+        const request = store.getAll();
+        request.onsuccess = () => {
+          // Return metadata without full state (for UI listing)
+          const snapshots = request.result.map(s => ({
+            id: s.id,
+            timestamp: s.timestamp,
+            reason: s.reason,
+            stats: s.stats,
+            date: new Date(s.timestamp).toLocaleString()
+          }));
+          // Sort newest first
+          snapshots.sort((a, b) => b.timestamp - a.timestamp);
+          resolve(snapshots);
+        };
+        request.onerror = () => reject(request.error);
+      });
+    },
+
+    // Get a specific snapshot with full state
+    async getSnapshot(id) {
+      if (!this.db) await this.init();
+
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction(this.STORE_NAME, 'readonly');
+        const store = tx.objectStore(this.STORE_NAME);
+        const request = store.get(id);
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+    },
+
+    // Restore state from a snapshot
+    async restoreSnapshot(id) {
+      const snapshot = await this.getSnapshot(id);
+      if (!snapshot) throw new Error('Snapshot not found');
+
+      // Create a snapshot of current state before restoring (safety net)
+      await this.createSnapshot('before_restore');
+
+      // Restore the state
+      const s = snapshot.state;
+      state.feeds = s.feeds || [];
+      state.articles = s.articles || [];
+      state.podcasts = s.podcasts || [];
+      state.archivedArticles = s.archivedArticles || [];
+      state.archivedPodcasts = s.archivedPodcasts || [];
+      state.progress = s.progress || {};
+      state.bookmarks = s.bookmarks || {};
+      state.feedLastViewed = s.feedLastViewed || {};
+
+      // Rebuild categories from restored feeds
+      state.categories.clear();
+      state.feeds.forEach(f => f.category && state.categories.add(f.category));
+
+      // Save the restored state
+      save();
+
+      return snapshot;
+    },
+
+    // Delete a specific snapshot
+    async deleteSnapshot(id) {
+      if (!this.db) await this.init();
+
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction(this.STORE_NAME, 'readwrite');
+        const store = tx.objectStore(this.STORE_NAME);
+        const request = store.delete(id);
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+      });
+    },
+
+    // Remove old snapshots keeping only MAX_SNAPSHOTS
+    async pruneOldSnapshots() {
+      const snapshots = await this.listSnapshots();
+      if (snapshots.length > this.MAX_SNAPSHOTS) {
+        const toDelete = snapshots.slice(this.MAX_SNAPSHOTS);
+        for (const snap of toDelete) {
+          await this.deleteSnapshot(snap.id);
+        }
+      }
+    },
+
+    // Clear all snapshots
+    async clearAll() {
+      if (!this.db) await this.init();
+
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction(this.STORE_NAME, 'readwrite');
+        const store = tx.objectStore(this.STORE_NAME);
+        const request = store.clear();
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+      });
+    }
+  };
+
+  // Expose snapshot functions globally
+  window.Snapshots = {
+    create: (reason) => SnapshotDB.createSnapshot(reason),
+    list: () => SnapshotDB.listSnapshots(),
+    get: (id) => SnapshotDB.getSnapshot(id),
+    restore: (id) => SnapshotDB.restoreSnapshot(id),
+    delete: (id) => SnapshotDB.deleteSnapshot(id)
   };
 
   // Track ongoing downloads
@@ -2624,7 +2896,10 @@
     sleepTimerModal: $('sleepTimerModal'), sleepTimerContent: $('sleepTimerContent'),
     sleepTimerActive: $('sleepTimerActive'), sleepCountdown: $('sleepCountdown'),
     sleepPresets: $('sleepPresets'), sleepCustomInput: $('sleepCustomInput'),
-    sleepCustomBtn: $('sleepCustomBtn'), sleepCancelBtn: $('sleepCancelBtn')
+    sleepCustomBtn: $('sleepCustomBtn'), sleepCancelBtn: $('sleepCancelBtn'),
+    // Snapshot modal
+    snapshotModal: $('snapshotModal'), snapshotModalClose: $('snapshotModalClose'),
+    snapshotList: $('snapshotList'), createSnapshotBtn: $('createSnapshotBtn')
   };
   
   // === UTILS ===
@@ -3537,6 +3812,13 @@
     if (state.refreshing) return;
     state.refreshing = true;
     toast('Refreshing feeds...');
+
+    // Create snapshot before refresh (content may change)
+    try {
+      await SnapshotDB.createSnapshot('before_refresh');
+    } catch (e) {
+      console.warn('Failed to create pre-refresh snapshot:', e);
+    }
 
     const results = await Promise.allSettled(
       state.feeds.map(feed => fetchAndParseFeed(feed))
@@ -4925,6 +5207,10 @@
           <div class="drawer-item-icon"><i class="ph ph-arrows-clockwise"></i></div>
           <span class="drawer-item-name">Refresh All</span>
         </div>
+        <div class="drawer-item" id="drawerHistory">
+          <div class="drawer-item-icon"><i class="ph ph-clock-counter-clockwise"></i></div>
+          <span class="drawer-item-name">History Snapshots</span>
+        </div>
       </div>
     `;
   };
@@ -5422,6 +5708,7 @@
     if (e.key === 'Escape') {
       el.expanded.classList.remove('active');
       el.sleepTimerModal.classList.remove('active');
+      el.snapshotModal.classList.remove('active');
       closeAllPanels();
       closeDrawer();
       return;
@@ -5482,6 +5769,11 @@
       refreshAllFeeds();
       return;
     }
+    if (item.id === 'drawerHistory') {
+      closeDrawer();
+      openSnapshotModal();
+      return;
+    }
     const type = item.dataset.type;
     const id = parseInt(item.dataset.id);
     closeDrawer();
@@ -5524,6 +5816,102 @@
     sleepTimer.cancel();
     toast('Sleep timer cancelled');
   };
+
+  // === SNAPSHOT MODAL ===
+  const renderSnapshotList = async () => {
+    try {
+      const snapshots = await SnapshotDB.listSnapshots();
+      if (!snapshots.length) {
+        el.snapshotList.innerHTML = `
+          <div class="snapshot-empty" style="text-align:center;padding:32px;color:var(--text2)">
+            <i class="ph ph-clock-counter-clockwise" style="font-size:48px;opacity:0.3"></i>
+            <p style="margin-top:12px">No snapshots yet</p>
+            <p style="font-size:13px">Create a snapshot to save your current state</p>
+          </div>`;
+        return;
+      }
+      el.snapshotList.innerHTML = snapshots.map(snap => `
+        <div class="snapshot-item" data-id="${snap.id}">
+          <div class="snapshot-icon"><i class="ph ph-clock-counter-clockwise"></i></div>
+          <div class="snapshot-info">
+            <div class="snapshot-date">${snap.date}</div>
+            <div class="snapshot-reason">${snap.reason.replace(/_/g, ' ')}</div>
+            <div class="snapshot-stats">${snap.stats.feedCount} feeds, ${snap.stats.articleCount} articles, ${snap.stats.podcastCount} episodes</div>
+          </div>
+          <div class="snapshot-actions-row">
+            <button class="snapshot-btn restore" data-action="restore" data-id="${snap.id}">Restore</button>
+            <button class="snapshot-btn delete" data-action="delete" data-id="${snap.id}"><i class="ph ph-trash"></i></button>
+          </div>
+        </div>
+      `).join('');
+    } catch (e) {
+      console.error('Failed to render snapshots:', e);
+      el.snapshotList.innerHTML = '<div style="color:var(--text2);text-align:center;padding:20px">Failed to load snapshots</div>';
+    }
+  };
+
+  const openSnapshotModal = async () => {
+    el.snapshotModal.classList.add('active');
+    await renderSnapshotList();
+  };
+
+  const closeSnapshotModal = () => {
+    el.snapshotModal.classList.remove('active');
+  };
+
+  el.snapshotModalClose.onclick = closeSnapshotModal;
+  el.snapshotModal.onclick = e => { if (e.target === el.snapshotModal) closeSnapshotModal(); };
+
+  el.createSnapshotBtn.onclick = async () => {
+    try {
+      await SnapshotDB.createSnapshot('manual');
+      toast('Snapshot created');
+      await renderSnapshotList();
+    } catch (e) {
+      toast('Failed to create snapshot');
+      console.error(e);
+    }
+  };
+
+  el.snapshotList.onclick = async e => {
+    const btn = e.target.closest('.snapshot-btn');
+    if (!btn) return;
+
+    const action = btn.dataset.action;
+    const id = btn.dataset.id;
+
+    if (action === 'restore') {
+      if (!confirm('Restore this snapshot? Your current state will be saved first.')) return;
+      try {
+        const snap = await SnapshotDB.restoreSnapshot(id);
+        toast(`Restored to ${new Date(snap.timestamp).toLocaleString()}`);
+        closeSnapshotModal();
+        // Re-render everything
+        renderNewsSources();
+        renderCategories();
+        renderTagFilters();
+        renderNews();
+        renderPodcasts();
+        renderAll();
+      } catch (e) {
+        toast('Failed to restore snapshot');
+        console.error(e);
+      }
+    } else if (action === 'delete') {
+      if (!confirm('Delete this snapshot?')) return;
+      try {
+        await SnapshotDB.deleteSnapshot(id);
+        toast('Snapshot deleted');
+        await renderSnapshotList();
+      } catch (e) {
+        toast('Failed to delete snapshot');
+        console.error(e);
+      }
+    }
+  };
+
+  // Expose snapshot modal opener globally
+  window.openSnapshotModal = openSnapshotModal;
 
   // Speed Panel
   el.pSpeed.onclick = (e) => { e.stopPropagation(); toggleSpeedPanel(); };
@@ -6105,6 +6493,14 @@
       if (syncNeeded) save();
     } catch (e) {
       console.error('Failed to initialize download database:', e);
+    }
+
+    // Initialize snapshot database for state history/restoration
+    try {
+      await SnapshotDB.init();
+      console.log('Snapshot database initialized');
+    } catch (e) {
+      console.error('Failed to initialize snapshot database:', e);
     }
 
     // Apply saved view state
