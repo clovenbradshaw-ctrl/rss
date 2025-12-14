@@ -1734,7 +1734,7 @@
         padding-bottom: calc(70px + var(--sab));
       }
 
-      /* Extra padding when mini player is active */
+      /* Extra padding when mini player is active (nav bar is hidden, player is at bottom) */
       .player.active ~ .main .news-list,
       .player.active ~ .main .podcast-content,
       .player.active ~ .main .all-content,
@@ -1742,7 +1742,7 @@
       body:has(.player.active) .podcast-content,
       body:has(.player.active) .podcast-inbox-content,
       body:has(.player.active) .all-content {
-        padding-bottom: calc(140px + var(--sab));
+        padding-bottom: calc(100px + var(--sab));
       }
 
       /* Articles */
@@ -2528,13 +2528,19 @@
         font-size: 11px;
       }
 
-      /* Mini player - mobile optimized */
+      /* Mini player - mobile optimized, locked to bottom */
       .player {
-        bottom: calc(70px + var(--sab));
-        border-radius: 12px 12px 0 0;
-        margin: 0 8px;
-        width: calc(100% - 16px);
+        bottom: 0;
+        border-radius: 0;
+        margin: 0;
+        width: 100%;
+        padding-bottom: max(12px, var(--sab));
         box-shadow: 0 -4px 20px rgba(0,0,0,0.5);
+      }
+
+      /* Hide nav bar when player is active on mobile */
+      body:has(.player.active) .controls {
+        display: none !important;
       }
 
       .player-main {
