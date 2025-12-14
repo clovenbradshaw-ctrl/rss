@@ -446,6 +446,11 @@
       background: var(--bg);
     }
 
+    /* Mobile shows header - hidden on desktop */
+    .mobile-shows-header {
+      display: none;
+    }
+
     /* === SPOTIFY-STYLE MINI PLAYER === */
     .player {
       position: fixed;
@@ -2484,6 +2489,132 @@
          PHASE 20: SPOTIFY-STYLE MOBILE
          ================== */
 
+      /* Mobile Shows Browser - horizontal scroll at top */
+      .mobile-shows-header {
+        display: block;
+        padding: var(--mobile-space-md);
+        background: var(--bg);
+        border-bottom: 1px solid var(--border);
+      }
+
+      .mobile-shows-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: var(--mobile-space-md);
+      }
+
+      .mobile-shows-title h3 {
+        font-size: var(--mobile-text-lg);
+        font-weight: 600;
+        color: var(--text);
+      }
+
+      .mobile-shows-title .add-show-btn {
+        background: var(--blue);
+        border: none;
+        color: #fff;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 20px;
+      }
+
+      .mobile-shows-scroll {
+        display: flex;
+        gap: var(--mobile-space-md);
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        padding-bottom: 4px;
+      }
+
+      .mobile-shows-scroll::-webkit-scrollbar {
+        display: none;
+      }
+
+      .mobile-show-card {
+        flex: 0 0 auto;
+        width: 80px;
+        text-align: center;
+        cursor: pointer;
+        scroll-snap-align: start;
+      }
+
+      .mobile-show-card.all-shows {
+        width: 80px;
+      }
+
+      .mobile-show-card .show-art {
+        width: 64px;
+        height: 64px;
+        border-radius: 12px;
+        margin: 0 auto var(--mobile-space-xs);
+        background: var(--bg3);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.15s, box-shadow 0.15s;
+      }
+
+      .mobile-show-card:active .show-art {
+        transform: scale(0.95);
+      }
+
+      .mobile-show-card.active .show-art {
+        box-shadow: 0 0 0 2px var(--blue), 0 4px 12px rgba(59,130,246,0.4);
+      }
+
+      .mobile-show-card .show-art img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .mobile-show-card .show-art i {
+        font-size: 28px;
+        color: var(--text3);
+      }
+
+      .mobile-show-card .show-name {
+        font-size: 11px;
+        color: var(--text2);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 80px;
+        line-height: 1.3;
+      }
+
+      .mobile-show-card.active .show-name {
+        color: var(--blue);
+        font-weight: 600;
+      }
+
+      /* New indicator for mobile show cards */
+      .mobile-show-card.has-new .show-art {
+        position: relative;
+      }
+
+      .mobile-show-card.has-new .show-art::after {
+        content: '';
+        position: absolute;
+        top: -2px;
+        right: -2px;
+        width: 12px;
+        height: 12px;
+        background: var(--blue);
+        border-radius: 50%;
+        border: 2px solid var(--bg);
+      }
+
       /* Episode list - full width, minimal padding */
       .podcast-inbox-list {
         padding: 0;
@@ -2964,6 +3095,7 @@
         <div class="sidebar-content" id="podcastSources"></div>
       </aside>
       <div class="podcast-inbox-content" id="podcastInboxContent">
+        <div class="mobile-shows-header" id="mobileShowsHeader"></div>
         <div class="podcast-inbox-list" id="podcastInboxList"></div>
       </div>
       <div class="show-page" id="showPage"></div>
@@ -5333,6 +5465,7 @@
     podcastSources: $('podcastSources'),
     podcastInboxList: $('podcastInboxList'),
     podcastInboxContent: $('podcastInboxContent'),
+    mobileShowsHeader: $('mobileShowsHeader'),
     showPage: $('showPage'),
     episodePage: $('episodePage'),
     player: $('player'), playerArt: $('playerArt'), playerTitle: $('playerTitle'),
@@ -7207,6 +7340,71 @@
       }).join('');
   };
 
+  // Mobile shows header browser (horizontal scroll)
+  const renderMobileShowsHeader = () => {
+    const podcasts = state.feeds.filter(f => f.type === 'podcast');
+
+    if (!el.mobileShowsHeader) return;
+
+    // Don't show if on show page or episode page
+    if (state.currentShowPage || state.currentEpisodePage) {
+      el.mobileShowsHeader.style.display = 'none';
+      return;
+    }
+
+    el.mobileShowsHeader.style.display = '';
+
+    const showsHtml = podcasts.map(f => {
+      const hasNew = feedHasNewContent(f.id);
+      const isActive = state.selectedPodcastSource === f.id;
+      return `<div class="mobile-show-card ${isActive ? 'active' : ''} ${hasNew ? 'has-new' : ''}" data-show-id="${f.id}">
+        <div class="show-art">
+          ${f.image ? `<img src="${f.image}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><i class="ph ph-microphone-stage" style="display:none"></i>` : '<i class="ph ph-microphone-stage"></i>'}
+        </div>
+        <div class="show-name">${f.name}</div>
+      </div>`;
+    }).join('');
+
+    el.mobileShowsHeader.innerHTML = `
+      <div class="mobile-shows-title">
+        <h3>Your Shows</h3>
+        <button class="add-show-btn" id="mobileAddShowBtn">+</button>
+      </div>
+      <div class="mobile-shows-scroll">
+        <div class="mobile-show-card all-shows ${!state.selectedPodcastSource ? 'active' : ''}" data-show-id="all">
+          <div class="show-art">
+            <i class="ph ph-headphones"></i>
+          </div>
+          <div class="show-name">All</div>
+        </div>
+        ${showsHtml}
+      </div>
+    `;
+
+    // Add click handlers for mobile shows
+    el.mobileShowsHeader.querySelectorAll('.mobile-show-card').forEach(card => {
+      card.onclick = () => {
+        const showId = card.dataset.showId;
+        if (showId === 'all') {
+          state.selectedPodcastSource = null;
+          renderMobileShowsHeader();
+          renderPodcastInbox();
+        } else {
+          // Navigate to show page on mobile
+          renderShowPage(showId);
+        }
+      };
+    });
+
+    // Add show button
+    const addBtn = el.mobileShowsHeader.querySelector('#mobileAddShowBtn');
+    if (addBtn) {
+      addBtn.onclick = () => {
+        openModal('podcast');
+      };
+    }
+  };
+
   const renderPodcastEpisodeItem = (ep, searchQuery = null) => {
     const show = state.feeds.find(f => f.id === ep.feedId);
     const pr = state.progress[ep.id] || 0;
@@ -7407,9 +7605,11 @@
 
   const renderPodcasts = () => {
     el.showPage.classList.remove('active');
+    el.episodePage.classList.remove('active');
     el.podcastInboxContent.style.display = 'flex';
 
     renderPodcastSources();
+    renderMobileShowsHeader();
     renderPodcastInbox();
   };
 
@@ -7655,6 +7855,7 @@
     el.showPage.classList.remove('active');
     el.podcastInboxContent.style.display = 'flex';
     renderPodcastSources(); // Update active state in sidebar
+    renderMobileShowsHeader(); // Show mobile shows browser again
   };
 
   // === EPISODE PAGE ===
@@ -7782,6 +7983,7 @@
       el.showPage.classList.add('active');
     } else {
       el.podcastInboxContent.style.display = 'flex';
+      renderMobileShowsHeader(); // Show mobile shows browser again
     }
   };
 
