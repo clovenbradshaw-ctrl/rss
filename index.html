@@ -876,9 +876,10 @@
       }
 
       .add-btn {
-        width: 36px;
-        height: 36px;
-        font-size: 20px;
+        width: var(--mobile-touch-min);
+        height: var(--mobile-touch-min);
+        font-size: 24px;
+        box-shadow: 0 4px 12px rgba(59,130,246,0.4);
       }
 
       .back-btn {
@@ -5151,8 +5152,8 @@
 
   const triggerHaptic = (intensity = 'light') => {
     if ('vibrate' in navigator) {
-      const patterns = { light: 10, medium: 25, heavy: 50 };
-      navigator.vibrate(patterns[intensity] || 10);
+      const patterns = { light: 5, medium: 10, heavy: 20 };
+      navigator.vibrate(patterns[intensity] || 5);
     }
   };
 
@@ -6334,12 +6335,12 @@
       if (!('vibrate' in navigator)) return;
 
       const patterns = {
-        light: 10,
-        medium: 20,
-        heavy: 40,
-        success: [10, 50, 10],
-        error: [20, 100, 20],
-        selection: 5
+        light: 5,
+        medium: 10,
+        heavy: 20,
+        success: [5, 50, 5],
+        error: [10, 100, 10],
+        selection: 3
       };
 
       navigator.vibrate(patterns[intensity] || patterns.light);
