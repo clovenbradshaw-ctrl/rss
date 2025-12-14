@@ -2265,6 +2265,94 @@
   };
   window.Memory = Mem;
 
+  // === STATE SYNC (Server-side storage for cross-device consistency) ===
+  // This ensures the app shows the same data on any device by always fetching from server
+  const StateSync = {
+    endpoint: 'https://xvkq-pq7i-idtl.n7d.xano.io/api:Hj4C6PGO/store',
+    syncing: false,
+    lastSync: null,
+    syncQueue: null, // Pending save operation
+    syncTimeout: null, // Debounce timer
+
+    // Fetch state from server (GET)
+    async fetchState() {
+      if (!this.endpoint) return null;
+      try {
+        const response = await fetch(this.endpoint, {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        if (!response.ok) {
+          console.warn('[StateSync] Server returned:', response.status);
+          return null;
+        }
+        const data = await response.json();
+        console.log('[StateSync] Fetched state from server');
+        return data;
+      } catch (e) {
+        console.warn('[StateSync] Failed to fetch state:', e.message);
+        return null;
+      }
+    },
+
+    // Save state to server (POST) - debounced
+    async saveState(stateData) {
+      if (!this.endpoint) return false;
+
+      // Queue the save and debounce
+      this.syncQueue = stateData;
+
+      if (this.syncTimeout) {
+        clearTimeout(this.syncTimeout);
+      }
+
+      // Debounce: wait 2 seconds before actually syncing
+      this.syncTimeout = setTimeout(() => this._doSync(), 2000);
+      return true;
+    },
+
+    // Actually perform the sync
+    async _doSync() {
+      if (this.syncing || !this.syncQueue) return;
+      this.syncing = true;
+
+      const stateData = this.syncQueue;
+      this.syncQueue = null;
+
+      try {
+        const response = await fetch(this.endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            data: stateData,
+            updated_at: new Date().toISOString()
+          })
+        });
+        if (response.ok) {
+          this.lastSync = Date.now();
+          console.log('[StateSync] State saved to server');
+        } else {
+          console.warn('[StateSync] Failed to save state:', response.status);
+        }
+      } catch (e) {
+        console.warn('[StateSync] Sync error:', e.message);
+      }
+      this.syncing = false;
+    },
+
+    // Force immediate sync (e.g., before page unload)
+    async flushSync() {
+      if (this.syncTimeout) {
+        clearTimeout(this.syncTimeout);
+        this.syncTimeout = null;
+      }
+      if (this.syncQueue) {
+        await this._doSync();
+      }
+    }
+  };
+  window.StateSync = StateSync;
+
   // === DOWNLOAD STORAGE (IndexedDB) ===
   const DownloadDB = {
     db: null,
@@ -2631,52 +2719,90 @@
   const fmt = s => { if (isNaN(s) || s < 0) return '0:00'; const m = Math.floor(s / 60), sec = Math.floor(s % 60); return m + ':' + String(sec).padStart(2, '0'); };
   const fmtLong = s => { if (isNaN(s) || s < 0) return '0:00'; const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = Math.floor(s % 60); return h > 0 ? h + ':' + String(m).padStart(2, '0') + ':' + String(sec).padStart(2, '0') : m + ':' + String(sec).padStart(2, '0'); };
   const toast = m => { el.toast.textContent = m; el.toast.classList.add('show'); setTimeout(() => el.toast.classList.remove('show'), 2500); };
-  const save = () => localStorage.setItem('feedr2', JSON.stringify({
-    feeds: state.feeds,
-    articles: state.articles,
-    podcasts: state.podcasts,
-    archivedArticles: state.archivedArticles,
-    archivedPodcasts: state.archivedPodcasts,
-    progress: state.progress,
-    view: state.view,
-    viewPrefs: state.viewPrefs,
-    bookmarks: state.bookmarks,
-    userBehavior: state.userBehavior,
-    feedLastViewed: state.feedLastViewed
-  }));
+  const save = () => {
+    const stateData = {
+      feeds: state.feeds,
+      articles: state.articles,
+      podcasts: state.podcasts,
+      archivedArticles: state.archivedArticles,
+      archivedPodcasts: state.archivedPodcasts,
+      progress: state.progress,
+      view: state.view,
+      viewPrefs: state.viewPrefs,
+      bookmarks: state.bookmarks,
+      userBehavior: state.userBehavior,
+      feedLastViewed: state.feedLastViewed
+    };
+    // Save to localStorage for immediate local access
+    localStorage.setItem('feedr2', JSON.stringify(stateData));
+    // Also sync to server for cross-device consistency (debounced)
+    StateSync.saveState(stateData);
+  };
 
-  const load = () => {
+  // Helper to apply state data from either server or localStorage
+  const applyStateData = (d) => {
+    if (!d) return false;
+    state.feeds = d.feeds || [];
+    state.articles = d.articles || [];
+    state.podcasts = d.podcasts || [];
+    state.archivedArticles = d.archivedArticles || [];
+    state.archivedPodcasts = d.archivedPodcasts || [];
+    state.progress = d.progress || {};
+    if (d.view) state.view = d.view;
+    state.viewPrefs = d.viewPrefs || {};
+    state.bookmarks = d.bookmarks || {};
+    state.userBehavior = d.userBehavior || { reads: [], plays: [], searches: [], subscriptions: [] };
+    state.feedLastViewed = d.feedLastViewed || {};
+
+    // Migrate: ensure all feeds have tags array
+    state.feeds.forEach(f => {
+      if (!f.tags) f.tags = [];
+    });
+    // Migrate: ensure all articles have tags array
+    state.articles.forEach(a => {
+      if (!a.tags) a.tags = [];
+    });
+    // Migrate: ensure all podcasts have tags array
+    state.podcasts.forEach(p => {
+      if (!p.tags) p.tags = [];
+    });
+    return true;
+  };
+
+  const load = async () => {
+    let loaded = false;
+
+    // ALWAYS try server first for cross-device consistency
     try {
-      const d = JSON.parse(localStorage.getItem('feedr2'));
-      if (d) {
-        state.feeds = d.feeds || [];
-        state.articles = d.articles || [];
-        state.podcasts = d.podcasts || [];
-        state.archivedArticles = d.archivedArticles || [];
-        state.archivedPodcasts = d.archivedPodcasts || [];
-        state.progress = d.progress || {};
-        if (d.view) state.view = d.view;
-        state.viewPrefs = d.viewPrefs || {};
-        state.bookmarks = d.bookmarks || {};
-        state.userBehavior = d.userBehavior || { reads: [], plays: [], searches: [], subscriptions: [] };
-        state.feedLastViewed = d.feedLastViewed || {};
-
-        // Migrate: ensure all feeds have tags array
-        state.feeds.forEach(f => {
-          if (!f.tags) f.tags = [];
-        });
-        // Migrate: ensure all articles have tags array
-        state.articles.forEach(a => {
-          if (!a.tags) a.tags = [];
-        });
-        // Migrate: ensure all podcasts have tags array
-        state.podcasts.forEach(p => {
-          if (!p.tags) p.tags = [];
-        });
+      const serverData = await StateSync.fetchState();
+      if (serverData && serverData.data) {
+        // Server has stored state - use it as source of truth
+        loaded = applyStateData(serverData.data);
+        if (loaded) {
+          console.log('[StateSync] Using server state for consistency');
+          // Update localStorage to match server state
+          localStorage.setItem('feedr2', JSON.stringify(serverData.data));
+        }
       }
-      state.feeds.forEach(f => f.category && state.categories.add(f.category));
-      if (!state.feeds.length) loadDemo();
-    } catch(e) { loadDemo(); }
+    } catch (e) {
+      console.warn('[StateSync] Server fetch failed, will try localStorage:', e.message);
+    }
+
+    // Fallback to localStorage only if server didn't provide data
+    if (!loaded) {
+      try {
+        const d = JSON.parse(localStorage.getItem('feedr2'));
+        if (d) {
+          loaded = applyStateData(d);
+          console.log('[StateSync] Using localStorage (server unavailable or empty)');
+        }
+      } catch(e) {
+        console.warn('[StateSync] localStorage parse failed:', e.message);
+      }
+    }
+
+    state.feeds.forEach(f => f.category && state.categories.add(f.category));
+    if (!state.feeds.length) loadDemo();
   };
 
   // Get/set view preference for a source
@@ -6082,7 +6208,8 @@
 
   // === INIT ===
   const init = async () => {
-    load();
+    // Await load to ensure server state is fetched first for cross-device consistency
+    await load();
 
     // Initialize download database
     try {
@@ -6143,7 +6270,18 @@
     // Initialize activity tracking (syncs to Xano)
     Mem.init();
 
+    // Sync state to server when page is hidden or closed (cross-device consistency)
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') {
+        StateSync.flushSync();
+      }
+    });
+    window.addEventListener('beforeunload', () => {
+      StateSync.flushSync();
+    });
+
     console.log('BURSST loaded');
+    console.log('[StateSync] Cross-device sync enabled:', StateSync.endpoint);
     console.log('[Mobile] Mobile optimizations active:', window.innerWidth <= 640);
     console.log('[Activity] Syncing to Xano:', Mem.endpoint);
     console.log('[API] User Behavior API:');
