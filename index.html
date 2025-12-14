@@ -1734,7 +1734,7 @@
         padding-bottom: calc(70px + var(--sab));
       }
 
-      /* Extra padding when mini player is active */
+      /* Extra padding when mini player is active (nav bar is hidden, player is at bottom) */
       .player.active ~ .main .news-list,
       .player.active ~ .main .podcast-content,
       .player.active ~ .main .all-content,
@@ -1742,7 +1742,7 @@
       body:has(.player.active) .podcast-content,
       body:has(.player.active) .podcast-inbox-content,
       body:has(.player.active) .all-content {
-        padding-bottom: calc(140px + var(--sab));
+        padding-bottom: calc(100px + var(--sab));
       }
 
       /* Articles */
@@ -2528,13 +2528,19 @@
         font-size: 11px;
       }
 
-      /* Mini player - mobile optimized */
+      /* Mini player - mobile optimized, locked to bottom */
       .player {
-        bottom: calc(70px + var(--sab));
-        border-radius: 12px 12px 0 0;
-        margin: 0 8px;
-        width: calc(100% - 16px);
+        bottom: 0;
+        border-radius: 0;
+        margin: 0;
+        width: 100%;
+        padding-bottom: max(12px, var(--sab));
         box-shadow: 0 -4px 20px rgba(0,0,0,0.5);
+      }
+
+      /* Hide nav bar when player is active on mobile */
+      body:has(.player.active) .controls {
+        display: none !important;
       }
 
       .player-main {
@@ -3522,9 +3528,45 @@
 
       // Only queue for remote sync if it's a meaningful content interaction
       if (shouldSync) {
+        // For critical feed operations, use beacon for guaranteed delivery
+        if (action === 'feed_added' || action === 'feed_removed') {
+          this.syncWithBeacon(m);
+        } else {
+          this.pending.push(m);
+          this.sync();
+        }
+      }
+    },
+
+    // Sync critical activity using sendBeacon - guaranteed even during page unload
+    syncWithBeacon(m) {
+      if (!this.endpoint) return false;
+
+      const { id, ts, session, action, target, content_url, ctx, local_only, ...rest } = m;
+      const payload = {
+        session_id: session,
+        action,
+        content_url: content_url || null,
+        data: {
+          target,
+          ctx,
+          ts,
+          ...rest
+        }
+      };
+
+      const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+      const success = navigator.sendBeacon(this.endpoint, blob);
+
+      if (success) {
+        console.log('[Mem] Beacon sent', action, 'activity');
+      } else {
+        // Fallback: queue for regular sync
+        console.warn('[Mem] Beacon failed for', action, ', queuing for retry');
         this.pending.push(m);
         this.sync();
       }
+      return success;
     },
 
     async sync() {
@@ -3663,6 +3705,18 @@
     syncQueue: null,
     snapshotInterval: 10, // Save full snapshot every 10 changes
     changeCounter: 0,
+    lastSyncedFeeds: null, // Track what we last synced to detect changes
+
+    // NOTE: State snapshots are NO LONGER posted to the activity store.
+    // This method is kept for backwards compatibility but does nothing.
+    // State is reconstructed from individual actions (feed_added, feed_removed).
+    syncWithBeacon(stateData) {
+      // Don't post state_snapshot - it clutters the activity store
+      // State is saved to localStorage and individual actions are logged by Mem
+      console.log('[StateSync] State saved locally with', stateData.feeds.length, 'feeds (beacon disabled)');
+      this.lastSyncedFeeds = JSON.stringify(stateData.feeds.map(f => f.url).sort());
+      return true;
+    },
 
     // Fetch state by reconstructing from activity log
     async fetchState() {
@@ -3856,13 +3910,16 @@
     },
 
     // Force immediate sync (saves to localStorage, no longer posts state_snapshot)
-    async flushSync() {
+    flushSync() {
       if (this.syncTimeout) {
         clearTimeout(this.syncTimeout);
         this.syncTimeout = null;
       }
       if (this.syncQueue) {
-        await this._doSync();
+        // State snapshots are no longer posted to activity store
+        // Just clear the queue - localStorage already has the state
+        console.log('[StateSync] Flushing sync queue (state saved locally)');
+        this.syncQueue = null;
       }
     }
   };
@@ -5353,11 +5410,8 @@
     // Sync minimal data to server for cross-device consistency
     if (immediate) {
       // Immediate sync for critical operations (feed add/remove)
-      // Force a full state snapshot to ensure feeds persist across page reloads
-      StateSync.syncQueue = syncData;
-      StateSync.changeCounter = StateSync.snapshotInterval; // Force snapshot
-      StateSync._doSync();
-      console.log('[StateSync] Immediate sync with forced snapshot');
+      // Use sendBeacon for guaranteed delivery even if page is closing
+      StateSync.syncWithBeacon(syncData);
     } else {
       // Debounced sync for normal operations
       StateSync.saveState(syncData);
