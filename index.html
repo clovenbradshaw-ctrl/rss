@@ -10626,6 +10626,60 @@
     }
   };
 
+  // News inbox view event handlers
+  el.newsContent.onclick = e => {
+    // View options
+    const viewBtn = e.target.closest('.view-btn');
+    if (viewBtn) {
+      const sourceKey = viewBtn.closest('.view-options').dataset.source;
+      const newView = viewBtn.dataset.view;
+
+      if (sourceKey === 'newsInbox') {
+        state.newsInboxView = newView;
+        try { localStorage.setItem('newsInboxView', newView); } catch (e) {}
+        renderInboxViewOptions();
+        renderNews();
+        return;
+      }
+    }
+  };
+
+  // Podcast inbox view event handlers
+  el.podcastInboxContent.onclick = e => {
+    // View options
+    const viewBtn = e.target.closest('.view-btn');
+    if (viewBtn) {
+      const sourceKey = viewBtn.closest('.view-options').dataset.source;
+      const newView = viewBtn.dataset.view;
+
+      if (sourceKey === 'podcastInbox') {
+        state.podcastInboxView = newView;
+        try { localStorage.setItem('podcastInboxView', newView); } catch (e) {}
+        renderInboxViewOptions();
+        renderPodcastInbox();
+        return;
+      }
+    }
+  };
+
+  // All view event handlers
+  document.getElementById('allView').onclick = e => {
+    // View options
+    const viewBtn = e.target.closest('.view-btn');
+    if (viewBtn) {
+      const sourceKey = viewBtn.closest('.view-options').dataset.source;
+      const newView = viewBtn.dataset.view;
+
+      if (sourceKey === 'allView') {
+        state.allView = newView;
+        try { localStorage.setItem('allView', newView); } catch (e) {}
+        renderInboxViewOptions();
+        renderAll();
+        return;
+      }
+    }
+  };
+
   el.pPlay.onclick = togglePlay;
   el.expPlay.onclick = togglePlay;
   el.pSpeed.onclick = cycleSpeed;
