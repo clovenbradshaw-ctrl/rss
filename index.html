@@ -2437,6 +2437,64 @@
       if (this.syncQueue) {
         await this._doSync();
       }
+    },
+
+    // Immediate sync for critical actions (feed add/remove) - bypasses debounce
+    async saveStateImmediate(stateData) {
+      if (!this.endpoint) return false;
+
+      // Clear any pending debounced sync
+      if (this.syncTimeout) {
+        clearTimeout(this.syncTimeout);
+        this.syncTimeout = null;
+      }
+      this.syncQueue = null;
+
+      try {
+        const response = await fetch(this.endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            data: stateData,
+            updated_at: new Date().toISOString()
+          })
+        });
+        if (response.ok) {
+          this.lastSync = Date.now();
+          console.log('[StateSync] State saved to server (immediate)');
+          return true;
+        } else {
+          console.warn('[StateSync] Failed to save state:', response.status);
+          return false;
+        }
+      } catch (e) {
+        console.warn('[StateSync] Immediate sync error:', e.message);
+        return false;
+      }
+    },
+
+    // Use sendBeacon for reliable sync on page close
+    flushSyncBeacon() {
+      if (!this.endpoint || !this.syncQueue) return;
+
+      // Clear debounce timer
+      if (this.syncTimeout) {
+        clearTimeout(this.syncTimeout);
+        this.syncTimeout = null;
+      }
+
+      const payload = JSON.stringify({
+        data: this.syncQueue,
+        updated_at: new Date().toISOString()
+      });
+
+      // sendBeacon is more reliable for beforeunload
+      if (navigator.sendBeacon) {
+        const blob = new Blob([payload], { type: 'application/json' });
+        navigator.sendBeacon(this.endpoint, blob);
+        console.log('[StateSync] State sent via beacon');
+      }
+      this.syncQueue = null;
     }
   };
   window.StateSync = StateSync;
@@ -3012,6 +3070,27 @@
     localStorage.setItem('feedr2', JSON.stringify(stateData));
     // Also sync to server for cross-device consistency (debounced)
     StateSync.saveState(stateData);
+  };
+
+  // Immediate save for critical actions (feed add/remove) - bypasses debounce
+  const saveImmediate = async () => {
+    const stateData = {
+      feeds: state.feeds,
+      articles: state.articles,
+      podcasts: state.podcasts,
+      archivedArticles: state.archivedArticles,
+      archivedPodcasts: state.archivedPodcasts,
+      progress: state.progress,
+      view: state.view,
+      viewPrefs: state.viewPrefs,
+      bookmarks: state.bookmarks,
+      userBehavior: state.userBehavior,
+      feedLastViewed: state.feedLastViewed
+    };
+    // Save to localStorage for immediate local access
+    localStorage.setItem('feedr2', JSON.stringify(stateData));
+    // Immediately sync to server (no debounce)
+    return StateSync.saveStateImmediate(stateData);
   };
 
   // Helper to apply state data from either server or localStorage
@@ -4031,7 +4110,8 @@
         const tagLabels = feed.tags.map(t => getTagInfo(t).label).join(', ');
         console.log(`Feed ${feed.name} auto-tagged: ${tagLabels}`);
       }
-      save();
+      // Use immediate sync for feed additions to ensure cross-device availability
+      await saveImmediate();
       renderNewsSources();
       renderCategories();
       renderNews();
@@ -6697,8 +6777,9 @@
         StateSync.flushSync();
       }
     });
+    // Use sendBeacon for reliable sync on page close (async fetch may not complete)
     window.addEventListener('beforeunload', () => {
-      StateSync.flushSync();
+      StateSync.flushSyncBeacon();
     });
 
     console.log('BURSST loaded');
