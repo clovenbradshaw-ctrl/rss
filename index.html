@@ -5382,12 +5382,9 @@
       const proxyUrl = proxyFn(url);
       console.log(`Trying proxy ${index}:`, proxyUrl);
 
-      const response = await fetchWithTimeout(proxyUrl, {
-        headers: {
-          'Accept': 'application/rss+xml, application/xml, text/xml, */*',
-          'Cache-Control': forceFresh ? 'no-cache' : 'max-age=300'
-        }
-      }, 12000); // Shorter timeout since we're racing
+      // Note: Avoid custom headers like Cache-Control that trigger CORS preflight
+      // Many proxy services don't properly handle preflight requests
+      const response = await fetchWithTimeout(proxyUrl, {}, 12000); // Shorter timeout since we're racing
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
