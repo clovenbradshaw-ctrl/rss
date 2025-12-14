@@ -3809,6 +3809,9 @@
     },
 
     // Actually perform the sync
+    // NOTE: State snapshots are NO LONGER posted to the activity store.
+    // State is reconstructed from individual actions (feed_added, feed_removed, etc.)
+    // which are logged by Mem. This keeps the activity store clean.
     async _doSync() {
       if (this.syncing || !this.syncQueue) return;
       this.syncing = true;
@@ -3817,58 +3820,34 @@
       this.syncQueue = null;
 
       try {
-        // Every N changes, save a full state snapshot
-        // Otherwise, individual actions are logged by Mem
-        const shouldSnapshot = this.changeCounter >= this.snapshotInterval;
+        // State is saved to localStorage by save() function.
+        // Individual actions (feed_added, feed_removed) are logged by Mem.
+        // No need to POST state_snapshot to activity store - it just clutters it.
+        console.log('[StateSync] State saved locally with', stateData.feeds.length, 'feeds');
+        this.changeCounter = 0;
 
-        if (shouldSnapshot) {
-          const payload = {
-            action: 'state_snapshot',
-            data: {
-              feeds: stateData.feeds,
-              progress: stateData.progress,
-              bookmarks: stateData.bookmarks,
-              feedLastViewed: stateData.feedLastViewed
-            },
-            created_at: new Date().toISOString()
-          };
+        // Periodically trigger cleanup (non-blocking)
+        if (Math.random() < 0.1) { // 10% chance on each sync
+          setTimeout(async () => {
+            try {
+              if (window.ActivityCleanup) {
+                const stats = await ActivityCleanup.getStats();
+                const totalPotential =
+                  stats.potentialSavings.duplicateProgress +
+                  stats.potentialSavings.oldEphemeral +
+                  stats.potentialSavings.redundantPairs;
 
-          const response = await fetch(this.endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-
-          if (response.ok) {
-            this.changeCounter = 0; // Reset counter
-            console.log('[StateSync] Saved state snapshot with', stateData.feeds.length, 'feeds');
-
-            // Trigger cleanup after successful snapshot (non-blocking)
-            setTimeout(async () => {
-              try {
-                if (window.ActivityCleanup) {
-                  const stats = await ActivityCleanup.getStats();
-                  const totalPotential =
-                    stats.potentialSavings.duplicateProgress +
-                    stats.potentialSavings.oldEphemeral +
-                    stats.potentialSavings.redundantPairs;
-
-                  // Only run cleanup if there's significant savings (>20 activities)
-                  if (totalPotential > 20) {
-                    console.log('[StateSync] Running post-snapshot cleanup...');
-                    await ActivityCleanup.consolidateProgress();
-                    await ActivityCleanup.pruneOldSessions(7);
-                  }
+                // Only run cleanup if there's significant savings (>20 activities)
+                if (totalPotential > 20) {
+                  console.log('[StateSync] Running periodic cleanup...');
+                  await ActivityCleanup.consolidateProgress();
+                  await ActivityCleanup.pruneOldSessions(7);
                 }
-              } catch (e) {
-                console.warn('[StateSync] Post-snapshot cleanup failed:', e.message);
               }
-            }, 5000); // Wait 5 seconds after snapshot before cleanup
-          } else {
-            console.warn('[StateSync] Snapshot failed:', response.status, await response.text());
-          }
-        } else {
-          console.log('[StateSync] Skipping snapshot (', this.changeCounter, '/', this.snapshotInterval, 'changes)');
+            } catch (e) {
+              console.warn('[StateSync] Cleanup failed:', e.message);
+            }
+          }, 5000);
         }
       } catch (e) {
         console.warn('[StateSync] Sync error:', e.message);
@@ -3876,18 +3855,14 @@
       this.syncing = false;
     },
 
-    // Force immediate snapshot
+    // Force immediate sync (saves to localStorage, no longer posts state_snapshot)
     async flushSync() {
       if (this.syncTimeout) {
         clearTimeout(this.syncTimeout);
         this.syncTimeout = null;
       }
       if (this.syncQueue) {
-        // Force a snapshot regardless of counter
-        const temp = this.changeCounter;
-        this.changeCounter = this.snapshotInterval;
         await this._doSync();
-        this.changeCounter = temp;
       }
     }
   };
@@ -3899,13 +3874,14 @@
 
     // Actions that should NEVER be deleted (state-defining)
     PROTECTED_ACTIONS: new Set([
-      'state_snapshot',
       'feed_added',
       'feed_removed'
     ]),
 
     // Actions safe to consolidate/prune aggressively
+    // NOTE: state_snapshot is now ephemeral since we no longer create them
     EPHEMERAL_ACTIONS: new Set([
+      'state_snapshot',
       'playback_progress',
       'seek',
       'play_pressed',
@@ -4139,6 +4115,34 @@
       return await this.deleteActivities(toDelete);
     },
 
+    // Strategy 5: Purge all state_snapshot entries (legacy cleanup)
+    // State snapshots are no longer created - state is reconstructed from individual actions
+    async purgeStateSnapshots() {
+      console.log('[ActivityCleanup] Purging all state_snapshot entries...');
+      const activities = await this.fetchActivities();
+
+      const toDelete = [];
+      for (const activity of activities) {
+        // Delete entries with action 'state_snapshot' OR entries that look like state dumps
+        // (have feeds/progress/bookmarks but no proper action type)
+        if (activity.action === 'state_snapshot') {
+          toDelete.push(activity.id);
+        } else if (!activity.action && activity.data &&
+                   (activity.data.feeds || activity.data.progress || activity.data.bookmarks)) {
+          // Legacy state dumps without action field
+          toDelete.push(activity.id);
+        }
+      }
+
+      if (toDelete.length === 0) {
+        console.log('[ActivityCleanup] No state snapshots to purge');
+        return { deleted: 0, failed: 0 };
+      }
+
+      console.log(`[ActivityCleanup] Purging ${toDelete.length} state snapshot entries`);
+      return await this.deleteActivities(toDelete);
+    },
+
     // Get cleanup statistics without deleting
     async getStats() {
       const activities = await this.fetchActivities();
@@ -4222,40 +4226,40 @@
       const startTime = Date.now();
 
       const results = {
+        stateSnapshots: { deleted: 0, failed: 0 },
         redundantPairs: { deleted: 0, failed: 0 },
         duplicateProgress: { deleted: 0, failed: 0 },
         oldSessions: { deleted: 0, failed: 0 },
-        beforeSnapshot: { deleted: 0, failed: 0 },
         totalDeleted: 0,
         totalFailed: 0,
         duration: 0
       };
 
-      // Run strategies in order (least destructive first)
+      // Run strategies in order
 
-      // 1. Remove redundant pairs first (safest)
+      // 1. Purge all state snapshots first (no longer needed)
+      results.stateSnapshots = await this.purgeStateSnapshots();
+
+      // 2. Remove redundant pairs (add/remove cancellations)
       results.redundantPairs = await this.pruneRedundantPairs();
 
-      // 2. Consolidate progress
+      // 3. Consolidate progress (keep only latest per episode)
       results.duplicateProgress = await this.consolidateProgress();
 
-      // 3. Prune old ephemeral actions
+      // 4. Prune old ephemeral actions (play/pause/seek older than 7 days)
       results.oldSessions = await this.pruneOldSessions(7);
 
-      // 4. Snapshot-based cleanup (most aggressive)
-      results.beforeSnapshot = await this.pruneBeforeSnapshot(2);
-
       results.totalDeleted =
+        results.stateSnapshots.deleted +
         results.redundantPairs.deleted +
         results.duplicateProgress.deleted +
-        results.oldSessions.deleted +
-        results.beforeSnapshot.deleted;
+        results.oldSessions.deleted;
 
       results.totalFailed =
+        results.stateSnapshots.failed +
         results.redundantPairs.failed +
         results.duplicateProgress.failed +
-        results.oldSessions.failed +
-        results.beforeSnapshot.failed;
+        results.oldSessions.failed;
 
       results.duration = Date.now() - startTime;
 
