@@ -3422,17 +3422,19 @@
     },
 
     // Get changed properties between two states
+    // Only tracks minimal sync data (feeds, progress, bookmarks) - NOT articles/podcasts
     getDiff(oldState, newState) {
       if (!oldState) return { full: true, data: newState };
 
       const diff = { changes: {} };
       let hasChanges = false;
 
-      // Check each property for changes
-      const props = ['feeds', 'articles', 'podcasts', 'progress', 'bookmarks', 'feedLastViewed'];
+      // Only sync: feeds (subscriptions), progress, bookmarks, feedLastViewed
+      // Articles/podcasts are stored locally and fetched fresh from RSS on each device
+      const props = ['feeds', 'progress', 'bookmarks', 'feedLastViewed'];
       for (const prop of props) {
-        const oldVal = JSON.stringify(oldState[prop] || []);
-        const newVal = JSON.stringify(newState[prop] || []);
+        const oldVal = JSON.stringify(oldState[prop] || (prop === 'feeds' ? [] : {}));
+        const newVal = JSON.stringify(newState[prop] || (prop === 'feeds' ? [] : {}));
         if (oldVal !== newVal) {
           diff.changes[prop] = newState[prop];
           hasChanges = true;
@@ -3446,7 +3448,8 @@
       return diff;
     },
 
-    // Fetch state from server (GET) - parses activity logs to reconstruct state
+    // Fetch state from server (GET) - returns subscription data (feeds, progress, bookmarks)
+    // Articles/podcasts are NOT synced - they are fetched fresh from RSS feeds on each device
     async fetchState() {
       if (!this.endpoint) return null;
       try {
@@ -3464,37 +3467,58 @@
         // Handle activity endpoint format: { items: [...], itemsReceived, curPage, etc. }
         if (rawData && rawData.items && Array.isArray(rawData.items)) {
           console.log('[StateSync] Parsing activity items to reconstruct state');
-          const feeds = [];
-          const feedUrls = new Set(); // Track unique feeds
+          const feedMap = new Map(); // Use map to track feeds by URL
+          const removedFeeds = new Set(); // Track removed feed URLs
+          let progress = {};
+          let bookmarks = {};
+          let feedLastViewed = {};
 
-          // Process activity items to reconstruct state
+          // Process activity items chronologically to reconstruct state
+          // Items should be in order, so later events override earlier ones
           for (const item of rawData.items) {
             if (item.action === 'feed_added' && item.data) {
               const feedData = item.data;
               const url = feedData.url || feedData.content_url || item.content_url;
 
-              // Only add unique feeds
-              if (url && !feedUrls.has(url)) {
-                feedUrls.add(url);
-                feeds.push({
-                  id: feedData.target || ('feed_' + Date.now() + '_' + feeds.length),
+              if (url) {
+                // Remove from removed set if re-added
+                removedFeeds.delete(url);
+                // Add/update feed
+                feedMap.set(url, {
+                  id: feedData.target || ('feed_' + Date.now() + '_' + feedMap.size),
                   url: url,
-                  title: feedData.name || 'Unknown Feed',
+                  name: feedData.name || 'Unknown Feed',  // Fixed: use 'name' not 'title'
                   type: feedData.type || 'news',
                   author: feedData.author || '',
                   category: feedData.category || 'Uncategorized',
                   addedAt: feedData.ts || item.created_at
                 });
               }
+            } else if (item.action === 'feed_removed' && item.data) {
+              // Track removed feeds
+              const feedData = item.data;
+              const url = feedData.url || feedData.content_url || item.content_url;
+              if (url) {
+                removedFeeds.add(url);
+                feedMap.delete(url);
+              }
             }
+
+            // Extract progress, bookmarks, feedLastViewed if present in sync data
+            if (item.data?.progress) progress = { ...progress, ...item.data.progress };
+            if (item.data?.bookmarks) bookmarks = { ...bookmarks, ...item.data.bookmarks };
+            if (item.data?.feedLastViewed) feedLastViewed = { ...feedLastViewed, ...item.data.feedLastViewed };
           }
 
-          console.log('[StateSync] Reconstructed', feeds.length, 'feeds from activity');
+          const feeds = Array.from(feedMap.values());
+          console.log('[StateSync] Reconstructed', feeds.length, 'feeds from activity (removed:', removedFeeds.size, ')');
           return {
             data: {
               feeds: feeds,
-              articles: [],
-              podcasts: []
+              progress: progress,
+              bookmarks: bookmarks,
+              feedLastViewed: feedLastViewed
+              // Note: articles/podcasts NOT included - fetched fresh from RSS on each device
             }
           };
         }
@@ -4652,7 +4676,8 @@
   const toast = m => { el.toast.textContent = m; el.toast.classList.add('show'); setTimeout(() => el.toast.classList.remove('show'), 2500); };
   const openArticleLink = url => { if (url) state.openLinksInNewTab ? window.open(url, '_blank') : window.location.href = url; };
   const save = (immediate = false) => {
-    const stateData = {
+    // Full state for localStorage (includes all content for offline access)
+    const fullStateData = {
       feeds: state.feeds,
       articles: state.articles,
       podcasts: state.podcasts,
@@ -4666,17 +4691,34 @@
       feedLastViewed: state.feedLastViewed,
       openLinksInNewTab: state.openLinksInNewTab
     };
-    // Save to localStorage for immediate local access
-    localStorage.setItem('feedr2', JSON.stringify(stateData));
-    // Also sync to server for cross-device consistency
+    // Save full state to localStorage for immediate local access
+    localStorage.setItem('feedr2', JSON.stringify(fullStateData));
+
+    // Minimal state for Xano sync (only subscriptions + user data, NOT content)
+    // Articles/podcasts are fetched fresh from RSS feeds on each device
+    const syncData = {
+      feeds: state.feeds.map(f => ({
+        id: f.id,
+        url: f.url,
+        name: f.name,
+        type: f.type,
+        category: f.category,
+        author: f.author
+      })),
+      progress: state.progress,
+      bookmarks: state.bookmarks,
+      feedLastViewed: state.feedLastViewed
+    };
+
+    // Sync minimal data to server for cross-device consistency
     if (immediate) {
       // Immediate sync for critical operations (feed add/remove)
-      StateSync.syncQueue = stateData;
+      StateSync.syncQueue = syncData;
       StateSync._doSync();
       console.log('[StateSync] Immediate sync triggered');
     } else {
       // Debounced sync for normal operations
-      StateSync.saveState(stateData);
+      StateSync.saveState(syncData);
     }
   };
 
@@ -4713,46 +4755,93 @@
 
   const load = async () => {
     let loaded = false;
+    let localData = null;
 
-    // ALWAYS try server first for cross-device consistency
+    // Step 1: Load localStorage FIRST (has full local state with articles/podcasts)
+    try {
+      localData = JSON.parse(localStorage.getItem('feedr2'));
+      if (localData) {
+        loaded = applyStateData(localData);
+        console.log('[StateSync] Loaded local state:', {
+          feeds: state.feeds.length,
+          articles: state.articles.length,
+          podcasts: state.podcasts.length
+        });
+      }
+    } catch(e) {
+      console.warn('[StateSync] localStorage parse failed:', e.message);
+    }
+
+    // Step 2: Fetch subscription data from Xano (feeds, progress, bookmarks ONLY)
+    // Articles/podcasts stay local - they're fetched fresh from RSS feeds
     try {
       const serverData = await StateSync.fetchState();
       console.log('[StateSync] Server response check:', {
         hasServerData: !!serverData,
         hasDataProperty: !!(serverData && serverData.data),
-        feedCount: serverData?.data?.feeds?.length || 0,
-        articleCount: serverData?.data?.articles?.length || 0
+        feedCount: serverData?.data?.feeds?.length || 0
       });
 
-      if (serverData && serverData.data) {
-        // Verify we have actual content (not just empty arrays)
-        const hasContent = serverData.data.feeds?.length > 0 ||
-                          serverData.data.articles?.length > 0 ||
-                          serverData.data.podcasts?.length > 0;
+      if (serverData && serverData.data && serverData.data.feeds?.length > 0) {
+        // Merge server subscription data with local content
+        const serverFeeds = serverData.data.feeds;
+        const serverFeedUrls = new Set(serverFeeds.map(f => f.url));
 
-        if (hasContent) {
-          // Server has stored state - use it as source of truth
-          loaded = applyStateData(serverData.data);
-          if (loaded) {
-            console.log('[StateSync] Using server state for consistency');
-            // Update localStorage to match server state
-            localStorage.setItem('feedr2', JSON.stringify(serverData.data));
+        // Use server feeds as source of truth for subscriptions
+        // But preserve local feed metadata that may have been enriched (image, tags, etc.)
+        const mergedFeeds = serverFeeds.map(sf => {
+          const localFeed = state.feeds.find(lf => lf.url === sf.url);
+          if (localFeed) {
+            // Merge: server subscription data + local enriched data
+            return {
+              ...localFeed,
+              id: sf.id || localFeed.id,
+              name: sf.name || localFeed.name,
+              type: sf.type || localFeed.type,
+              category: sf.category || localFeed.category,
+              author: sf.author || localFeed.author
+            };
           }
-        } else {
-          console.log('[StateSync] Server returned empty state, will check localStorage');
+          // New feed from server - will be fetched later
+          return { ...sf, tags: [] };
+        });
+
+        state.feeds = mergedFeeds;
+
+        // Filter local content to only keep items from active feeds
+        const activeFeedIds = new Set(mergedFeeds.map(f => f.id));
+        state.articles = state.articles.filter(a => activeFeedIds.has(a.feedId));
+        state.podcasts = state.podcasts.filter(p => activeFeedIds.has(p.feedId));
+
+        // Merge progress, bookmarks, feedLastViewed from server (server wins for user data)
+        if (serverData.data.progress) {
+          state.progress = { ...state.progress, ...serverData.data.progress };
         }
+        if (serverData.data.bookmarks) {
+          state.bookmarks = { ...state.bookmarks, ...serverData.data.bookmarks };
+        }
+        if (serverData.data.feedLastViewed) {
+          state.feedLastViewed = { ...state.feedLastViewed, ...serverData.data.feedLastViewed };
+        }
+
+        console.log('[StateSync] Merged server subscriptions with local content:', {
+          feeds: state.feeds.length,
+          articles: state.articles.length,
+          podcasts: state.podcasts.length
+        });
+        loaded = true;
       }
     } catch (e) {
-      console.warn('[StateSync] Server fetch failed, will try localStorage:', e.message);
+      console.warn('[StateSync] Server fetch failed, using local only:', e.message);
     }
 
-    // Fallback to localStorage only if server didn't provide data
+    // Fallback: if nothing loaded, state stays empty
     if (!loaded) {
       try {
         const d = JSON.parse(localStorage.getItem('feedr2'));
         if (d) {
           loaded = applyStateData(d);
-          console.log('[StateSync] Using localStorage (server unavailable or empty)');
+          console.log('[StateSync] Using localStorage only (server unavailable)');
         }
       } catch(e) {
         console.warn('[StateSync] localStorage parse failed:', e.message);
