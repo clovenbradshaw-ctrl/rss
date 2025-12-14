@@ -113,7 +113,21 @@
     .source-badge { background: var(--orange); color: #fff; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 12px; flex-shrink: 0; box-shadow: 0 2px 6px rgba(255,107,53,0.3); }
     .source-arrow { color: var(--text3); opacity: 0; transition: opacity 0.15s; }
     .source-item:hover .source-arrow { opacity: 1; }
-    
+
+    /* New content indicator styles */
+    .source-item { position: relative; }
+    .source-info { flex: 1; min-width: 0; }
+    .source-info .source-name { flex: none; }
+    .source-subtitle { font-size: 11px; color: var(--blue); font-weight: 500; margin-top: 2px; }
+    .new-indicator { position: absolute; left: 4px; top: 50%; transform: translateY(-50%); width: 6px; height: 6px; background: var(--blue); border-radius: 50%; box-shadow: 0 0 8px var(--blue); }
+    .source-item.has-new { padding-left: 16px; }
+    .source-item.has-new .source-name { color: var(--text); }
+
+    /* Show card new content indicator */
+    .show-card { position: relative; }
+    .show-card.has-new .new-indicator { position: absolute; top: 8px; right: 8px; width: 10px; height: 10px; z-index: 1; }
+    .show-card .show-new-indicator { color: var(--blue); font-weight: 500; }
+
     .news-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
     .news-list-view { display: flex; flex-direction: column; gap: 12px; }
     .news-header { padding: 16px 24px; border-bottom: 1px solid var(--border2); display: flex; align-items: center; gap: 16px; }
@@ -2516,6 +2530,7 @@
     sleepTimer: null, // { endTime, intervalId, fadeIntervalId }
     speedPanelOpen: false,
     bookmarksPanelOpen: false,
+    feedLastViewed: {}, // { feedId: timestamp } - when user last viewed each feed
     userBehavior: { // Track user behavior for API sync
       reads: [], // { articleId, timestamp, duration }
       plays: [], // { episodeId, timestamp, duration, completed }
@@ -2579,7 +2594,8 @@
     view: state.view,
     viewPrefs: state.viewPrefs,
     bookmarks: state.bookmarks,
-    userBehavior: state.userBehavior
+    userBehavior: state.userBehavior,
+    feedLastViewed: state.feedLastViewed
   }));
 
   const load = () => {
@@ -2596,6 +2612,7 @@
         state.viewPrefs = d.viewPrefs || {};
         state.bookmarks = d.bookmarks || {};
         state.userBehavior = d.userBehavior || { reads: [], plays: [], searches: [], subscriptions: [] };
+        state.feedLastViewed = d.feedLastViewed || {};
 
         // Migrate: ensure all feeds have tags array
         state.feeds.forEach(f => {
@@ -2618,6 +2635,79 @@
   // Get/set view preference for a source
   const getViewPref = (sourceId, defaultView = 'list') => state.viewPrefs[sourceId] || defaultView;
   const setViewPref = (sourceId, viewMode) => { state.viewPrefs[sourceId] = viewMode; save(); };
+
+  // === NEW CONTENT TRACKING ===
+  // Mark a feed as viewed (user opened it)
+  const markFeedViewed = (feedId) => {
+    state.feedLastViewed[feedId] = Date.now();
+    save();
+  };
+
+  // Get the newest content date for a feed
+  const getNewestContentDate = (feedId) => {
+    const feed = state.feeds.find(f => f.id === feedId);
+    if (!feed) return null;
+
+    const items = feed.type === 'podcast'
+      ? state.podcasts.filter(p => p.feedId === feedId)
+      : state.articles.filter(a => a.feedId === feedId);
+
+    if (!items.length) return null;
+
+    // Find newest pubDate
+    let newest = null;
+    items.forEach(item => {
+      const date = item.pubDate ? new Date(item.pubDate).getTime() : null;
+      if (date && (!newest || date > newest)) newest = date;
+    });
+    return newest;
+  };
+
+  // Check if feed has new content since last viewed
+  const feedHasNewContent = (feedId) => {
+    const lastViewed = state.feedLastViewed[feedId];
+    const newestContent = getNewestContentDate(feedId);
+
+    // If never viewed, it has new content (if there's any content)
+    if (!lastViewed) return newestContent !== null;
+
+    // Compare newest content to last viewed time
+    return newestContent && newestContent > lastViewed;
+  };
+
+  // Get count of new items since last viewed
+  const getNewItemCount = (feedId) => {
+    const lastViewed = state.feedLastViewed[feedId];
+    if (!lastViewed) return 0; // Don't show count if never viewed
+
+    const feed = state.feeds.find(f => f.id === feedId);
+    if (!feed) return 0;
+
+    const items = feed.type === 'podcast'
+      ? state.podcasts.filter(p => p.feedId === feedId)
+      : state.articles.filter(a => a.feedId === feedId);
+
+    return items.filter(item => {
+      const date = item.pubDate ? new Date(item.pubDate).getTime() : null;
+      return date && date > lastViewed;
+    }).length;
+  };
+
+  // Format relative time for "Updated X ago" display
+  const formatUpdatedAgo = (timestamp) => {
+    if (!timestamp) return '';
+    const now = Date.now();
+    const diff = now - timestamp;
+    const mins = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+
+    if (mins < 1) return 'Just now';
+    if (mins < 60) return `${mins}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    if (days < 7) return `${days}d ago`;
+    return new Date(timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
   
   const loadDemo = () => {
     // No sample data - users add their own feeds
@@ -3480,7 +3570,23 @@
   const renderNewsSources = () => {
     const news = state.feeds.filter(f => f.type === 'news');
     el.newsSources.innerHTML = `<div class="source-item ${!state.selectedSource && !state.currentSourcePage ? 'active' : ''}" data-id="all"><div class="source-icon"><i class="ph ph-books"></i></div><div class="source-name">All Sources</div></div>` +
-      news.map(f => `<div class="source-item ${state.currentSourcePage === f.id ? 'active' : ''}" data-id="${f.id}"><div class="source-icon">${f.image ? `<img src="${f.image}">` : '<i class="ph ph-newspaper"></i>'}</div><div class="source-name">${f.name}</div>${f.unread ? `<span class="source-badge">${f.unread}</span>` : ''}<span class="source-arrow">→</span></div>`).join('');
+      news.map(f => {
+        const hasNew = feedHasNewContent(f.id);
+        const newCount = getNewItemCount(f.id);
+        const newestDate = getNewestContentDate(f.id);
+        const updatedText = hasNew && newestDate ? formatUpdatedAgo(newestDate) : '';
+        const subtitle = hasNew ? (newCount > 0 ? `${newCount} new` : updatedText) : '';
+
+        return `<div class="source-item ${state.currentSourcePage === f.id ? 'active' : ''} ${hasNew ? 'has-new' : ''}" data-id="${f.id}">
+          ${hasNew ? '<span class="new-indicator"></span>' : ''}
+          <div class="source-icon">${f.image ? `<img src="${f.image}">` : '<i class="ph ph-newspaper"></i>'}</div>
+          <div class="source-info">
+            <div class="source-name">${f.name}</div>
+            ${subtitle ? `<div class="source-subtitle">${subtitle}</div>` : ''}
+          </div>
+          <span class="source-arrow">→</span>
+        </div>`;
+      }).join('');
   };
   
   const renderCategories = () => {
@@ -3565,18 +3671,29 @@
     el.newsList.innerHTML = items.map(i => `<div class="article ${i.unread ? 'unread' : ''}" data-id="${i.id}"><div class="article-icon">${i.feed?.image ? `<img src="${i.feed.image}">` : '<i class="ph ph-article"></i>'}</div><div class="article-body"><div class="article-meta"><span class="article-source">${i.feed?.name || ''}</span><span class="article-time">· ${i.time}</span>${i.unread ? '<span class="article-new">NEW</span>' : ''}</div><div class="article-title">${i.title}</div>${i.summary ? `<div class="article-summary">${i.summary}</div>` : ''}${renderItemTags(i.tags)}</div>${i.image ? `<img class="article-image" src="${i.image}">` : ''}</div>`).join('');
   };
   
-  // === RENDER PODCASTS (Inbox Style) ===
+// === RENDER PODCASTS (Inbox Style) ===
+  // Placeholder SVG for broken images
+  const placeholderImg = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="#1a1a1a" width="100" height="100"/><path d="M50 20c-5.5 0-10 4.5-10 10v20c0 5.5 4.5 10 10 10s10-4.5 10-10V30c0-5.5-4.5-10-10-10zm20 30c0 11-9 20-20 20s-20-9-20-20h-5c0 13.3 10.1 24.2 23 25.7V85h4V75.7c12.9-1.5 23-12.4 23-25.7h-5z" fill="#666" transform="translate(0,5)"/></svg>');
+
   const renderPodcastSources = () => {
     const podcasts = state.feeds.filter(f => f.type === 'podcast');
     el.podcastSources.innerHTML = `<div class="source-item ${!state.selectedPodcastSource && !state.currentShowPage ? 'active' : ''}" data-id="all"><div class="source-icon"><i class="ph ph-headphones"></i></div><div class="source-name">All Episodes</div></div>` +
       podcasts.map(f => {
-        const episodeCount = state.podcasts.filter(p => p.feedId === f.id).length;
-        const inProgressCount = state.podcasts.filter(p => {
-          if (p.feedId !== f.id) return false;
-          const pr = state.progress[p.id] || 0;
-          return pr > 0 && pr < p.duration * 0.95;
-        }).length;
-        return `<div class="source-item ${state.currentShowPage === f.id ? 'active' : ''}" data-id="${f.id}"><div class="source-icon">${f.image ? `<img src="${f.image}">` : '<i class="ph ph-microphone-stage"></i>'}</div><div class="source-name">${f.name}</div>${inProgressCount ? `<span class="source-badge">${inProgressCount}</span>` : ''}<span class="source-arrow">→</span></div>`;
+        const hasNew = feedHasNewContent(f.id);
+        const newCount = getNewItemCount(f.id);
+        const newestDate = getNewestContentDate(f.id);
+        const updatedText = hasNew && newestDate ? formatUpdatedAgo(newestDate) : '';
+        const subtitle = hasNew ? (newCount > 0 ? `${newCount} new` : updatedText) : '';
+
+        return `<div class="source-item ${state.currentShowPage === f.id ? 'active' : ''} ${hasNew ? 'has-new' : ''}" data-id="${f.id}">
+          ${hasNew ? '<span class="new-indicator"></span>' : ''}
+          <div class="source-icon">${f.image ? `<img src="${f.image}">` : '<i class="ph ph-microphone-stage"></i>'}</div>
+          <div class="source-info">
+            <div class="source-name">${f.name}</div>
+            ${subtitle ? `<div class="source-subtitle">${subtitle}</div>` : ''}
+          </div>
+          <span class="source-arrow">→</span>
+        </div>`;
       }).join('');
   };
 
@@ -3707,9 +3824,6 @@
     renderPodcastTagFilters();
     renderPodcastInbox();
   };
-  
-  // Placeholder SVG for broken images
-  const placeholderImg = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="#1a1a1a" width="100" height="100"/><path d="M50 20c-5.5 0-10 4.5-10 10v20c0 5.5 4.5 10 10 10s10-4.5 10-10V30c0-5.5-4.5-10-10-10zm20 30c0 11-9 20-20 20s-20-9-20-20h-5c0 13.3 10.1 24.2 23 25.7V85h4V75.7c12.9-1.5 23-12.4 23-25.7h-5z" fill="#666" transform="translate(0,5)"/></svg>');
 
   const renderEpisode = ep => {
     const show = state.feeds.find(f => f.id === ep.feedId);
@@ -3867,6 +3981,7 @@
     if (!source) return;
     Mem.log('feed_opened', id);
     state.currentSourcePage = id;
+    markFeedViewed(id); // Mark feed as viewed to clear new content indicator
 
     const articles = state.articles.filter(a => a.feedId === id);
     const viewMode = getViewPref('news_' + id, 'list');
@@ -3907,6 +4022,7 @@
     if (!show) return;
     Mem.log('feed_opened', id);
     state.currentShowPage = id;
+    markFeedViewed(id); // Mark feed as viewed to clear new content indicator
 
     const eps = state.podcasts.filter(p => p.feedId === id);
     const viewMode = getViewPref('podcast_' + id, 'list');
