@@ -6773,9 +6773,9 @@
       const articles = state.articles.map(a => ({ ...a, sortDate: new Date(a.pubDate), type: 'news' }));
       const episodes = state.podcasts.map(p => ({ ...p, sortDate: new Date(p.pubDate), type: 'podcast' }));
 
-      // Count items for nav
-      const newsCount = articles.length;
-      const podcastCount = episodes.length;
+      // Count new/unread items for nav
+      const newsCount = state.articles.filter(a => a.unread).length;
+      const podcastCount = state.podcasts.filter(p => !state.progress[p.id]).length;
       updateFeedNav(newsCount, podcastCount);
 
       // Combine and sort by date
