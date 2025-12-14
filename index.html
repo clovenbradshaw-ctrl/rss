@@ -1026,9 +1026,25 @@
     .episode-progress-text { font-size: 13px; color: var(--text2); display: flex; justify-content: space-between; }
     .episode-description { padding: 0 32px 32px; }
     .episode-description-title { font-size: 18px; font-weight: 600; margin-bottom: 16px; }
-    .episode-description-content { font-size: 15px; line-height: 1.7; color: var(--text2); white-space: pre-wrap; }
+    .episode-description-content { font-size: 15px; line-height: 1.7; color: var(--text2); }
     .episode-description-content a { color: var(--blue); text-decoration: none; }
     .episode-description-content a:hover { text-decoration: underline; }
+    .episode-description-content p { margin: 0 0 1em; }
+    .episode-description-content p:last-child { margin-bottom: 0; }
+    .episode-description-content ul, .episode-description-content ol { margin: 0 0 1em; padding-left: 1.5em; }
+    .episode-description-content li { margin-bottom: 0.5em; }
+    .episode-description-content h1, .episode-description-content h2, .episode-description-content h3, .episode-description-content h4 { color: var(--text); margin: 1.5em 0 0.5em; font-weight: 600; }
+    .episode-description-content h1 { font-size: 1.4em; }
+    .episode-description-content h2 { font-size: 1.25em; }
+    .episode-description-content h3 { font-size: 1.1em; }
+    .episode-description-content h4 { font-size: 1em; }
+    .episode-description-content blockquote { margin: 1em 0; padding-left: 1em; border-left: 3px solid var(--border2); color: var(--text2); font-style: italic; }
+    .episode-description-content strong, .episode-description-content b { font-weight: 600; color: var(--text); }
+    .episode-description-content em, .episode-description-content i { font-style: italic; }
+    .episode-description-content code { background: var(--bg3); padding: 0.2em 0.4em; border-radius: 4px; font-family: monospace; font-size: 0.9em; }
+    .episode-description-content pre { background: var(--bg3); padding: 1em; border-radius: 8px; overflow-x: auto; margin: 1em 0; }
+    .episode-description-content hr { border: none; border-top: 1px solid var(--border2); margin: 1.5em 0; }
+    .episode-description-content img { max-width: 100%; height: auto; border-radius: 8px; margin: 1em 0; }
     .episode-bookmarks { padding: 0 32px 140px; }
     .episode-bookmarks-title { font-size: 18px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
     .episode-bookmarks-list { display: flex; flex-direction: column; gap: 12px; }
@@ -6094,20 +6110,35 @@
       }
       const duration = parseDuration(durationStr);
 
-      // Get description - try multiple fields
+      // Get description - try multiple fields, prefer content:encoded for full HTML
+      let descHtml = '';
       let desc = '';
-      const descFields = ['itunes:summary', 'itunes:subtitle', 'description', 'summary', 'content:encoded'];
+      // First try to get HTML content from content:encoded
+      const contentEncoded = item.getElementsByTagName('content:encoded');
+      if (contentEncoded.length > 0) {
+        descHtml = contentEncoded[0].textContent?.trim() || '';
+      }
+      // Then try other fields for fallback
+      const descFields = ['itunes:summary', 'description', 'summary', 'itunes:subtitle'];
       for (const field of descFields) {
         const els = item.getElementsByTagName(field);
         if (els.length > 0 && els[0].textContent?.trim()) {
-          desc = els[0].textContent.trim();
+          if (!descHtml) {
+            descHtml = els[0].textContent.trim();
+          }
+          // Get plain text version for preview
+          const tmp = document.createElement('div');
+          tmp.innerHTML = els[0].textContent.trim();
+          desc = tmp.textContent?.trim().slice(0, 300) || '';
           break;
         }
       }
-      // Strip HTML
-      const tmp = document.createElement('div');
-      tmp.innerHTML = desc;
-      desc = tmp.textContent?.trim().slice(0, 300) || '';
+      // If we have HTML but no plain text preview, create one
+      if (descHtml && !desc) {
+        const tmp = document.createElement('div');
+        tmp.innerHTML = descHtml;
+        desc = tmp.textContent?.trim().slice(0, 300) || '';
+      }
 
       // Get episode image - try multiple approaches
       let image = getItunesImage(item);
@@ -6132,6 +6163,7 @@
         feedId,
         title,
         desc,
+        descHtml, // Full HTML description for detail page
         duration: duration || 1800, // Default 30 min if no duration
         date: formatTimeAgo(pubDate),
         pubDate: pubDate.toISOString(),
@@ -7389,10 +7421,10 @@
           Add Bookmark
         </button>
       </div>
-      ${ep.desc ? `
+      ${(ep.descHtml || ep.desc) ? `
         <div class="episode-description">
           <div class="episode-description-title">About this episode</div>
-          <div class="episode-description-content">${linkifyText(ep.desc)}</div>
+          <div class="episode-description-content">${ep.descHtml ? sanitizeHtml(ep.descHtml) : linkifyText(ep.desc)}</div>
         </div>
       ` : ''}
       ${bookmarksHtml}
@@ -7420,6 +7452,42 @@
     if (!text) return '';
     const urlRegex = /(https?:\/\/[^\s<]+)/g;
     return text.replace(urlRegex, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
+  };
+
+  // Helper to sanitize HTML content for safe rendering
+  const sanitizeHtml = (html) => {
+    if (!html) return '';
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+
+    // Remove potentially dangerous elements
+    const dangerousTags = ['script', 'style', 'iframe', 'object', 'embed', 'form', 'input', 'button'];
+    dangerousTags.forEach(tag => {
+      tmp.querySelectorAll(tag).forEach(el => el.remove());
+    });
+
+    // Clean attributes on remaining elements
+    tmp.querySelectorAll('*').forEach(el => {
+      // Remove event handlers and dangerous attributes
+      const attrs = [...el.attributes];
+      attrs.forEach(attr => {
+        if (attr.name.startsWith('on') || attr.name === 'srcdoc' || attr.name === 'formaction') {
+          el.removeAttribute(attr.name);
+        }
+        // Sanitize href/src attributes
+        if ((attr.name === 'href' || attr.name === 'src') &&
+            (attr.value.startsWith('javascript:') || attr.value.startsWith('data:'))) {
+          el.removeAttribute(attr.name);
+        }
+      });
+      // Make links open in new tab
+      if (el.tagName === 'A') {
+        el.setAttribute('target', '_blank');
+        el.setAttribute('rel', 'noopener noreferrer');
+      }
+    });
+
+    return tmp.innerHTML;
   };
 
   // === RENDER ALL - Social Media Feed Style ===
