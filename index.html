@@ -3927,10 +3927,19 @@
             ContentCache.cacheImage(src, blob).catch(() => {});
             imgElement.src = URL.createObjectURL(blob);
             imgElement.classList.add('loaded');
+          } else {
+            // Non-image response, fallback to direct loading
+            imgElement.onload = () => imgElement.classList.add('loaded');
+            imgElement.src = src;
           }
+        } else {
+          // Non-200 response, fallback to direct loading
+          imgElement.onload = () => imgElement.classList.add('loaded');
+          imgElement.src = src;
         }
       } catch (e) {
         // On error, try loading directly (CORS issues)
+        imgElement.onload = () => imgElement.classList.add('loaded');
         imgElement.src = src;
       }
 
