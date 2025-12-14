@@ -4300,7 +4300,8 @@
   // Loads images with caching, lazy loading, and error handling
   const ImageLoader = {
     observer: null,
-    loadingImages: new Set(),
+    loadingImages: new Map(), // Track loading promises for deduplication
+    objectUrls: new Map(), // Track object URLs for cleanup (prevents memory leaks)
 
     init() {
       // Create intersection observer for lazy loading
@@ -4319,6 +4320,30 @@
         rootMargin: '100px', // Start loading 100px before visible
         threshold: 0.01
       });
+
+      // Clean up object URLs periodically to prevent memory leaks
+      setInterval(() => this.cleanupObjectUrls(), 60000); // Every minute
+    },
+
+    // Revoke old object URLs to free memory
+    cleanupObjectUrls() {
+      const maxAge = 5 * 60 * 1000; // 5 minutes
+      const now = Date.now();
+      for (const [url, data] of this.objectUrls.entries()) {
+        if (now - data.created > maxAge) {
+          try {
+            URL.revokeObjectURL(data.objectUrl);
+          } catch (e) {}
+          this.objectUrls.delete(url);
+        }
+      }
+    },
+
+    // Create an object URL and track it for cleanup
+    createTrackedObjectUrl(src, blob) {
+      const objectUrl = URL.createObjectURL(blob);
+      this.objectUrls.set(src, { objectUrl, created: Date.now() });
+      return objectUrl;
     },
 
     async loadImage(imgElement, src) {
@@ -4338,17 +4363,58 @@
         return;
       }
 
-      if (this.loadingImages.has(src)) return;
-      this.loadingImages.add(src);
+      // Check if we already have an object URL for this source
+      const existing = this.objectUrls.get(src);
+      if (existing) {
+        imgElement.src = existing.objectUrl;
+        imgElement.classList.add('loaded');
+        return;
+      }
 
+      // If already loading this URL, wait for it and reuse result
+      if (this.loadingImages.has(src)) {
+        try {
+          const objectUrl = await this.loadingImages.get(src);
+          if (objectUrl) {
+            imgElement.src = objectUrl;
+            imgElement.classList.add('loaded');
+          } else {
+            this.showFallback(imgElement);
+          }
+        } catch (e) {
+          this.showFallback(imgElement);
+        }
+        return;
+      }
+
+      // Create a promise for this load that can be shared
+      const loadPromise = this.fetchImage(src);
+      this.loadingImages.set(src, loadPromise);
+
+      try {
+        const objectUrl = await loadPromise;
+        if (objectUrl) {
+          imgElement.src = objectUrl;
+          imgElement.classList.add('loaded');
+        } else {
+          // Fall back to direct loading
+          this.loadDirect(imgElement, src);
+        }
+      } catch (e) {
+        // On error, try loading directly (CORS issues)
+        this.loadDirect(imgElement, src);
+      } finally {
+        this.loadingImages.delete(src);
+      }
+    },
+
+    // Fetch and cache image, returns object URL or null
+    async fetchImage(src) {
       try {
         // Check cache first
         const cachedBlob = await ContentCache.getCachedImage(src);
         if (cachedBlob) {
-          imgElement.src = URL.createObjectURL(cachedBlob);
-          imgElement.classList.add('loaded');
-          this.loadingImages.delete(src);
-          return;
+          return this.createTrackedObjectUrl(src, cachedBlob);
         }
 
         // Fetch and cache
@@ -4358,46 +4424,28 @@
           if (blob.type.startsWith('image/')) {
             // Cache the image
             ContentCache.cacheImage(src, blob).catch(() => {});
-            imgElement.src = URL.createObjectURL(blob);
-            imgElement.classList.add('loaded');
-          } else {
-            // Non-image response, fallback to direct loading
-            imgElement.onload = () => imgElement.classList.add('loaded');
-            imgElement.onerror = () => {
-              imgElement.classList.add('loaded');
-              if (imgElement.parentElement) {
-                imgElement.parentElement.innerHTML = '<i class="ph ph-microphone-stage"></i>';
-              }
-            };
-            imgElement.src = src;
+            return this.createTrackedObjectUrl(src, blob);
           }
-        } else {
-          // Non-200 response, fallback to direct loading
-          imgElement.onload = () => imgElement.classList.add('loaded');
-          imgElement.onerror = () => {
-            imgElement.classList.add('loaded');
-            if (imgElement.parentElement) {
-              imgElement.parentElement.innerHTML = '<i class="ph ph-microphone-stage"></i>';
-            }
-          };
-          imgElement.src = src;
         }
+        return null;
       } catch (e) {
-        // On error, try loading directly (CORS issues)
-        // Set up handlers BEFORE setting src to avoid race condition
-        imgElement.onload = () => imgElement.classList.add('loaded');
-        imgElement.onerror = () => {
-          // If direct load also fails, show the placeholder and trigger fallback
-          imgElement.classList.add('loaded');
-          // Replace with microphone icon (same as inline onerror behavior)
-          if (imgElement.parentElement) {
-            imgElement.parentElement.innerHTML = '<i class="ph ph-microphone-stage"></i>';
-          }
-        };
-        imgElement.src = src;
+        return null;
       }
+    },
 
-      this.loadingImages.delete(src);
+    // Load image directly (bypasses CORS fetch, lets browser handle it)
+    loadDirect(imgElement, src) {
+      imgElement.onload = () => imgElement.classList.add('loaded');
+      imgElement.onerror = () => this.showFallback(imgElement);
+      imgElement.src = src;
+    },
+
+    // Show fallback icon
+    showFallback(imgElement) {
+      imgElement.classList.add('loaded');
+      if (imgElement.parentElement) {
+        imgElement.parentElement.innerHTML = '<i class="ph ph-microphone-stage"></i>';
+      }
     },
 
     // Observe an image for lazy loading
@@ -5089,9 +5137,11 @@
     // Sync minimal data to server for cross-device consistency
     if (immediate) {
       // Immediate sync for critical operations (feed add/remove)
+      // Force a full state snapshot to ensure feeds persist across page reloads
       StateSync.syncQueue = syncData;
+      StateSync.changeCounter = StateSync.snapshotInterval; // Force snapshot
       StateSync._doSync();
-      console.log('[StateSync] Immediate sync triggered');
+      console.log('[StateSync] Immediate sync with forced snapshot');
     } else {
       // Debounced sync for normal operations
       StateSync.saveState(syncData);
@@ -5150,29 +5200,47 @@
 
       if (serverData && serverData.data && serverData.data.feeds) {
         const serverFeeds = serverData.data.feeds;
+        const localFeeds = state.feeds;
 
-        if (serverFeeds.length > 0) {
-          console.log('[Load] Server has', serverFeeds.length, 'feeds');
+        if (serverFeeds.length > 0 || localFeeds.length > 0) {
+          console.log('[Load] Server has', serverFeeds.length, 'feeds, local has', localFeeds.length);
 
-          // Merge: server feeds = source of truth for subscriptions
-          state.feeds = serverFeeds.map(sf => {
-            const localFeed = state.feeds.find(lf => lf.url === sf.url);
+          // BIDIRECTIONAL MERGE: Keep feeds from both local and server
+          // Server feeds with local enrichment
+          const mergedFeeds = serverFeeds.map(sf => {
+            const localFeed = localFeeds.find(lf => lf.url === sf.url);
             return localFeed ? { ...localFeed, ...sf } : { ...sf, tags: [] };
           });
 
-          // Clean up orphaned content
+          // Add local-only feeds that aren't on server yet (preserves unsync'd feeds)
+          const serverUrls = new Set(serverFeeds.map(sf => sf.url));
+          const localOnlyFeeds = localFeeds.filter(lf => !serverUrls.has(lf.url));
+          if (localOnlyFeeds.length > 0) {
+            console.log('[Load] Preserving', localOnlyFeeds.length, 'local-only feeds not yet synced');
+            mergedFeeds.push(...localOnlyFeeds);
+          }
+
+          state.feeds = mergedFeeds;
+
+          // Keep content for all current feeds (don't orphan local content)
           const activeFeedIds = new Set(state.feeds.map(f => f.id));
           state.articles = state.articles.filter(a => activeFeedIds.has(a.feedId));
           state.podcasts = state.podcasts.filter(p => activeFeedIds.has(p.feedId));
 
-          // Merge progress/bookmarks
+          // Merge progress/bookmarks (both directions)
           state.progress = { ...state.progress, ...serverData.data.progress };
           state.bookmarks = { ...state.bookmarks, ...serverData.data.bookmarks };
           state.feedLastViewed = { ...state.feedLastViewed, ...serverData.data.feedLastViewed };
 
           console.log('[Load] Merged to', state.feeds.length, 'feeds');
           loaded = true;
-          save();
+
+          // If we had local-only feeds, force sync to push them to server
+          if (localOnlyFeeds.length > 0) {
+            console.log('[Load] Forcing sync to push local-only feeds to server');
+            StateSync.changeCounter = StateSync.snapshotInterval;
+          }
+          save(true);
         } else if (localData && localData.feeds && localData.feeds.length > 0) {
           // Server empty, push local state
           console.log('[Load] Pushing local state to server');
@@ -6103,46 +6171,96 @@
     }
   };
 
+  // Fetch and parse a single feed - returns result data without mutating state
+  // This prevents race conditions when fetching multiple feeds in parallel
   const fetchAndParseFeed = async feed => {
     try {
       const normalizedUrl = normalizeFeedUrl(feed.url);
       const xml = await fetchWithProxy(normalizedUrl);
       const meta = extractFeedMeta(xml);
 
-      // Update feed metadata if available (only if user hasn't provided values)
-      if (meta.title && (!feed.name || feed.name === 'Loading...')) feed.name = meta.title;
-      if (meta.image && !feed.image) feed.image = meta.image;
-      if (meta.author && !feed.author) feed.author = meta.author;
-      if (meta.description) feed.description = meta.description;
+      // Build feed metadata updates (don't mutate feed directly during parallel fetch)
+      const feedUpdates = {};
+      if (meta.title && (!feed.name || feed.name === 'Loading...')) feedUpdates.name = meta.title;
+      if (meta.image && !feed.image) feedUpdates.image = meta.image;
+      if (meta.author && !feed.author) feedUpdates.author = meta.author;
+      if (meta.description) feedUpdates.description = meta.description;
 
       // Auto-detect tags for the feed if not already set
       const feedContentSample = meta.description || meta.itunesCategory || '';
       if (!feed.tags || feed.tags.length === 0) {
-        feed.tags = autoDetectFeedTags(feed, feedContentSample);
-        console.log(`Auto-detected tags for ${feed.name}:`, feed.tags.map(t => getTagInfo(t).label));
+        feedUpdates.tags = autoDetectFeedTags({ ...feed, ...feedUpdates }, feedContentSample);
+        console.log(`Auto-detected tags for ${feedUpdates.name || feed.name}:`, feedUpdates.tags.map(t => getTagInfo(t).label));
       }
+
+      feedUpdates.lastFetched = new Date().toISOString();
+      feedUpdates.error = null;
+
+      // Return result object instead of mutating state
+      const result = {
+        feedId: feed.id,
+        feedUpdates,
+        success: true
+      };
 
       if (feed.type === 'news') {
         const articles = parseNewsFeed(xml, feed.id, feed.url);
 
         // Auto-tag each article
         articles.forEach(article => {
-          article.tags = autoDetectItemTags(article, feed.tags);
+          article.tags = autoDetectItemTags(article, feed.tags || feedUpdates.tags || []);
         });
 
+        result.type = 'news';
+        result.items = articles;
+      } else {
+        const episodes = parsePodcastFeed(xml, feed.id, feed.url);
+
+        // Auto-tag each episode
+        episodes.forEach(episode => {
+          episode.tags = autoDetectItemTags(episode, feed.tags || feedUpdates.tags || []);
+        });
+
+        result.type = 'podcast';
+        result.items = episodes;
+      }
+
+      return result;
+    } catch (e) {
+      console.error(`Failed to fetch feed ${feed.name}:`, e);
+      return {
+        feedId: feed.id,
+        feedUpdates: { error: e.message },
+        success: false
+      };
+    }
+  };
+
+  // Apply feed results to state (called AFTER all parallel fetches complete)
+  const applyFeedResults = (results) => {
+    for (const result of results) {
+      if (!result || result.status === 'rejected') continue;
+
+      const { feedId, feedUpdates, success, type, items } = result.value || result;
+      const feed = state.feeds.find(f => f.id === feedId);
+      if (!feed) continue;
+
+      // Apply feed metadata updates
+      Object.assign(feed, feedUpdates);
+
+      if (!success || !items) continue;
+
+      if (type === 'news') {
         // Get all existing articles for this feed (including archived)
-        const existingArticles = state.articles.filter(a => a.feedId === feed.id);
-        const archivedForFeed = state.archivedArticles.filter(a => a.feedId === feed.id);
+        const existingArticles = state.articles.filter(a => a.feedId === feedId);
+        const archivedForFeed = state.archivedArticles.filter(a => a.feedId === feedId);
 
         // Create sets of existing titles (both active and archived)
         const existingTitles = new Set(existingArticles.map(a => a.title));
         const archivedTitles = new Set(archivedForFeed.map(a => a.title));
 
-        // Find truly new articles (not in current or archived)
-        const newArticles = articles.filter(a => !existingTitles.has(a.title) && !archivedTitles.has(a.title));
-
         // Find articles that are in current list but NOT in new feed (they're being archived)
-        const currentTitlesInFeed = new Set(articles.map(a => a.title));
+        const currentTitlesInFeed = new Set(items.map(a => a.title));
         const toArchive = existingArticles.filter(a => !currentTitlesInFeed.has(a.title));
 
         // Archive items that fell off the feed (preserve history)
@@ -6150,55 +6268,38 @@
           toArchive.forEach(a => a.archived = true);
           state.archivedArticles = [...state.archivedArticles, ...toArchive];
           // Limit archived items per feed to prevent unbounded growth (keep last 500)
-          const feedArchived = state.archivedArticles.filter(a => a.feedId === feed.id);
+          const feedArchived = state.archivedArticles.filter(a => a.feedId === feedId);
           if (feedArchived.length > 500) {
             const toRemove = feedArchived.slice(0, feedArchived.length - 500).map(a => a.id);
             state.archivedArticles = state.archivedArticles.filter(a => !toRemove.includes(a.id));
           }
         }
 
-        // Update articles: new + existing that are still in feed
-        const updatedArticles = articles.map(feedArticle => {
-          // Check if we have an existing version with user state (read status, etc.)
+        // Update articles: preserve user state
+        const updatedArticles = items.map(feedArticle => {
           const existing = existingArticles.find(a => a.title === feedArticle.title);
           if (existing) {
-            // Preserve user state but update content
             return { ...feedArticle, unread: existing.unread, tags: existing.tags?.length ? existing.tags : feedArticle.tags };
           }
           return feedArticle;
         });
 
+        // Replace only this feed's articles (atomic per-feed update)
         state.articles = [
-          ...state.articles.filter(a => a.feedId !== feed.id),
+          ...state.articles.filter(a => a.feedId !== feedId),
           ...updatedArticles
         ];
 
-        // Sort by date
-        state.articles.sort((a, b) => new Date(b.pubDate || 0) - new Date(a.pubDate || 0));
         // Update unread count
-        feed.unread = state.articles.filter(a => a.feedId === feed.id && a.unread).length;
+        feed.unread = updatedArticles.filter(a => a.unread).length;
 
-      } else {
-        const episodes = parsePodcastFeed(xml, feed.id, feed.url);
-
-        // Auto-tag each episode
-        episodes.forEach(episode => {
-          episode.tags = autoDetectItemTags(episode, feed.tags);
-        });
-
+      } else if (type === 'podcast') {
         // Get all existing episodes for this feed (including archived)
-        const existingEpisodes = state.podcasts.filter(p => p.feedId === feed.id);
-        const archivedForFeed = state.archivedPodcasts.filter(p => p.feedId === feed.id);
-
-        // Create sets of existing titles
-        const existingTitles = new Set(existingEpisodes.map(p => p.title));
-        const archivedTitles = new Set(archivedForFeed.map(p => p.title));
-
-        // Find truly new episodes
-        const newEpisodes = episodes.filter(e => !existingTitles.has(e.title) && !archivedTitles.has(e.title));
+        const existingEpisodes = state.podcasts.filter(p => p.feedId === feedId);
+        const archivedForFeed = state.archivedPodcasts.filter(p => p.feedId === feedId);
 
         // Find episodes to archive
-        const currentTitlesInFeed = new Set(episodes.map(e => e.title));
+        const currentTitlesInFeed = new Set(items.map(e => e.title));
         const toArchive = existingEpisodes.filter(p => !currentTitlesInFeed.has(p.title));
 
         // Archive episodes that fell off the feed
@@ -6206,7 +6307,7 @@
           toArchive.forEach(p => p.archived = true);
           state.archivedPodcasts = [...state.archivedPodcasts, ...toArchive];
           // Limit archived per feed
-          const feedArchived = state.archivedPodcasts.filter(p => p.feedId === feed.id);
+          const feedArchived = state.archivedPodcasts.filter(p => p.feedId === feedId);
           if (feedArchived.length > 500) {
             const toRemove = feedArchived.slice(0, feedArchived.length - 500).map(p => p.id);
             state.archivedPodcasts = state.archivedPodcasts.filter(p => !toRemove.includes(p.id));
@@ -6214,7 +6315,7 @@
         }
 
         // Update episodes: preserve user state (progress, downloaded, etc.)
-        const updatedEpisodes = episodes.map(feedEp => {
+        const updatedEpisodes = items.map(feedEp => {
           const existing = existingEpisodes.find(p => p.title === feedEp.title);
           if (existing) {
             return {
@@ -6226,23 +6327,17 @@
           return feedEp;
         });
 
+        // Replace only this feed's episodes (atomic per-feed update)
         state.podcasts = [
-          ...state.podcasts.filter(p => p.feedId !== feed.id),
+          ...state.podcasts.filter(p => p.feedId !== feedId),
           ...updatedEpisodes
         ];
-
-        // Sort by date
-        state.podcasts.sort((a, b) => new Date(b.pubDate || 0) - new Date(a.pubDate || 0));
       }
-
-      feed.lastFetched = new Date().toISOString();
-      feed.error = null;
-      return true;
-    } catch (e) {
-      console.error(`Failed to fetch feed ${feed.name}:`, e);
-      feed.error = e.message;
-      return false;
     }
+
+    // Sort all articles and podcasts once at the end
+    state.articles.sort((a, b) => new Date(b.pubDate || 0) - new Date(a.pubDate || 0));
+    state.podcasts.sort((a, b) => new Date(b.pubDate || 0) - new Date(a.pubDate || 0));
   };
 
   const refreshAllFeeds = async (silent = false) => {
@@ -6269,7 +6364,11 @@
       state.feeds.map(feed => fetchAndParseFeed(feed))
     );
 
-    const success = results.filter(r => r.status === 'fulfilled' && r.value).length;
+    // Apply all results atomically AFTER parallel fetches complete
+    // This prevents race conditions where later-finishing fetches overwrite earlier ones
+    applyFeedResults(results);
+
+    const success = results.filter(r => r.status === 'fulfilled' && r.value?.success).length;
     const failed = results.length - success;
 
     state.refreshing = false;
