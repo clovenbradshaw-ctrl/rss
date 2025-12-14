@@ -987,9 +987,9 @@
     .ep-dl.downloading { color: var(--blue); cursor: wait; animation: pulse 1.5s ease-in-out infinite; }
     @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
     
-    /* Show Page & Source Page */
-    .show-page, .source-page { display: none; overflow-y: auto; height: 100%; }
-    .show-page.active, .source-page.active { display: block; flex: 1; }
+    /* Show Page, Source Page & Episode Page */
+    .show-page, .source-page, .episode-page { display: none; overflow-y: auto; height: 100%; }
+    .show-page.active, .source-page.active, .episode-page.active { display: block; flex: 1; }
     .show-hero, .source-hero { padding: 32px; background: linear-gradient(180deg, rgba(59,130,246,0.15) 0%, var(--bg) 100%); display: flex; gap: 28px; align-items: flex-end; }
     .show-hero-art, .source-hero-art { width: 200px; height: 200px; border-radius: 16px; object-fit: cover; box-shadow: 0 12px 32px rgba(0,0,0,0.5); }
     .show-hero-info, .source-hero-info { flex: 1; }
@@ -1001,6 +1001,43 @@
     .show-play:hover { transform: scale(1.05); background: var(--blue2); }
     .show-episodes, .source-articles { padding: 0 32px 140px; }
     .show-episodes-title, .source-articles-title { font-size: 20px; font-weight: 600; margin-bottom: 20px; letter-spacing: -0.02em; }
+
+    /* Episode Page */
+    .episode-hero { padding: 32px; background: linear-gradient(180deg, rgba(59,130,246,0.15) 0%, var(--bg) 100%); display: flex; gap: 28px; align-items: flex-start; }
+    .episode-hero-art { width: 240px; height: 240px; border-radius: 16px; object-fit: cover; box-shadow: 0 12px 32px rgba(0,0,0,0.5); flex-shrink: 0; }
+    .episode-hero-info { flex: 1; padding-top: 20px; }
+    .episode-hero-show { font-size: 14px; font-weight: 500; color: var(--blue); margin-bottom: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+    .episode-hero-show:hover { text-decoration: underline; }
+    .episode-hero-title { font-size: 32px; font-weight: 700; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .episode-hero-meta { display: flex; flex-wrap: wrap; gap: 16px; font-size: 14px; color: var(--text2); margin-bottom: 20px; }
+    .episode-hero-meta span { display: flex; align-items: center; gap: 6px; }
+    .episode-hero-meta svg { width: 16px; height: 16px; opacity: 0.7; }
+    .episode-actions { padding: 20px 32px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .episode-play-btn { background: var(--blue); border: none; color: #fff; padding: 14px 28px; border-radius: 50px; font-size: 15px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: all 0.2s; box-shadow: 0 4px 16px rgba(59,130,246,0.4); }
+    .episode-play-btn:hover { transform: scale(1.02); background: var(--blue2); }
+    .episode-play-btn svg { width: 20px; height: 20px; }
+    .episode-action-btn { background: rgba(255,255,255,0.05); border: 1px solid var(--border2); color: var(--text2); padding: 12px 20px; border-radius: 12px; font-size: 14px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.15s; font-family: inherit; }
+    .episode-action-btn:hover { background: rgba(255,255,255,0.08); color: var(--text); border-color: rgba(255,255,255,0.15); }
+    .episode-action-btn svg { width: 18px; height: 18px; }
+    .episode-action-btn.active { background: rgba(59,130,246,0.15); border-color: var(--blue); color: var(--blue); }
+    .episode-progress-section { padding: 0 32px 20px; }
+    .episode-progress-bar { height: 6px; background: var(--bg4); border-radius: 3px; overflow: hidden; margin-bottom: 8px; }
+    .episode-progress-fill { height: 100%; background: var(--blue); border-radius: 3px; transition: width 0.3s; }
+    .episode-progress-text { font-size: 13px; color: var(--text2); display: flex; justify-content: space-between; }
+    .episode-description { padding: 0 32px 32px; }
+    .episode-description-title { font-size: 18px; font-weight: 600; margin-bottom: 16px; }
+    .episode-description-content { font-size: 15px; line-height: 1.7; color: var(--text2); white-space: pre-wrap; }
+    .episode-description-content a { color: var(--blue); text-decoration: none; }
+    .episode-description-content a:hover { text-decoration: underline; }
+    .episode-bookmarks { padding: 0 32px 140px; }
+    .episode-bookmarks-title { font-size: 18px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .episode-bookmarks-list { display: flex; flex-direction: column; gap: 12px; }
+    .episode-bookmark-item { background: var(--bg3); border: 1px solid var(--border2); border-radius: 12px; padding: 16px; display: flex; align-items: center; gap: 16px; cursor: pointer; transition: all 0.15s; }
+    .episode-bookmark-item:hover { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.15); }
+    .episode-bookmark-time { font-size: 14px; font-weight: 600; color: var(--blue); white-space: nowrap; }
+    .episode-bookmark-note { flex: 1; font-size: 14px; color: var(--text2); }
+    .episode-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+    .episode-tag { background: rgba(255,255,255,0.05); border: 1px solid var(--border2); color: var(--text2); padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; }
 
     /* Back Button */
     .back-btn { background: rgba(255,255,255,0.05); border: 1px solid var(--border2); color: var(--text2); cursor: pointer; padding: 10px 16px; border-radius: 12px; display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500; font-family: inherit; transition: all 0.15s; }
@@ -1335,6 +1372,18 @@
       .show-hero, .source-hero { flex-direction: column; align-items: center; text-align: center; padding: 24px; }
       .show-hero-art, .source-hero-art { width: 160px; height: 160px; }
       .show-hero-title, .source-hero-title { font-size: 26px; }
+      .episode-hero { flex-direction: column; align-items: center; text-align: center; padding: 20px; }
+      .episode-hero-art { width: 180px; height: 180px; }
+      .episode-hero-info { padding-top: 16px; }
+      .episode-hero-title { font-size: 22px; }
+      .episode-hero-meta { justify-content: center; }
+      .episode-actions { justify-content: center; flex-wrap: wrap; padding: 16px 20px; }
+      .episode-play-btn { width: 100%; justify-content: center; }
+      .episode-action-btn { flex: 1; min-width: 100px; justify-content: center; }
+      .episode-description { padding: 0 20px 24px; }
+      .episode-bookmarks { padding: 0 20px 120px; }
+      .episode-progress-section { padding: 0 20px 16px; }
+      .episode-tags { justify-content: center; }
       .player { padding: 12px 16px; }
       .player-art { width: 48px; height: 48px; }
       .player-play { width: 44px; height: 44px; }
@@ -2769,6 +2818,7 @@
         <div class="podcast-inbox-list" id="podcastInboxList"></div>
       </div>
       <div class="show-page" id="showPage"></div>
+      <div class="episode-page" id="episodePage"></div>
     </div>
 
     <!-- ALL VIEW -->
@@ -5025,6 +5075,7 @@
     viewPrefs: {}, // { sourceId: 'list'|'table'|'cards'|'masonry' }
     currentSourcePage: null, // Currently viewing source page (news)
     currentShowPage: null, // Currently viewing show page (podcasts)
+    currentEpisodePage: null, // Currently viewing episode page (episode detail)
     bookmarks: {}, // { episodeId: [{ time, note, created }] }
     sleepTimer: null, // { endTime, intervalId, fadeIntervalId }
     speedPanelOpen: false,
@@ -5054,6 +5105,7 @@
     podcastInboxList: $('podcastInboxList'),
     podcastInboxContent: $('podcastInboxContent'),
     showPage: $('showPage'),
+    episodePage: $('episodePage'),
     player: $('player'), playerArt: $('playerArt'), playerTitle: $('playerTitle'),
     playerShow: $('playerShow'), pPlay: $('pPlay'), pPlayIcon: $('pPlayIcon'),
     pCur: $('pCur'), pDur: $('pDur'), pBar: $('pBar'), pFill: $('pFill'), pSpeed: $('pSpeed'), scrubTooltip: $('scrubTooltip'),
@@ -7204,6 +7256,141 @@
     renderPodcastSources(); // Update active state in sidebar
   };
 
+  // === EPISODE PAGE ===
+  const renderEpisodePage = (episodeId) => {
+    const ep = state.podcasts.find(p => p.id === episodeId);
+    if (!ep) return;
+
+    const show = state.feeds.find(f => f.id === ep.feedId);
+    const pr = state.progress[ep.id] || 0;
+    const pct = ep.duration ? (pr / ep.duration) * 100 : 0;
+    const done = pr >= ep.duration * 0.95;
+    const bookmarks = state.bookmarks[ep.id] || [];
+    const isPlaying = state.currentEp?.id === ep.id && state.playing;
+    const isDownloaded = ep.downloaded;
+
+    state.currentEpisodePage = episodeId;
+
+    // Hide inbox content and show page, show episode page
+    el.podcastInboxContent.style.display = 'none';
+    el.showPage.classList.remove('active');
+    el.episodePage.classList.add('active');
+
+    // Generate tags HTML
+    const tagsHtml = ep.tags && ep.tags.length > 0
+      ? `<div class="episode-tags">${ep.tags.map(tag => {
+          const tagInfo = getTagInfo(tag);
+          return `<span class="episode-tag">#${tagInfo.label.toLowerCase().replace(/\s+/g, '')}</span>`;
+        }).join('')}</div>`
+      : '';
+
+    // Generate bookmarks HTML
+    const bookmarksHtml = bookmarks.length > 0
+      ? `<div class="episode-bookmarks">
+          <div class="episode-bookmarks-title">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+            Bookmarks (${bookmarks.length})
+          </div>
+          <div class="episode-bookmarks-list">
+            ${bookmarks.map(b => `
+              <div class="episode-bookmark-item" data-time="${b.time}">
+                <span class="episode-bookmark-time">${fmtLong(b.time)}</span>
+                <span class="episode-bookmark-note">${b.note || 'No note'}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>`
+      : '';
+
+    el.episodePage.innerHTML = `
+      <div class="episode-hero">
+        <button class="back-btn" id="episodeBackBtn">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+          Back
+        </button>
+      </div>
+      <div class="episode-hero" style="padding-top:0">
+        <img class="episode-hero-art" src="${ep.image || show?.image || placeholderImg}" onerror="this.src='${placeholderImg}'">
+        <div class="episode-hero-info">
+          <div class="episode-hero-show" data-show="${ep.feedId}">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+            ${show?.name || 'Unknown Show'}
+          </div>
+          <div class="episode-hero-title">${ep.title}</div>
+          <div class="episode-hero-meta">
+            <span>
+              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              ${ep.date}
+            </span>
+            <span>
+              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+              ${fmtLong(ep.duration)}
+            </span>
+            ${done ? '<span style="color: var(--green);"><svg fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Played</span>' : ''}
+          </div>
+          ${tagsHtml}
+        </div>
+      </div>
+      ${pr > 0 ? `
+        <div class="episode-progress-section">
+          <div class="episode-progress-bar">
+            <div class="episode-progress-fill" style="width: ${pct}%"></div>
+          </div>
+          <div class="episode-progress-text">
+            <span>${fmtLong(pr)} listened</span>
+            <span>${done ? 'Completed' : fmtLong(ep.duration - pr) + ' remaining'}</span>
+          </div>
+        </div>
+      ` : ''}
+      <div class="episode-actions">
+        <button class="episode-play-btn" data-ep="${ep.id}">
+          ${isPlaying
+            ? '<svg fill="currentColor" viewBox="0 0 24 24"><path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/></svg> Pause'
+            : '<svg fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg> Play'}
+        </button>
+        <button class="episode-action-btn ${isDownloaded ? 'active' : ''}" data-dl="${ep.id}">
+          ${isDownloaded
+            ? '<svg fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Downloaded'
+            : '<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Download'}
+        </button>
+        <button class="episode-action-btn" id="episodeBookmarkBtn" data-ep="${ep.id}">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+          Add Bookmark
+        </button>
+      </div>
+      ${ep.desc ? `
+        <div class="episode-description">
+          <div class="episode-description-title">About this episode</div>
+          <div class="episode-description-content">${linkifyText(ep.desc)}</div>
+        </div>
+      ` : ''}
+      ${bookmarksHtml}
+    `;
+
+    // Setup lazy loading for images
+    requestAnimationFrame(() => {
+      el.episodePage.querySelectorAll('img[data-src]').forEach(img => ImageLoader.observe(img));
+    });
+  };
+
+  const closeEpisodePage = () => {
+    state.currentEpisodePage = null;
+    el.episodePage.classList.remove('active');
+    // If we came from show page, show it again, otherwise show inbox
+    if (state.currentShowPage) {
+      el.showPage.classList.add('active');
+    } else {
+      el.podcastInboxContent.style.display = 'flex';
+    }
+  };
+
+  // Helper to convert URLs in text to clickable links
+  const linkifyText = (text) => {
+    if (!text) return '';
+    const urlRegex = /(https?:\/\/[^\s<]+)/g;
+    return text.replace(urlRegex, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
+  };
+
   // === RENDER ALL - Social Media Feed Style ===
 
   // Render a single feed post in social media style
@@ -7476,8 +7663,13 @@
     const openBtn = e.target.closest('.feed-post-action[data-action="open"]');
 
     if (type === 'podcast') {
-      // For podcasts, always play
-      playEp(id);
+      // If play button clicked, play directly
+      if (playBtn) {
+        playEp(id);
+      } else {
+        // Otherwise navigate to episode page
+        renderEpisodePage(id);
+      }
     } else if (type === 'news') {
       // For news, open the article
       const art = state.articles.find(a => a.id === id);
@@ -8193,6 +8385,10 @@
     // Reset search scope when changing views (keep query)
     state.searchScope = null;
     updateSearchUI();
+    // Close any open detail pages when switching views
+    if (state.currentEpisodePage) closeEpisodePage();
+    if (state.currentShowPage) closeShowPage();
+    if (state.currentSourcePage) closeSourcePage();
     if (state.view === 'news') renderNews();
     if (state.view === 'podcasts') renderPodcasts();
     if (state.view === 'all') renderAll();
@@ -8343,7 +8539,7 @@
   };
 
   el.podcastInboxList.onclick = e => {
-    // Play button overlay click
+    // Play button overlay click - directly plays the episode
     const playBtn = e.target.closest('.spotify-ep-play-overlay');
     if (playBtn) {
       e.stopPropagation();
@@ -8358,17 +8554,11 @@
       return;
     }
 
-    // Episode item click - play episode
+    // Episode item click - navigate to episode page
     const item = e.target.closest('.spotify-ep');
     if (item) {
       const epId = item.dataset.ep;
-      // If already playing this episode, open expanded player
-      if (state.currentEp?.id === epId) {
-        el.expanded.classList.add('active');
-      } else {
-        playEp(epId);
-        renderPodcastInbox();
-      }
+      renderEpisodePage(epId);
     }
   };
 
@@ -8417,13 +8607,13 @@
       return;
     }
 
-    // Episode clicks (all view modes - list, card, masonry, table row)
+    // Episode clicks (all view modes - list, card, masonry, table row) - navigate to episode page
     const epEl = e.target.closest('.episode, .episode-card, .episode-masonry, tr[data-ep]');
     if (epEl && epEl.dataset.ep) {
-      playEp(epEl.dataset.ep);
+      renderEpisodePage(epEl.dataset.ep);
     }
   };
-  
+
   el.showPage.onclick = e => {
     // Back button
     const backBtn = e.target.closest('#showBackBtn');
@@ -8481,13 +8671,98 @@
       return;
     }
 
-    // Episode clicks (all view modes - list, card, masonry, table row)
+    // Episode clicks (all view modes - list, card, masonry, table row) - navigate to episode page
     const epEl = e.target.closest('.episode, .episode-card, .episode-masonry, tr[data-ep]');
     if (epEl && epEl.dataset.ep) {
-      playEp(epEl.dataset.ep);
+      renderEpisodePage(epEl.dataset.ep);
     }
   };
-  
+
+  // Episode page event handlers
+  el.episodePage.onclick = e => {
+    // Back button
+    const backBtn = e.target.closest('#episodeBackBtn');
+    if (backBtn) {
+      closeEpisodePage();
+      return;
+    }
+
+    // Show name click - navigate to show page
+    const showNameEl = e.target.closest('.episode-hero-show');
+    if (showNameEl) {
+      const showId = showNameEl.dataset.show;
+      if (showId) {
+        closeEpisodePage();
+        renderShowPage(showId);
+      }
+      return;
+    }
+
+    // Play button
+    const playBtn = e.target.closest('.episode-play-btn');
+    if (playBtn) {
+      const epId = playBtn.dataset.ep;
+      if (state.currentEp?.id === epId) {
+        togglePlay();
+      } else {
+        playEp(epId);
+      }
+      // Re-render to update play/pause button state
+      renderEpisodePage(epId);
+      return;
+    }
+
+    // Download button
+    const dlBtn = e.target.closest('.episode-action-btn[data-dl]');
+    if (dlBtn) {
+      const id = dlBtn.dataset.dl;
+      const p = state.podcasts.find(x => x.id === id);
+      if (p) {
+        if (p.downloaded) {
+          removeDownload(id);
+        } else {
+          startDownload(id);
+        }
+        // Re-render to update download button state
+        setTimeout(() => renderEpisodePage(id), 100);
+      }
+      return;
+    }
+
+    // Add bookmark button
+    const bookmarkBtn = e.target.closest('#episodeBookmarkBtn');
+    if (bookmarkBtn) {
+      const epId = bookmarkBtn.dataset.ep;
+      // If the episode is playing, add bookmark at current time
+      if (state.currentEp?.id === epId) {
+        addBookmark();
+        toast('Bookmark saved');
+        renderEpisodePage(epId);
+      } else {
+        // If not playing, start playing first then user can add bookmark
+        toast('Start playing to add a bookmark');
+      }
+      return;
+    }
+
+    // Bookmark item click - seek to that time
+    const bookmarkItem = e.target.closest('.episode-bookmark-item');
+    if (bookmarkItem) {
+      const time = parseFloat(bookmarkItem.dataset.time);
+      const epId = state.currentEpisodePage;
+      // If this episode is currently loaded, seek to time
+      if (state.currentEp?.id === epId) {
+        seekTo(time);
+      } else {
+        // Play the episode first
+        playEp(epId);
+        // Seek after a short delay to allow audio to load
+        setTimeout(() => seekTo(time), 500);
+      }
+      return;
+    }
+  };
+
   el.pPlay.onclick = togglePlay;
   el.expPlay.onclick = togglePlay;
   el.pSpeed.onclick = cycleSpeed;
