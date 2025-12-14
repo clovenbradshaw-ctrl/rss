@@ -2782,18 +2782,15 @@
     ]);
   };
 
-  const fetchWithProxy = async (url, proxyIndex = 0) => {
-    if (proxyIndex >= CORS_PROXIES.length) {
-      throw new Error(`All CORS proxies failed for: ${url}`);
-    }
+  const fetchWithProxy = async (url) => {
+    // Try all proxies in parallel for faster response
+    const proxyAttempts = CORS_PROXIES.map(async (proxyFn, index) => {
+      const proxyUrl = proxyFn(url);
+      console.log(`Trying proxy ${index}:`, proxyUrl);
 
-    const proxyUrl = CORS_PROXIES[proxyIndex](url);
-    console.log('Trying proxy:', proxyUrl);
-
-    try {
       const response = await fetchWithTimeout(proxyUrl, {
         headers: { 'Accept': 'application/rss+xml, application/xml, text/xml, */*' }
-      }, 20000);
+      }, 12000); // Shorter timeout since we're racing
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
@@ -2808,13 +2805,17 @@
       // Basic validation that this looks like XML
       if (!text.trim().startsWith('<?xml') && !text.trim().startsWith('<rss') && !text.trim().startsWith('<feed')) {
         console.warn('Response does not look like XML:', text.substring(0, 100));
-        // Still try to use it, might be valid
       }
 
       return text;
+    });
+
+    // Return first successful result
+    try {
+      const result = await Promise.any(proxyAttempts);
+      return result;
     } catch (e) {
-      console.warn(`Proxy ${proxyIndex} failed:`, e.message);
-      return fetchWithProxy(url, proxyIndex + 1);
+      throw new Error(`All CORS proxies failed for: ${url}`);
     }
   };
 
@@ -3533,10 +3534,18 @@
     }
   };
 
-  const refreshAllFeeds = async () => {
+  const refreshAllFeeds = async (silent = false) => {
     if (state.refreshing) return;
     state.refreshing = true;
-    toast('Refreshing feeds...');
+
+    // Add spinning animation to refresh button
+    const refreshBtn = $('refreshBtn');
+    if (refreshBtn) {
+      refreshBtn.style.animation = 'spin 1s linear infinite';
+      refreshBtn.disabled = true;
+    }
+
+    if (!silent) toast('Refreshing feeds...');
 
     const results = await Promise.allSettled(
       state.feeds.map(feed => fetchAndParseFeed(feed))
@@ -3546,6 +3555,13 @@
     const failed = results.length - success;
 
     state.refreshing = false;
+
+    // Stop spinning animation
+    if (refreshBtn) {
+      refreshBtn.style.animation = '';
+      refreshBtn.disabled = false;
+    }
+
     save();
     renderNewsSources();
     renderCategories();
@@ -3556,7 +3572,7 @@
 
     if (failed > 0) {
       toast(`Refreshed ${success} feeds, ${failed} failed`);
-    } else if (success > 0) {
+    } else if (success > 0 && !silent) {
       toast(`Refreshed ${success} feeds`);
     }
   };
@@ -6153,6 +6169,28 @@
     console.log('  Memory.clear() - Clear local behavior logs');
     console.log('[Tags] Content Tags:', Object.keys(CONTENT_TAGS).length, 'categories available for auto-tagging');
     console.log('[Archive] Archived:', state.archivedArticles.length, 'articles,', state.archivedPodcasts.length, 'episodes preserved');
+
+    // Auto-refresh feeds on startup if we have feeds but limited cached content
+    const podcastFeeds = state.feeds.filter(f => f.type === 'podcast');
+    const newsFeeds = state.feeds.filter(f => f.type !== 'podcast');
+    const hasPodcastFeeds = podcastFeeds.length > 0;
+    const hasNewsFeeds = newsFeeds.length > 0;
+    const hasCachedPodcasts = state.podcasts.length > 0;
+    const hasCachedArticles = state.articles.length > 0;
+
+    // Show loading state if we have feeds but no cached content
+    if (hasPodcastFeeds && !hasCachedPodcasts && state.view === 'podcasts') {
+      LoadingStates.show(el.podcastInboxList, 'episode', 6);
+    }
+    if (hasNewsFeeds && !hasCachedArticles && state.view === 'news') {
+      LoadingStates.show(el.newsList, 'article', 6);
+    }
+
+    // Auto-refresh if we have feeds - fetch new content in background
+    if (state.feeds.length > 0) {
+      console.log('[Init] Auto-refreshing', state.feeds.length, 'feeds...');
+      refreshAllFeeds(true).catch(e => console.error('[Init] Background refresh failed:', e));
+    }
   };
 
   init();
