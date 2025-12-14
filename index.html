@@ -5219,7 +5219,7 @@
       let elements = parent.getElementsByTagNameNS(itunesNS, 'image');
       if (elements.length > 0) {
         const href = elements[0].getAttribute('href');
-        if (href) return href;
+        if (href) { console.log('[getItunesImage] Method 1 (NS) succeeded'); return href; }
       }
     } catch(e) {}
 
@@ -5228,7 +5228,7 @@
       let elements = parent.getElementsByTagName('itunes:image');
       if (elements.length > 0) {
         const href = elements[0].getAttribute('href');
-        if (href) return href;
+        if (href) { console.log('[getItunesImage] Method 2 (colon) succeeded'); return href; }
       }
     } catch(e) {}
 
@@ -5237,7 +5237,7 @@
       const elements = parent.getElementsByTagNameNS('*', 'image');
       for (let i = 0; i < elements.length; i++) {
         const href = elements[i].getAttribute('href');
-        if (href) return href;
+        if (href) { console.log('[getItunesImage] Method 3 (wildcard NS) succeeded'); return href; }
       }
     } catch(e) {}
 
@@ -5245,7 +5245,7 @@
     const imageEls = parent.getElementsByTagName('image');
     for (let i = 0; i < imageEls.length; i++) {
       const href = imageEls[i].getAttribute('href');
-      if (href) return href;
+      if (href) { console.log('[getItunesImage] Method 4 (plain image) succeeded'); return href; }
     }
 
     // FALLBACK: Find ANY element with href attribute that looks like an image URL
@@ -5258,7 +5258,7 @@
         // Only check elements that look like image tags
         if (!tagName.includes('image') && tagName !== 'logo' && tagName !== 'icon') continue;
         const href = el.getAttribute('href');
-        if (href) return href;
+        if (href) { console.log('[getItunesImage] Method 5 (tagName includes image) succeeded:', tagName); return href; }
       }
     } catch(e) {}
 
@@ -5268,11 +5268,13 @@
       for (let i = 0; i < allElements.length; i++) {
         const href = allElements[i].getAttribute('href');
         if (href && /\.(jpg|jpeg|png|gif|webp)/i.test(href)) {
+          console.log('[getItunesImage] Method 6 (href ends with image ext) succeeded');
           return href;
         }
       }
     } catch(e) {}
 
+    console.log('[getItunesImage] All methods failed');
     return '';
   };
 
@@ -5631,13 +5633,17 @@
 
       // Get episode image - try multiple approaches
       let image = getItunesImage(item);
+      const itunesImg = image;
       if (!image) {
         image = extractImage(item);
       }
+      const extractedImg = image;
       // Fallback to channel image
       if (!image) {
         image = channelImage;
       }
+      // Debug logging for image extraction
+      console.log(`[Image] Episode "${title.slice(0,30)}...": itunes=${itunesImg ? 'YES' : 'NO'}, extracted=${extractedImg ? 'YES' : 'NO'}, final=${image ? image.slice(0,50) + '...' : 'NONE'}`);
 
       // Create stable GUID using feed URL and audio URL/title
       // This ensures the same episode always has the same ID even after feed deletion/re-add
