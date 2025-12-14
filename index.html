@@ -911,12 +911,14 @@
     .feed-nav-btn .feed-nav-icon { font-size: 16px; }
     .feed-nav-btn .feed-nav-count { font-size: 11px; background: var(--bg4); padding: 2px 8px; border-radius: 10px; color: var(--text3); }
     .feed-nav-btn.active .feed-nav-count { background: rgba(59,130,246,0.2); color: var(--blue); }
+    .feed-nav-add-btn { background: var(--blue); border: none; color: #fff; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; transition: all 0.15s; box-shadow: 0 2px 6px rgba(59,130,246,0.3); display: inline-flex; align-items: center; justify-content: center; margin-left: auto; }
+    .feed-nav-add-btn:hover { background: var(--blue2); transform: scale(1.05); }
 
     /* Hide mobile view toggle on desktop */
     .mobile-view-toggle { display: none; }
 
     /* All view options on desktop */
-    .all-view-options { display: flex; gap: 4px; margin-left: auto; padding: 8px 0; }
+    .all-view-options { display: flex; gap: 4px; padding: 8px 0; }
 
     .feed-container { flex: 1; overflow-y: auto; display: flex; justify-content: center; background: var(--bg); }
     .feed-scroll { max-width: 600px; width: 100%; padding: 0; padding-bottom: 140px; }
@@ -2567,7 +2569,6 @@
       /* View toggle button in feed nav */
       .mobile-view-toggle {
         display: flex;
-        margin-left: auto;
         background: var(--bg3);
         border: none;
         color: var(--text2);
@@ -2581,6 +2582,13 @@
 
       .mobile-view-toggle:active {
         background: var(--bg4);
+      }
+
+      /* Add button in All view - larger touch target on mobile */
+      .feed-nav-add-btn {
+        width: 42px;
+        height: 42px;
+        margin-right: 8px;
       }
 
       /* === COMPACT MODE - More preview text, smaller elements === */
@@ -3799,6 +3807,9 @@
           <span class="feed-nav-icon"><i class="ph ph-books"></i></span>
           <span>All</span>
           <span class="feed-nav-count" id="feedCountAll">0</span>
+        </button>
+        <button class="feed-nav-add-btn" id="addAllViewBtn" title="Add Feed">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
         </button>
         <button class="mobile-view-toggle" id="mobileViewToggle" title="Change card layout">
           <i class="ph ph-rows" id="mobileViewIcon"></i>
@@ -10677,6 +10688,7 @@
   $('refreshBtn').onclick = () => refreshAllFeeds();
   $('addBtn').onclick = () => el.modal.classList.add('active');
   $('addNewsBtn').onclick = () => { $('tNews').click(); el.modal.classList.add('active'); };
+  $('addAllViewBtn').onclick = () => el.modal.classList.add('active');
   $('modalClose').onclick = () => el.modal.classList.remove('active');
   el.modal.onclick = e => { if (e.target === el.modal) el.modal.classList.remove('active'); };
   $('tNews').onclick = () => { state.feedType = 'news'; $('tNews').classList.add('active'); $('tPodcast').classList.remove('active'); };
