@@ -121,8 +121,10 @@
     .news-sidebar { width: 260px; background: var(--bg2); border-right: 1px solid var(--border2); display: flex; flex-direction: column; }
     .sidebar-header { padding: 16px 20px; border-bottom: 1px solid var(--border2); display: flex; align-items: center; justify-content: space-between; }
     .sidebar-header h2 { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text2); }
-    .add-btn { background: var(--blue); border: none; color: #fff; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 18px; transition: all 0.15s; box-shadow: 0 2px 6px rgba(59,130,246,0.3); }
+    .add-btn { background: var(--blue); border: none; color: #fff; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 18px; transition: all 0.15s; box-shadow: 0 2px 6px rgba(59,130,246,0.3); display: inline-flex; align-items: center; justify-content: center; }
     .add-btn:hover { background: var(--blue2); transform: scale(1.05); }
+    .add-btn.discover-btn { margin-right: 8px; font-size: 14px; }
+    .sidebar-header .add-btn + .add-btn { margin-left: 0; }
     .sidebar-content { flex: 1; overflow-y: auto; padding: 12px; }
 
     .source-item { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 12px; cursor: pointer; margin-bottom: 4px; transition: all 0.15s ease-out; }
@@ -1275,6 +1277,45 @@
     .sleep-timer-cancel { background: rgba(255,255,255,0.05); border: 1px solid var(--border2); border-radius: 10px; padding: 10px 16px; color: var(--text); cursor: pointer; font-size: 14px; font-family: inherit; transition: all 0.15s; }
     .sleep-timer-cancel:hover { background: rgba(255,255,255,0.1); }
     .sleep-badge { position: absolute; top: -4px; right: -4px; background: var(--blue); color: #fff; font-size: 9px; font-weight: 700; padding: 3px 6px; border-radius: 10px; min-width: 18px; text-align: center; }
+
+    /* Podcast Search Modal */
+    .podcast-search-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 350; backdrop-filter: blur(4px); }
+    .podcast-search-modal.active { display: flex; }
+    .podcast-search-box { background: var(--bg3); border-radius: 20px; width: 90%; max-width: 500px; max-height: 85vh; border: 1px solid var(--border2); box-shadow: 0 20px 60px rgba(0,0,0,0.5); display: flex; flex-direction: column; }
+    .podcast-search-header { padding: 20px 24px; border-bottom: 1px solid var(--border2); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+    .podcast-search-header h2 { font-size: 20px; font-weight: 600; letter-spacing: -0.02em; display: flex; align-items: center; gap: 10px; }
+    .podcast-search-close { background: rgba(255,255,255,0.05); border: none; color: var(--text2); cursor: pointer; padding: 8px; border-radius: 50%; transition: all 0.15s; }
+    .podcast-search-close:hover { background: rgba(255,255,255,0.1); color: var(--text); }
+    .podcast-search-body { padding: 24px; overflow-y: auto; flex: 1; }
+    .podcast-search-input-wrap { display: flex; gap: 8px; margin-bottom: 20px; }
+    .podcast-search-input { flex: 1; padding: 14px 16px; background: var(--bg4); border: 1px solid var(--border2); border-radius: 12px; color: var(--text); font-size: 15px; font-family: inherit; transition: all 0.15s; }
+    .podcast-search-input:focus { outline: none; border-color: var(--blue); background: var(--bg); }
+    .podcast-search-btn { padding: 14px 20px; background: var(--blue); border: none; border-radius: 12px; color: #fff; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.15s; display: flex; align-items: center; gap: 8px; }
+    .podcast-search-btn:hover { background: var(--blue2); }
+    .podcast-search-btn:disabled { background: var(--bg4); color: var(--text3); cursor: not-allowed; }
+    .podcast-search-results { display: flex; flex-direction: column; gap: 12px; }
+    .podcast-search-empty { text-align: center; padding: 40px 20px; color: var(--text2); }
+    .podcast-search-empty i { font-size: 48px; opacity: 0.3; margin-bottom: 12px; display: block; }
+    .podcast-search-loading { text-align: center; padding: 40px 20px; color: var(--text2); }
+    .podcast-search-loading i { font-size: 32px; animation: spin 1s linear infinite; display: block; margin-bottom: 12px; }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .podcast-result-item { display: flex; gap: 14px; padding: 14px; background: var(--bg4); border-radius: 14px; border: 1px solid var(--border2); transition: all 0.15s; }
+    .podcast-result-item:hover { border-color: rgba(255,255,255,0.15); }
+    .podcast-result-art { width: 72px; height: 72px; border-radius: 12px; background: var(--bg3); flex-shrink: 0; overflow: hidden; }
+    .podcast-result-art img { width: 100%; height: 100%; object-fit: cover; }
+    .podcast-result-info { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
+    .podcast-result-title { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .podcast-result-author { font-size: 13px; color: var(--text2); margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .podcast-result-meta { font-size: 12px; color: var(--text3); display: flex; gap: 12px; flex-wrap: wrap; }
+    .podcast-result-actions { display: flex; align-items: center; flex-shrink: 0; }
+    .podcast-add-btn { padding: 10px 16px; background: var(--blue); border: none; border-radius: 10px; color: #fff; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.15s; display: flex; align-items: center; gap: 6px; }
+    .podcast-add-btn:hover { background: var(--blue2); }
+    .podcast-add-btn:disabled { background: var(--bg3); color: var(--text3); cursor: not-allowed; }
+    .podcast-add-btn.added { background: rgba(34,197,94,0.2); color: #22c55e; }
+    .podcast-search-status { font-size: 12px; color: var(--text2); margin-bottom: 12px; }
+    .podcast-search-powered { font-size: 11px; color: var(--text3); text-align: center; margin-top: 16px; display: flex; align-items: center; justify-content: center; gap: 6px; }
+    .podcast-search-powered a { color: var(--blue); text-decoration: none; }
+    .podcast-search-powered a:hover { text-decoration: underline; }
 
     /* Settings Modal */
     .settings-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 350; backdrop-filter: blur(4px); }
@@ -2811,7 +2852,7 @@
     <!-- PODCAST VIEW -->
     <div class="podcast-view" id="podcastView">
       <aside class="podcast-sidebar">
-        <div class="sidebar-header"><h2>Shows</h2><button class="add-btn" id="addPodcastBtn">+</button></div>
+        <div class="sidebar-header"><h2>Shows</h2><button class="add-btn discover-btn" id="discoverPodcastBtn" title="Discover Podcasts"><i class="ph ph-magnifying-glass"></i></button><button class="add-btn" id="addPodcastBtn" title="Add by URL">+</button></div>
         <div class="sidebar-content" id="podcastSources"></div>
       </aside>
       <div class="podcast-inbox-content" id="podcastInboxContent">
@@ -3111,6 +3152,32 @@
           <p style="margin-top:12px">No snapshots yet</p>
           <p style="font-size:13px">Create a snapshot to save your current state</p>
         </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Podcast Search Modal -->
+<div class="podcast-search-modal" id="podcastSearchModal">
+  <div class="podcast-search-box">
+    <div class="podcast-search-header">
+      <h2><i class="ph ph-magnifying-glass"></i> Discover Podcasts</h2>
+      <button class="podcast-search-close" id="podcastSearchClose"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 5L5 15M5 5l10 10"/></svg></button>
+    </div>
+    <div class="podcast-search-body">
+      <div class="podcast-search-input-wrap">
+        <input type="text" class="podcast-search-input" id="podcastSearchInput" placeholder="Search by name, author, or topic...">
+        <button class="podcast-search-btn" id="podcastSearchBtn"><i class="ph ph-magnifying-glass"></i> Search</button>
+      </div>
+      <div id="podcastSearchStatus" class="podcast-search-status" style="display:none"></div>
+      <div id="podcastSearchResults" class="podcast-search-results">
+        <div class="podcast-search-empty">
+          <i class="ph ph-microphone-stage"></i>
+          <p>Search for podcasts to add to your library</p>
+        </div>
+      </div>
+      <div class="podcast-search-powered">
+        Powered by <a href="https://podcastindex.org" target="_blank" rel="noopener">PodcastIndex.org</a>
       </div>
     </div>
   </div>
@@ -5143,7 +5210,11 @@
     activityStatSavings: $('activityStatSavings'), cleanupStatus: $('cleanupStatus'),
     // Snapshot modal
     snapshotModal: $('snapshotModal'), snapshotModalClose: $('snapshotModalClose'),
-    snapshotList: $('snapshotList'), createSnapshotBtn: $('createSnapshotBtn')
+    snapshotList: $('snapshotList'), createSnapshotBtn: $('createSnapshotBtn'),
+    // Podcast search modal
+    podcastSearchModal: $('podcastSearchModal'), podcastSearchClose: $('podcastSearchClose'),
+    podcastSearchInput: $('podcastSearchInput'), podcastSearchBtn: $('podcastSearchBtn'),
+    podcastSearchResults: $('podcastSearchResults'), podcastSearchStatus: $('podcastSearchStatus')
   };
   
   // === UTILS ===
@@ -5407,6 +5478,105 @@
     url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
     url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`
   ];
+
+  // === PODCASTINDEX API ===
+  const PodcastIndex = {
+    API_KEY: 'YEAFNWVNMD4HTBNFUPM3',
+    API_SECRET: '', // Add your secret here if needed
+    BASE_URL: 'https://api.podcastindex.org/api/1.0',
+    USER_AGENT: 'BRRST-PodcastApp/1.0',
+
+    // SHA1 hash using Web Crypto API
+    async sha1(message) {
+      const msgBuffer = new TextEncoder().encode(message);
+      const hashBuffer = await crypto.subtle.digest('SHA-1', msgBuffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    },
+
+    // Generate auth headers for PodcastIndex API
+    async getAuthHeaders() {
+      const ts = Math.floor(Date.now() / 1000);
+      const authString = this.API_KEY + this.API_SECRET + ts.toString();
+      const authHash = await this.sha1(authString);
+      return {
+        'User-Agent': this.USER_AGENT,
+        'X-Auth-Key': this.API_KEY,
+        'X-Auth-Date': ts.toString(),
+        'Authorization': authHash
+      };
+    },
+
+    // Search podcasts by term
+    async searchByTerm(query, max = 20) {
+      try {
+        const headers = await this.getAuthHeaders();
+        const url = `${this.BASE_URL}/search/byterm?q=${encodeURIComponent(query)}&max=${max}`;
+
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: headers
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('[PodcastIndex] API error:', response.status, errorText);
+          throw new Error(`API error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('[PodcastIndex] Search results:', data);
+        return data;
+      } catch (error) {
+        console.error('[PodcastIndex] Search failed:', error);
+        throw error;
+      }
+    },
+
+    // Get podcast by feed URL
+    async getByFeedUrl(feedUrl) {
+      try {
+        const headers = await this.getAuthHeaders();
+        const url = `${this.BASE_URL}/podcasts/byfeedurl?url=${encodeURIComponent(feedUrl)}`;
+
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: headers
+        });
+
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status}`);
+        }
+
+        return await response.json();
+      } catch (error) {
+        console.error('[PodcastIndex] Get by URL failed:', error);
+        throw error;
+      }
+    },
+
+    // Get trending podcasts
+    async getTrending(max = 10, lang = 'en') {
+      try {
+        const headers = await this.getAuthHeaders();
+        const url = `${this.BASE_URL}/podcasts/trending?max=${max}&lang=${lang}`;
+
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: headers
+        });
+
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status}`);
+        }
+
+        return await response.json();
+      } catch (error) {
+        console.error('[PodcastIndex] Get trending failed:', error);
+        throw error;
+      }
+    }
+  };
 
   const fetchWithTimeout = (url, options = {}, timeout = 15000) => {
     return Promise.race([
@@ -8324,6 +8494,10 @@
           <div class="drawer-item-icon"><i class="ph ph-plus"></i></div>
           <span class="drawer-item-name">Add Feed</span>
         </div>
+        <div class="drawer-item" id="drawerDiscoverPodcasts">
+          <div class="drawer-item-icon"><i class="ph ph-magnifying-glass"></i></div>
+          <span class="drawer-item-name">Discover Podcasts</span>
+        </div>
         <div class="drawer-item" id="drawerRefresh">
           <div class="drawer-item-icon"><i class="ph ph-arrows-clockwise"></i></div>
           <span class="drawer-item-name">Refresh All</span>
@@ -8566,6 +8740,11 @@
   document.getElementById('addPodcastBtn').onclick = () => {
     document.getElementById('tPodcast').click();
     el.modal.classList.add('active');
+  };
+
+  // Discover podcasts button in sidebar
+  document.getElementById('discoverPodcastBtn').onclick = () => {
+    openPodcastSearch();
   };
 
   // Legacy podcastContent handler for show page elements (still needed for show page)
@@ -9250,6 +9429,11 @@
       el.modal.classList.add('active');
       return;
     }
+    if (item.id === 'drawerDiscoverPodcasts') {
+      closeDrawer();
+      openPodcastSearch();
+      return;
+    }
     if (item.id === 'drawerRefresh') {
       closeDrawer();
       refreshAllFeeds();
@@ -9398,6 +9582,167 @@
 
   // Expose snapshot modal opener globally
   window.openSnapshotModal = openSnapshotModal;
+
+  // === PODCAST SEARCH MODAL ===
+  let podcastSearchResults = []; // Store current search results
+
+  const renderPodcastSearchResults = (podcasts) => {
+    if (!podcasts || podcasts.length === 0) {
+      el.podcastSearchResults.innerHTML = `
+        <div class="podcast-search-empty">
+          <i class="ph ph-microphone-stage"></i>
+          <p>No podcasts found. Try a different search term.</p>
+        </div>`;
+      return;
+    }
+
+    // Check which podcasts are already subscribed
+    const subscribedUrls = new Set(state.feeds.map(f => f.url.toLowerCase()));
+
+    el.podcastSearchResults.innerHTML = podcasts.map((podcast, index) => {
+      const isSubscribed = subscribedUrls.has(podcast.url?.toLowerCase()) ||
+                          subscribedUrls.has(podcast.originalUrl?.toLowerCase());
+      const episodeCount = podcast.episodeCount || 0;
+      const lastUpdate = podcast.lastUpdateTime ? new Date(podcast.lastUpdateTime * 1000).toLocaleDateString() : '';
+
+      return `
+        <div class="podcast-result-item" data-index="${index}">
+          <div class="podcast-result-art">
+            <img src="${podcast.image || podcast.artwork || placeholderImg}" alt="${podcast.title}" onerror="this.src='${placeholderImg}'">
+          </div>
+          <div class="podcast-result-info">
+            <div class="podcast-result-title" title="${podcast.title}">${podcast.title}</div>
+            <div class="podcast-result-author" title="${podcast.author || podcast.ownerName || ''}">${podcast.author || podcast.ownerName || 'Unknown'}</div>
+            <div class="podcast-result-meta">
+              ${episodeCount ? `<span>${episodeCount} episodes</span>` : ''}
+              ${lastUpdate ? `<span>Updated ${lastUpdate}</span>` : ''}
+            </div>
+          </div>
+          <div class="podcast-result-actions">
+            <button class="podcast-add-btn ${isSubscribed ? 'added' : ''}" data-index="${index}" ${isSubscribed ? 'disabled' : ''}>
+              <i class="ph ph-${isSubscribed ? 'check' : 'plus'}"></i>
+              ${isSubscribed ? 'Added' : 'Add'}
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  };
+
+  const searchPodcasts = async (query) => {
+    if (!query.trim()) return;
+
+    el.podcastSearchBtn.disabled = true;
+    el.podcastSearchStatus.style.display = 'block';
+    el.podcastSearchStatus.textContent = 'Searching...';
+    el.podcastSearchResults.innerHTML = `
+      <div class="podcast-search-loading">
+        <i class="ph ph-spinner"></i>
+        <p>Searching for podcasts...</p>
+      </div>`;
+
+    try {
+      const result = await PodcastIndex.searchByTerm(query);
+      podcastSearchResults = result.feeds || [];
+
+      el.podcastSearchStatus.textContent = `Found ${podcastSearchResults.length} podcast${podcastSearchResults.length === 1 ? '' : 's'}`;
+      renderPodcastSearchResults(podcastSearchResults);
+    } catch (error) {
+      console.error('[PodcastSearch] Error:', error);
+      el.podcastSearchStatus.textContent = 'Search failed. Please try again.';
+      el.podcastSearchResults.innerHTML = `
+        <div class="podcast-search-empty">
+          <i class="ph ph-warning-circle"></i>
+          <p>Failed to search. Please check your connection and try again.</p>
+        </div>`;
+    } finally {
+      el.podcastSearchBtn.disabled = false;
+    }
+  };
+
+  const addPodcastFromSearch = async (index) => {
+    const podcast = podcastSearchResults[index];
+    if (!podcast) return;
+
+    const feedUrl = podcast.url || podcast.originalUrl;
+    if (!feedUrl) {
+      toast('No feed URL available');
+      return;
+    }
+
+    // Check if already subscribed
+    const existingFeed = state.feeds.find(f =>
+      f.url.toLowerCase() === feedUrl.toLowerCase()
+    );
+    if (existingFeed) {
+      toast('Already subscribed to this podcast');
+      return;
+    }
+
+    // Update button state immediately
+    const btn = el.podcastSearchResults.querySelector(`button[data-index="${index}"]`);
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<i class="ph ph-spinner"></i> Adding...';
+    }
+
+    try {
+      // Add the feed using existing addFeed function
+      await addFeed(
+        feedUrl,
+        podcast.title,
+        'podcast',
+        podcast.categories?.[0]?.name || 'Podcasts',
+        podcast.author || podcast.ownerName || ''
+      );
+
+      // Update button to show success
+      if (btn) {
+        btn.classList.add('added');
+        btn.innerHTML = '<i class="ph ph-check"></i> Added';
+      }
+    } catch (error) {
+      console.error('[PodcastSearch] Failed to add podcast:', error);
+      toast('Failed to add podcast');
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="ph ph-plus"></i> Add';
+      }
+    }
+  };
+
+  const openPodcastSearch = () => {
+    el.podcastSearchModal.classList.add('active');
+    el.podcastSearchInput.focus();
+  };
+
+  const closePodcastSearch = () => {
+    el.podcastSearchModal.classList.remove('active');
+  };
+
+  // Podcast search modal event handlers
+  el.podcastSearchClose.onclick = closePodcastSearch;
+  el.podcastSearchModal.onclick = e => { if (e.target === el.podcastSearchModal) closePodcastSearch(); };
+
+  el.podcastSearchBtn.onclick = () => searchPodcasts(el.podcastSearchInput.value);
+  el.podcastSearchInput.onkeydown = e => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      searchPodcasts(el.podcastSearchInput.value);
+    }
+  };
+
+  // Handle clicks on add buttons in search results
+  el.podcastSearchResults.onclick = e => {
+    const btn = e.target.closest('.podcast-add-btn');
+    if (btn && !btn.disabled) {
+      const index = parseInt(btn.dataset.index);
+      addPodcastFromSearch(index);
+    }
+  };
+
+  // Expose podcast search modal opener globally
+  window.openPodcastSearch = openPodcastSearch;
 
   // Speed Panel
   el.pSpeed.onclick = (e) => { e.stopPropagation(); toggleSpeedPanel(); };
