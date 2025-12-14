@@ -4355,6 +4355,210 @@
   };
   window.StateSync = StateSync;
 
+  // === FEED SCANNER - Detect new feeds from other devices ===
+  const FeedScanner = {
+    scanInterval: 30000, // Scan every 30 seconds
+    intervalId: null,
+    scanning: false,
+    lastScanTime: 0,
+    minScanGap: 10000, // Minimum 10 seconds between scans
+
+    // Start periodic scanning
+    start() {
+      if (this.intervalId) return;
+
+      console.log('[FeedScanner] Starting periodic scan (every', this.scanInterval / 1000, 'seconds)');
+
+      // Do initial scan after a short delay (let app fully load first)
+      setTimeout(() => this.scan(), 3000);
+
+      // Set up periodic scanning
+      this.intervalId = setInterval(() => this.scan(), this.scanInterval);
+
+      // Scan when tab becomes visible (user returns to app)
+      document.addEventListener('visibilitychange', this._onVisibilityChange.bind(this));
+    },
+
+    // Stop scanning
+    stop() {
+      if (this.intervalId) {
+        clearInterval(this.intervalId);
+        this.intervalId = null;
+      }
+      document.removeEventListener('visibilitychange', this._onVisibilityChange.bind(this));
+      console.log('[FeedScanner] Stopped');
+    },
+
+    // Handle visibility change - scan when user returns to tab
+    _onVisibilityChange() {
+      if (document.visibilityState === 'visible') {
+        // Only scan if enough time has passed since last scan
+        const timeSinceLastScan = Date.now() - this.lastScanTime;
+        if (timeSinceLastScan > this.minScanGap) {
+          console.log('[FeedScanner] Tab visible, checking for new feeds...');
+          this.scan();
+        }
+      }
+    },
+
+    // Scan for new feeds from the server
+    async scan() {
+      if (this.scanning) return;
+      if (!StateSync.endpoint) return;
+
+      this.scanning = true;
+      this.lastScanTime = Date.now();
+
+      try {
+        const serverState = await StateSync.fetchState();
+
+        if (!serverState || !serverState.data || !serverState.data.feeds) {
+          this.scanning = false;
+          return;
+        }
+
+        const serverFeeds = serverState.data.feeds;
+        const localFeedUrls = new Set(state.feeds.map(f => f.url));
+        const serverFeedUrls = new Set(serverFeeds.map(f => f.url));
+
+        // Find feeds on server that we don't have locally
+        const newFeeds = serverFeeds.filter(sf => !localFeedUrls.has(sf.url));
+
+        // Find feeds we have locally that were removed on server
+        const removedFeeds = state.feeds.filter(lf => !serverFeedUrls.has(lf.url));
+
+        if (newFeeds.length === 0 && removedFeeds.length === 0) {
+          // Also sync progress and bookmarks even if no feed changes
+          const hasProgressChanges = this._mergeProgress(serverState.data.progress);
+          const hasBookmarkChanges = this._mergeBookmarks(serverState.data.bookmarks);
+
+          if (hasProgressChanges || hasBookmarkChanges) {
+            save();
+          }
+
+          this.scanning = false;
+          return;
+        }
+
+        console.log('[FeedScanner] Found', newFeeds.length, 'new feeds,', removedFeeds.length, 'removed feeds');
+
+        // Add new feeds from other devices
+        for (const serverFeed of newFeeds) {
+          console.log('[FeedScanner] Adding new feed from other device:', serverFeed.name || serverFeed.url);
+
+          // Create local feed object
+          const feed = {
+            id: serverFeed.id || GUID.forFeed(serverFeed.url),
+            url: serverFeed.url,
+            name: serverFeed.name || 'Loading...',
+            type: serverFeed.type || 'news',
+            category: serverFeed.category || 'Uncategorized',
+            image: serverFeed.image || '',
+            author: serverFeed.author || '',
+            unread: 0,
+            tags: serverFeed.tags || [],
+            description: serverFeed.description || ''
+          };
+
+          // Add to state without triggering another sync (it's already on server)
+          state.feeds.push(feed);
+          state.categories.add(feed.category);
+
+          // Fetch content for the new feed
+          try {
+            await fetchAndParseFeed(feed);
+            console.log('[FeedScanner] Fetched content for:', feed.name);
+          } catch (e) {
+            console.warn('[FeedScanner] Failed to fetch content for:', feed.name, e.message);
+          }
+        }
+
+        // Remove feeds that were deleted on other devices
+        for (const localFeed of removedFeeds) {
+          console.log('[FeedScanner] Removing feed deleted on other device:', localFeed.name);
+
+          // Archive content before removing
+          if (localFeed.type === 'news') {
+            const feedArticles = state.articles.filter(a => a.feedId === localFeed.id);
+            state.archivedArticles.push(...feedArticles);
+            state.articles = state.articles.filter(a => a.feedId !== localFeed.id);
+          } else {
+            const feedPodcasts = state.podcasts.filter(p => p.feedId === localFeed.id);
+            state.archivedPodcasts.push(...feedPodcasts);
+            state.podcasts = state.podcasts.filter(p => p.feedId !== localFeed.id);
+          }
+
+          // Remove feed from state
+          state.feeds = state.feeds.filter(f => f.id !== localFeed.id);
+        }
+
+        // Merge progress and bookmarks
+        this._mergeProgress(serverState.data.progress);
+        this._mergeBookmarks(serverState.data.bookmarks);
+
+        // Save locally (but don't trigger server sync since data came from server)
+        localStorage.setItem('feedr2', JSON.stringify(state));
+
+        // Re-render UI to show changes
+        if (newFeeds.length > 0 || removedFeeds.length > 0) {
+          renderNewsSources();
+          renderPodcastSources();
+          renderCategories();
+          renderTagFilters();
+          renderNews();
+          if (state.view === 'podcasts') {
+            renderPodcasts();
+            renderPodcastInbox();
+          }
+          if (state.view === 'all') renderAll();
+
+          // Notify user of sync
+          if (newFeeds.length > 0) {
+            toast(`Synced ${newFeeds.length} feed${newFeeds.length > 1 ? 's' : ''} from another device`);
+          }
+          if (removedFeeds.length > 0 && newFeeds.length === 0) {
+            toast(`Removed ${removedFeeds.length} feed${removedFeeds.length > 1 ? 's' : ''} (deleted on another device)`);
+          }
+        }
+
+      } catch (e) {
+        console.warn('[FeedScanner] Scan failed:', e.message);
+      }
+
+      this.scanning = false;
+    },
+
+    // Merge server progress with local (server wins for newer progress)
+    _mergeProgress(serverProgress) {
+      if (!serverProgress) return false;
+
+      let changed = false;
+      for (const [id, progress] of Object.entries(serverProgress)) {
+        // Only update if server has higher progress (user listened further on another device)
+        if (!state.progress[id] || progress > state.progress[id]) {
+          state.progress[id] = progress;
+          changed = true;
+        }
+      }
+      return changed;
+    },
+
+    // Merge server bookmarks with local (union of both)
+    _mergeBookmarks(serverBookmarks) {
+      if (!serverBookmarks) return false;
+
+      let changed = false;
+      for (const [id, isBookmarked] of Object.entries(serverBookmarks)) {
+        if (isBookmarked && !state.bookmarks[id]) {
+          state.bookmarks[id] = true;
+          changed = true;
+        }
+      }
+      return changed;
+    }
+  };
+  window.FeedScanner = FeedScanner;
+
   // === ACTIVITY CLEANUP - Delete and Prune Activities ===
   const ActivityCleanup = {
     endpoint: 'https://xvkq-pq7i-idtl.n7d.xano.io/api:Hj4C6PGO/activity',
@@ -11029,6 +11233,9 @@
     // Initialize activity tracking (syncs to Xano)
     Mem.init();
 
+    // Start feed scanner to detect new feeds from other devices
+    FeedScanner.start();
+
     // Sync state to server when page is hidden or closed (cross-device consistency)
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'hidden') {
@@ -11041,6 +11248,7 @@
 
     console.log('BRSST loaded');
     console.log('[StateSync] Cross-device sync enabled:', StateSync.endpoint);
+    console.log('[FeedScanner] Scanning for new feeds every', FeedScanner.scanInterval / 1000, 'seconds');
     console.log('[Mobile] Mobile optimizations active:', window.innerWidth <= 640);
     console.log('[Activity] Syncing to Xano:', Mem.endpoint);
     console.log('[API] User Behavior API:');
