@@ -1984,7 +1984,68 @@
 <script>
 (function() {
   'use strict';
-  
+
+  // === GUID GENERATION UTILITIES ===
+  // Generates stable, deterministic GUIDs based on content
+  // These persist across deletion/re-addition of feeds
+  const GUID = {
+    // FNV-1a hash - produces consistent 32-bit hash
+    hash32(str) {
+      let h = 0x811c9dc5;
+      for (let i = 0; i < str.length; i++) {
+        h ^= str.charCodeAt(i);
+        h = Math.imul(h, 0x01000193);
+      }
+      return h >>> 0;
+    },
+
+    // Generate 64-bit hash as two 32-bit values combined
+    hash64(str) {
+      const h1 = this.hash32(str);
+      const h2 = this.hash32(str + '_salt_' + h1);
+      return h1.toString(16).padStart(8, '0') + h2.toString(16).padStart(8, '0');
+    },
+
+    // Normalize URL for consistent hashing
+    normalizeUrl(url) {
+      try {
+        const u = new URL(url);
+        // Remove trailing slashes, normalize to lowercase host
+        return (u.protocol + '//' + u.host.toLowerCase() + u.pathname.replace(/\/+$/, '') + u.search).toLowerCase();
+      } catch {
+        return url.toLowerCase().trim();
+      }
+    },
+
+    // Generate feed GUID from URL - same URL always = same GUID
+    forFeed(feedUrl) {
+      const normalized = this.normalizeUrl(feedUrl);
+      return 'feed_' + this.hash64(normalized);
+    },
+
+    // Generate article GUID - stable across feed re-adds
+    // Uses: feedUrl + (link OR title+pubDate)
+    forArticle(feedUrl, link, title, pubDate) {
+      const feedPart = this.normalizeUrl(feedUrl);
+      // Prefer link as it's most stable, fallback to title+date
+      const contentPart = link
+        ? this.normalizeUrl(link)
+        : (title + '|' + (pubDate || '')).toLowerCase();
+      return 'art_' + this.hash64(feedPart + '::' + contentPart);
+    },
+
+    // Generate episode GUID - stable across feed re-adds
+    // Uses: feedUrl + (audioUrl OR title+pubDate)
+    forEpisode(feedUrl, audioUrl, title, pubDate) {
+      const feedPart = this.normalizeUrl(feedUrl);
+      // Prefer audioUrl as it's unique per episode, fallback to title+date
+      const contentPart = audioUrl
+        ? this.normalizeUrl(audioUrl)
+        : (title + '|' + (pubDate || '')).toLowerCase();
+      return 'ep_' + this.hash64(feedPart + '::' + contentPart);
+    }
+  };
+
   // === MEMORY & USER BEHAVIOR SYSTEM ===
   // Comprehensive tracking system for user behavior that can sync to API
   const Mem = {
@@ -2655,7 +2716,7 @@
       ep.downloaded = true;
       downloadProgress[episodeId] = { progress: 100, status: 'done' };
       save();
-      Mem.log('download_completed', 'ep_' + episodeId, { size: blob.size });
+      Mem.log('download_completed', episodeId, { size: blob.size });
       toast('Download complete!');
     } catch (e) {
       console.error('Download failed:', e);
@@ -2677,7 +2738,7 @@
       ep.downloaded = false;
       delete downloadProgress[episodeId];
       save();
-      Mem.log('download_removed', 'ep_' + episodeId);
+      Mem.log('download_removed', episodeId);
       toast('Download removed');
     } catch (e) {
       console.error('Failed to remove download:', e);
@@ -2851,7 +2912,7 @@
     return '';
   };
 
-  const parseNewsFeed = (xml, feedId) => {
+  const parseNewsFeed = (xml, feedId, feedUrl) => {
     const parser = new DOMParser();
     const doc = parser.parseFromString(xml, 'text/xml');
 
@@ -2884,9 +2945,9 @@
       const link = getNodeText(item, 'link') || getNodeAttr(item, 'link', 'href');
       const image = extractImage(item);
 
-      // Create unique ID using feed ID, hash of title, and index
-      const titleHash = title.split('').reduce((a, c) => ((a << 5) - a + c.charCodeAt(0)) | 0, 0);
-      const uniqueId = Math.abs(feedId * 100000 + titleHash + index);
+      // Create stable GUID using feed URL and article link/title
+      // This ensures the same article always has the same ID even after feed deletion/re-add
+      const uniqueId = GUID.forArticle(feedUrl, link, title, pubDate.toISOString());
 
       articles.push({
         id: uniqueId,
@@ -2904,7 +2965,7 @@
     return articles;
   };
 
-  const parsePodcastFeed = (xml, feedId) => {
+  const parsePodcastFeed = (xml, feedId, feedUrl) => {
     const parser = new DOMParser();
     const doc = parser.parseFromString(xml, 'text/xml');
 
@@ -3013,9 +3074,9 @@
         image = channelImage;
       }
 
-      // Create unique ID using feed ID, hash of title, and index
-      const titleHash = title.split('').reduce((a, c) => ((a << 5) - a + c.charCodeAt(0)) | 0, 0);
-      const uniqueId = Math.abs(feedId * 100000 + titleHash + index);
+      // Create stable GUID using feed URL and audio URL/title
+      // This ensures the same episode always has the same ID even after feed deletion/re-add
+      const uniqueId = GUID.forEpisode(feedUrl, audioUrl, title, pubDate.toISOString());
 
       episodes.push({
         id: uniqueId,
@@ -3161,7 +3222,7 @@
       }
 
       if (feed.type === 'news') {
-        const articles = parseNewsFeed(xml, feed.id);
+        const articles = parseNewsFeed(xml, feed.id, feed.url);
 
         // Auto-tag each article
         articles.forEach(article => {
@@ -3217,7 +3278,7 @@
         feed.unread = state.articles.filter(a => a.feedId === feed.id && a.unread).length;
 
       } else {
-        const episodes = parsePodcastFeed(xml, feed.id);
+        const episodes = parsePodcastFeed(xml, feed.id, feed.url);
 
         // Auto-tag each episode
         episodes.forEach(episode => {
@@ -3312,7 +3373,7 @@
   };
 
   const addFeed = async (url, name, type, category, author) => {
-    const id = Date.now();
+    const id = GUID.forFeed(url);
     const feed = {
       id,
       url,
@@ -3636,7 +3697,7 @@
   const renderSourcePage = id => {
     const source = state.feeds.find(f => f.id === id);
     if (!source) return;
-    Mem.log('feed_opened', 'source_' + id);
+    Mem.log('feed_opened', id);
     state.currentSourcePage = id;
 
     const articles = state.articles.filter(a => a.feedId === id);
@@ -3676,7 +3737,7 @@
   const renderShowPage = id => {
     const show = state.feeds.find(f => f.id === id);
     if (!show) return;
-    Mem.log('feed_opened', 'source_' + id);
+    Mem.log('feed_opened', id);
     state.currentShowPage = id;
 
     const eps = state.podcasts.filter(p => p.feedId === id);
@@ -3882,7 +3943,7 @@
       if (art) {
         art.unread = false;
         save();
-        Mem.log('article_opened', 'art_' + id, { source: art.feedId });
+        Mem.log('article_opened', id, { source: art.feedId });
         if (art.link) window.open(art.link, '_blank');
         renderAll();
       }
@@ -3926,7 +3987,7 @@
 
     // Log progress every 30 seconds
     if (cur - progStart >= 30) {
-      Mem.log('playback_progress', 'ep_' + state.currentEp.id, { from: progStart, to: cur });
+      Mem.log('playback_progress', state.currentEp.id, { from: progStart, to: cur });
       progStart = cur;
     }
     updatePlayer();
@@ -3936,7 +3997,7 @@
 
   el.audio.addEventListener('ended', () => {
     if (state.currentEp) {
-      Mem.log('episode_completed', 'ep_' + state.currentEp.id);
+      Mem.log('episode_completed', state.currentEp.id);
       state.progress[state.currentEp.id] = state.currentEp.duration;
     }
     state.playing = false;
@@ -3997,13 +4058,13 @@
     }
 
     if (state.currentEp && state.currentEp.id !== id) {
-      Mem.log('episode_exited', 'ep_' + state.currentEp.id, { pos: state.progress[state.currentEp.id] || 0 });
+      Mem.log('episode_exited', state.currentEp.id, { pos: state.progress[state.currentEp.id] || 0 });
     }
 
     state.currentEp = ep;
     const pr = state.progress[id] || 0;
-    if (pr > 0) Mem.log('returned_to_episode', 'ep_' + id, { prev_pos: pr });
-    Mem.log('play_pressed', 'ep_' + id, { pos: pr });
+    if (pr > 0) Mem.log('returned_to_episode', id, { prev_pos: pr });
+    Mem.log('play_pressed', id, { pos: pr });
 
     progStart = pr;
 
@@ -4051,13 +4112,13 @@
 
     if (state.playing) {
       el.audio.pause();
-      Mem.log('pause_pressed', 'ep_' + state.currentEp.id, { pos: pr });
+      Mem.log('pause_pressed', state.currentEp.id, { pos: pr });
     } else {
       el.audio.play().catch(e => {
         console.error('Playback failed:', e);
         toast('Playback failed');
       });
-      Mem.log('play_pressed', 'ep_' + state.currentEp.id, { pos: pr });
+      Mem.log('play_pressed', state.currentEp.id, { pos: pr });
     }
   };
 
@@ -4066,7 +4127,7 @@
     const prev = state.progress[state.currentEp.id] || 0;
     const duration = el.audio.duration || state.currentEp.duration;
     const p = Math.max(0, Math.min(duration, pos));
-    Mem.log('seek', 'ep_' + state.currentEp.id, { from: prev, to: p });
+    Mem.log('seek', state.currentEp.id, { from: prev, to: p });
     el.audio.currentTime = p;
     state.progress[state.currentEp.id] = p;
     save();
@@ -4182,7 +4243,7 @@
 
       skip(seekSeconds);
       triggerHaptic('medium');
-      Mem.log('swipe_seek', 'ep_' + state.currentEp.id, {
+      Mem.log('swipe_seek', state.currentEp.id, {
         direction: deltaX > 0 ? 'rewind' : 'forward',
         amount: seekAmount,
         swipeDistance: Math.abs(deltaX)
@@ -4313,7 +4374,7 @@
     save();
     renderBookmarks();
     toast('Bookmark added at ' + fmt(time));
-    Mem.log('bookmark_added', 'ep_' + epId, { time });
+    Mem.log('bookmark_added', epId, { time });
   };
 
   const deleteBookmark = (epId, index) => {
@@ -4639,7 +4700,7 @@
     const id = parseInt(item.dataset.id);
     const art = state.articles.find(a => a.id === id);
     if (art) {
-      Mem.log('article_opened', 'art_' + id, { source: art.feedId });
+      Mem.log('article_opened', id, { source: art.feedId });
       art.unread = false;
       save();
       if (art.link) window.open(art.link, '_blank');
@@ -4672,7 +4733,7 @@
       const id = parseInt(articleEl.dataset.id);
       const art = state.articles.find(a => a.id === id);
       if (art) {
-        Mem.log('article_opened', 'art_' + id, { source: art.feedId });
+        Mem.log('article_opened', id, { source: art.feedId });
         art.unread = false;
         save();
         if (art.link) window.open(art.link, '_blank');
@@ -4687,7 +4748,7 @@
       const id = parseInt(tableRow.dataset.id);
       const art = state.articles.find(a => a.id === id);
       if (art) {
-        Mem.log('article_opened', 'art_' + id, { source: art.feedId });
+        Mem.log('article_opened', id, { source: art.feedId });
         art.unread = false;
         save();
         if (art.link) window.open(art.link, '_blank');
