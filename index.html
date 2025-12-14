@@ -405,9 +405,8 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* Lazy image fade-in */
+    /* Lazy image fade-in - placeholder visible initially */
     .lazy-img {
-      opacity: 0;
       transition: opacity 0.3s ease;
     }
     .lazy-img.loaded { opacity: 1; }
@@ -2570,13 +2569,13 @@
       opacity: 0.6;
     }
 
-    /* Lazy loading images */
+    /* Lazy loading images - show placeholder initially, fade when real image loads */
     img[data-src] {
-      opacity: 0;
       transition: opacity 0.3s ease-in-out;
       background: var(--bg3);
     }
 
+    /* Fade in effect when loaded */
     img[data-src].loaded, img.loaded {
       opacity: 1;
     }
@@ -3932,6 +3931,13 @@
       } catch (e) {
         // On error, try loading directly (CORS issues)
         imgElement.src = src;
+        // Add loaded class so image becomes visible, and handle load/error
+        imgElement.onload = () => imgElement.classList.add('loaded');
+        imgElement.onerror = () => {
+          // If direct load also fails, trigger the existing onerror handler
+          // which will replace with an icon
+          imgElement.classList.add('loaded'); // Still show something
+        };
       }
 
       this.loadingImages.delete(src);
@@ -6001,13 +6007,19 @@
       }
       save(true); // Immediate sync after content loaded
       renderNewsSources();
+      renderPodcastSources(); // Always update podcast sidebar too (for image/name updates)
       renderCategories();
       renderNews();
       renderTagFilters();
-      if (state.view === 'podcasts') renderPodcasts();
+      if (state.view === 'podcasts') renderPodcastInbox();
+      if (state.view === 'all') renderAll();
       toast(`Added: ${feed.name}`);
     } else {
-      // Keep the feed but show error
+      // Keep the feed but show error - still render to show the feed was added
+      renderNewsSources();
+      renderPodcastSources();
+      if (state.view === 'podcasts') renderPodcastInbox();
+      if (state.view === 'all') renderAll();
       toast(`Added ${feed.name} (fetch failed)`);
     }
 
@@ -6092,7 +6104,7 @@
 
         return `<div class="source-item ${state.currentSourcePage === f.id ? 'active' : ''} ${hasNew ? 'has-new' : ''}" data-id="${f.id}">
           ${hasNew ? '<span class="new-indicator"></span>' : ''}
-          <div class="source-icon">${f.image ? `<img src="${f.image}">` : '<i class="ph ph-newspaper"></i>'}</div>
+          <div class="source-icon">${f.image ? `<img src="${f.image}" onerror="this.parentElement.innerHTML='<i class=\\'ph ph-newspaper\\'></i>'">` : '<i class="ph ph-newspaper"></i>'}</div>
           <div class="source-info">
             <div class="source-name">${f.name}</div>
             ${subtitle ? `<div class="source-subtitle">${subtitle}</div>` : ''}
@@ -6303,7 +6315,7 @@
 
         return `<div class="source-item ${state.currentShowPage === f.id ? 'active' : ''} ${hasNew ? 'has-new' : ''}" data-id="${f.id}">
           ${hasNew ? '<span class="new-indicator"></span>' : ''}
-          <div class="source-icon">${f.image ? `<img src="${f.image}">` : '<i class="ph ph-microphone-stage"></i>'}</div>
+          <div class="source-icon">${f.image ? `<img src="${f.image}" onerror="this.parentElement.innerHTML='<i class=\\'ph ph-microphone-stage\\'></i>'">` : '<i class="ph ph-microphone-stage"></i>'}</div>
           <div class="source-info">
             <div class="source-name">${f.name}</div>
             ${subtitle ? `<div class="source-subtitle">${subtitle}</div>` : ''}
