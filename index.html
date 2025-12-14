@@ -4695,6 +4695,16 @@
 
         console.log('[FeedScanner] Found', newFeeds.length, 'new feeds,', removedFeeds.length, 'removed feeds');
 
+        // Create a snapshot before sync changes (safety net for cross-device conflicts)
+        if (removedFeeds.length > 0) {
+          try {
+            await SnapshotDB.createSnapshot('before_sync');
+            console.log('[FeedScanner] Created pre-sync snapshot');
+          } catch (e) {
+            console.warn('[FeedScanner] Failed to create pre-sync snapshot:', e);
+          }
+        }
+
         // Add new feeds from other devices
         for (const serverFeed of newFeeds) {
           console.log('[FeedScanner] Adding new feed from other device:', serverFeed.name || serverFeed.url);
@@ -5797,14 +5807,15 @@
     async createSnapshot(reason = 'manual') {
       if (!this.db) await this.init();
 
+      // Note: We intentionally exclude transient articles/podcasts from snapshots.
+      // These are re-fetched from RSS feeds on refresh, so snapshotting them wastes storage.
+      // Only archived content (no longer in feeds) needs preservation.
       const snapshot = {
         id: 'snap_' + Date.now(),
         timestamp: Date.now(),
         reason, // 'manual', 'auto', 'before_delete', 'before_refresh', etc.
         state: {
           feeds: JSON.parse(JSON.stringify(state.feeds)),
-          articles: JSON.parse(JSON.stringify(state.articles)),
-          podcasts: JSON.parse(JSON.stringify(state.podcasts)),
           archivedArticles: JSON.parse(JSON.stringify(state.archivedArticles || [])),
           archivedPodcasts: JSON.parse(JSON.stringify(state.archivedPodcasts || [])),
           progress: JSON.parse(JSON.stringify(state.progress)),
@@ -5813,8 +5824,8 @@
         },
         stats: {
           feedCount: state.feeds.length,
-          articleCount: state.articles.length,
-          podcastCount: state.podcasts.length,
+          archivedArticleCount: (state.archivedArticles || []).length,
+          archivedPodcastCount: (state.archivedPodcasts || []).length,
           bookmarkCount: Object.keys(state.bookmarks || {}).length
         }
       };
@@ -5887,10 +5898,12 @@
       await this.createSnapshot('before_restore');
 
       // Restore the state
+      // Note: articles/podcasts are not stored in snapshots (they're transient, re-fetched from feeds)
+      // Clear them so they get refreshed from the restored feed list
       const s = snapshot.state;
       state.feeds = s.feeds || [];
-      state.articles = s.articles || [];
-      state.podcasts = s.podcasts || [];
+      state.articles = []; // Clear - will be re-fetched from restored feeds
+      state.podcasts = []; // Clear - will be re-fetched from restored feeds
       state.archivedArticles = s.archivedArticles || [];
       state.archivedPodcasts = s.archivedPodcasts || [];
       state.progress = s.progress || {};
@@ -7758,7 +7771,7 @@
   };
 
   // Remove a feed from the app
-  const removeFeed = (feedId) => {
+  const removeFeed = async (feedId) => {
     const feed = state.feeds.find(f => f.id === feedId);
     if (!feed) return;
 
@@ -7768,6 +7781,14 @@
     // Confirm deletion
     if (!confirm(`Remove "${feedName}" from your feeds?\n\nThis will also remove all ${feedType === 'news' ? 'articles' : 'episodes'} from this feed.`)) {
       return;
+    }
+
+    // Create a snapshot before deletion (safety net for accidental deletions)
+    try {
+      await SnapshotDB.createSnapshot('before_delete');
+    } catch (e) {
+      console.warn('Failed to create pre-delete snapshot:', e);
+      // Continue with deletion even if snapshot fails
     }
 
     // Remove the feed from state
@@ -10725,20 +10746,24 @@
           </div>`;
         return;
       }
-      el.snapshotList.innerHTML = snapshots.map(snap => `
+      el.snapshotList.innerHTML = snapshots.map(snap => {
+        // Support both old (articleCount/podcastCount) and new (archivedArticleCount/archivedPodcastCount) formats
+        const archivedArticles = snap.stats.archivedArticleCount ?? snap.stats.articleCount ?? 0;
+        const archivedPodcasts = snap.stats.archivedPodcastCount ?? snap.stats.podcastCount ?? 0;
+        return `
         <div class="snapshot-item" data-id="${snap.id}">
           <div class="snapshot-icon"><i class="ph ph-clock-counter-clockwise"></i></div>
           <div class="snapshot-info">
             <div class="snapshot-date">${snap.date}</div>
             <div class="snapshot-reason">${snap.reason.replace(/_/g, ' ')}</div>
-            <div class="snapshot-stats">${snap.stats.feedCount} feeds, ${snap.stats.articleCount} articles, ${snap.stats.podcastCount} episodes</div>
+            <div class="snapshot-stats">${snap.stats.feedCount} feeds, ${archivedArticles} archived articles, ${archivedPodcasts} archived episodes</div>
           </div>
           <div class="snapshot-actions-row">
             <button class="snapshot-btn restore" data-action="restore" data-id="${snap.id}">Restore</button>
             <button class="snapshot-btn delete" data-action="delete" data-id="${snap.id}"><i class="ph ph-trash"></i></button>
           </div>
         </div>
-      `).join('');
+      `}).join('');
     } catch (e) {
       console.error('Failed to render snapshots:', e);
       el.snapshotList.innerHTML = '<div style="color:var(--text2);text-align:center;padding:20px">Failed to load snapshots</div>';
