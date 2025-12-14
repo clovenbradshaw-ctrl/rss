@@ -5480,42 +5480,19 @@
   ];
 
   // === PODCASTINDEX API ===
+  // Uses the Apple Replacement endpoint which doesn't require authentication
   const PodcastIndex = {
-    API_KEY: 'YEAFNWVNMD4HTBNFUPM3',
-    API_SECRET: '', // Add your secret here if needed
-    BASE_URL: 'https://api.podcastindex.org/api/1.0',
-    USER_AGENT: 'BRRST-PodcastApp/1.0',
+    // Apple Replacement search endpoint (no auth required)
+    SEARCH_URL: 'https://api.podcastindex.org/search',
 
-    // SHA1 hash using Web Crypto API
-    async sha1(message) {
-      const msgBuffer = new TextEncoder().encode(message);
-      const hashBuffer = await crypto.subtle.digest('SHA-1', msgBuffer);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    },
-
-    // Generate auth headers for PodcastIndex API
-    async getAuthHeaders() {
-      const ts = Math.floor(Date.now() / 1000);
-      const authString = this.API_KEY + this.API_SECRET + ts.toString();
-      const authHash = await this.sha1(authString);
-      return {
-        'User-Agent': this.USER_AGENT,
-        'X-Auth-Key': this.API_KEY,
-        'X-Auth-Date': ts.toString(),
-        'Authorization': authHash
-      };
-    },
-
-    // Search podcasts by term
-    async searchByTerm(query, max = 20) {
+    // Search podcasts by term using the unauthenticated Apple Replacement endpoint
+    async searchByTerm(query) {
       try {
-        const headers = await this.getAuthHeaders();
-        const url = `${this.BASE_URL}/search/byterm?q=${encodeURIComponent(query)}&max=${max}`;
+        const url = `${this.SEARCH_URL}?term=${encodeURIComponent(query)}`;
+        console.log('[PodcastIndex] Searching:', url);
 
         const response = await fetch(url, {
-          method: 'GET',
-          headers: headers
+          method: 'GET'
         });
 
         if (!response.ok) {
@@ -5526,53 +5503,23 @@
 
         const data = await response.json();
         console.log('[PodcastIndex] Search results:', data);
-        return data;
+
+        // Transform Apple-style response to a normalized format
+        const feeds = (data.results || []).map(result => ({
+          id: result.collectionId || result.trackId,
+          title: result.collectionName || result.trackName,
+          url: result.feedUrl,
+          author: result.artistName,
+          image: result.artworkUrl600 || result.artworkUrl100 || result.artworkUrl60,
+          artwork: result.artworkUrl600 || result.artworkUrl100,
+          episodeCount: result.trackCount || 0,
+          genres: result.genres || [],
+          primaryGenre: result.primaryGenreName || ''
+        }));
+
+        return { feeds, count: data.resultCount || feeds.length };
       } catch (error) {
         console.error('[PodcastIndex] Search failed:', error);
-        throw error;
-      }
-    },
-
-    // Get podcast by feed URL
-    async getByFeedUrl(feedUrl) {
-      try {
-        const headers = await this.getAuthHeaders();
-        const url = `${this.BASE_URL}/podcasts/byfeedurl?url=${encodeURIComponent(feedUrl)}`;
-
-        const response = await fetch(url, {
-          method: 'GET',
-          headers: headers
-        });
-
-        if (!response.ok) {
-          throw new Error(`API error: ${response.status}`);
-        }
-
-        return await response.json();
-      } catch (error) {
-        console.error('[PodcastIndex] Get by URL failed:', error);
-        throw error;
-      }
-    },
-
-    // Get trending podcasts
-    async getTrending(max = 10, lang = 'en') {
-      try {
-        const headers = await this.getAuthHeaders();
-        const url = `${this.BASE_URL}/podcasts/trending?max=${max}&lang=${lang}`;
-
-        const response = await fetch(url, {
-          method: 'GET',
-          headers: headers
-        });
-
-        if (!response.ok) {
-          throw new Error(`API error: ${response.status}`);
-        }
-
-        return await response.json();
-      } catch (error) {
-        console.error('[PodcastIndex] Get trending failed:', error);
         throw error;
       }
     }
@@ -9597,29 +9544,28 @@
     }
 
     // Check which podcasts are already subscribed
-    const subscribedUrls = new Set(state.feeds.map(f => f.url.toLowerCase()));
+    const subscribedUrls = new Set(state.feeds.map(f => f.url?.toLowerCase()).filter(Boolean));
 
     el.podcastSearchResults.innerHTML = podcasts.map((podcast, index) => {
-      const isSubscribed = subscribedUrls.has(podcast.url?.toLowerCase()) ||
-                          subscribedUrls.has(podcast.originalUrl?.toLowerCase());
+      const isSubscribed = podcast.url && subscribedUrls.has(podcast.url.toLowerCase());
       const episodeCount = podcast.episodeCount || 0;
-      const lastUpdate = podcast.lastUpdateTime ? new Date(podcast.lastUpdateTime * 1000).toLocaleDateString() : '';
+      const genre = podcast.primaryGenre || (podcast.genres && podcast.genres[0]) || '';
 
       return `
         <div class="podcast-result-item" data-index="${index}">
           <div class="podcast-result-art">
-            <img src="${podcast.image || podcast.artwork || placeholderImg}" alt="${podcast.title}" onerror="this.src='${placeholderImg}'">
+            <img src="${podcast.image || podcast.artwork || placeholderImg}" alt="${podcast.title || ''}" onerror="this.src='${placeholderImg}'">
           </div>
           <div class="podcast-result-info">
-            <div class="podcast-result-title" title="${podcast.title}">${podcast.title}</div>
-            <div class="podcast-result-author" title="${podcast.author || podcast.ownerName || ''}">${podcast.author || podcast.ownerName || 'Unknown'}</div>
+            <div class="podcast-result-title" title="${podcast.title || ''}">${podcast.title || 'Unknown Podcast'}</div>
+            <div class="podcast-result-author" title="${podcast.author || ''}">${podcast.author || 'Unknown'}</div>
             <div class="podcast-result-meta">
               ${episodeCount ? `<span>${episodeCount} episodes</span>` : ''}
-              ${lastUpdate ? `<span>Updated ${lastUpdate}</span>` : ''}
+              ${genre ? `<span>${genre}</span>` : ''}
             </div>
           </div>
           <div class="podcast-result-actions">
-            <button class="podcast-add-btn ${isSubscribed ? 'added' : ''}" data-index="${index}" ${isSubscribed ? 'disabled' : ''}>
+            <button class="podcast-add-btn ${isSubscribed ? 'added' : ''}" data-index="${index}" ${isSubscribed ? 'disabled' : ''} ${!podcast.url ? 'disabled title="No feed URL available"' : ''}>
               <i class="ph ph-${isSubscribed ? 'check' : 'plus'}"></i>
               ${isSubscribed ? 'Added' : 'Add'}
             </button>
@@ -9688,12 +9634,13 @@
 
     try {
       // Add the feed using existing addFeed function
+      const category = podcast.primaryGenre || (podcast.genres && podcast.genres[0]) || 'Podcasts';
       await addFeed(
         feedUrl,
         podcast.title,
         'podcast',
-        podcast.categories?.[0]?.name || 'Podcasts',
-        podcast.author || podcast.ownerName || ''
+        category,
+        podcast.author || ''
       );
 
       // Update button to show success
