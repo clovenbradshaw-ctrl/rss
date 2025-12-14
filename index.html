@@ -3474,9 +3474,51 @@
           let bookmarks = {};
           let feedLastViewed = {};
 
-          // Process activity items chronologically to reconstruct state
+          // Find the most recent state snapshot (items without action but with feeds array)
+          // State snapshots are the authoritative source of current subscriptions
+          let latestSnapshotTime = 0;
+          let latestSnapshot = null;
+
+          for (const item of rawData.items) {
+            // State snapshots have no action field but have data with feeds array
+            if (!item.action && item.data && Array.isArray(item.data.feeds)) {
+              const itemTime = item.created_at || 0;
+              if (itemTime > latestSnapshotTime) {
+                latestSnapshotTime = itemTime;
+                latestSnapshot = item.data;
+              }
+            }
+          }
+
+          // If we found a state snapshot, use it as the baseline
+          if (latestSnapshot && latestSnapshot.feeds) {
+            console.log('[StateSync] Found state snapshot with', latestSnapshot.feeds.length, 'feeds');
+            for (const feed of latestSnapshot.feeds) {
+              if (feed.url) {
+                feedMap.set(feed.url, {
+                  id: feed.id || ('feed_' + Date.now() + '_' + feedMap.size),
+                  url: feed.url,
+                  name: feed.name || 'Unknown Feed',
+                  type: feed.type || 'news',
+                  author: feed.author || '',
+                  category: feed.category || 'Uncategorized',
+                  addedAt: feed.addedAt
+                });
+              }
+            }
+            // Also apply snapshot's progress, bookmarks, feedLastViewed
+            if (latestSnapshot.progress) progress = { ...latestSnapshot.progress };
+            if (latestSnapshot.bookmarks) bookmarks = { ...latestSnapshot.bookmarks };
+            if (latestSnapshot.feedLastViewed) feedLastViewed = { ...latestSnapshot.feedLastViewed };
+          }
+
+          // Process activity items chronologically to apply any changes after the snapshot
           // Items should be in order, so later events override earlier ones
           for (const item of rawData.items) {
+            // Only process activity events that occurred after the snapshot
+            const itemTime = item.created_at || 0;
+            if (latestSnapshot && itemTime <= latestSnapshotTime) continue;
+
             if (item.action === 'feed_added' && item.data) {
               const feedData = item.data;
               const url = feedData.url || feedData.content_url || item.content_url;
@@ -3512,7 +3554,7 @@
           }
 
           const feeds = Array.from(feedMap.values());
-          console.log('[StateSync] Reconstructed', feeds.length, 'feeds from activity (removed:', removedFeeds.size, ')');
+          console.log('[StateSync] Reconstructed', feeds.length, 'feeds from', latestSnapshot ? 'snapshot + activity' : 'activity only', '(removed:', removedFeeds.size, ')');
           return {
             data: {
               feeds: feeds,
