@@ -2607,20 +2607,20 @@
     <!-- ALL VIEW -->
     <div class="all-view" id="allView">
       <nav class="feed-nav" id="feedNav">
-        <button class="feed-nav-btn active" data-filter="all">
-          <span class="feed-nav-icon"><i class="ph ph-books"></i></span>
-          <span>All</span>
-          <span class="feed-nav-count" id="feedCountAll">0</span>
+        <button class="feed-nav-btn active" data-filter="podcast">
+          <span class="feed-nav-icon"><i class="ph ph-headphones"></i></span>
+          <span>Podcasts</span>
+          <span class="feed-nav-count" id="feedCountPodcast">0</span>
         </button>
         <button class="feed-nav-btn" data-filter="news">
           <span class="feed-nav-icon"><i class="ph ph-newspaper"></i></span>
           <span>News</span>
           <span class="feed-nav-count" id="feedCountNews">0</span>
         </button>
-        <button class="feed-nav-btn" data-filter="podcast">
-          <span class="feed-nav-icon"><i class="ph ph-headphones"></i></span>
-          <span>Podcasts</span>
-          <span class="feed-nav-count" id="feedCountPodcast">0</span>
+        <button class="feed-nav-btn" data-filter="all">
+          <span class="feed-nav-icon"><i class="ph ph-books"></i></span>
+          <span>All</span>
+          <span class="feed-nav-count" id="feedCountAll">0</span>
         </button>
       </nav>
       <div class="feed-container">
@@ -3775,7 +3775,7 @@
     selectedPodcastSource: null, // Currently selected podcast source (null = all)
     selectedPodcastCat: 'All', // Category filter for podcasts
     selectedPodcastTag: 'all', // Tag filter for podcasts
-    feedFilter: 'all', // Feed filter: 'all', 'news', 'podcast'
+    feedFilter: 'podcast', // Feed filter: 'all', 'news', 'podcast'
     query: '',
     feedType: 'news',
     currentEp: null,
