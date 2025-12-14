@@ -6134,7 +6134,8 @@
     const batchHtml = batch.map(i => {
       const title = q ? highlightSearch(i.title, q) : i.title;
       const summary = i.summary ? (q ? highlightSearch(i.summary, q) : i.summary) : '';
-      return `<div class="article ${i.unread ? 'unread' : ''}" data-id="${i.id}"><div class="article-icon">${i.feed?.image ? `<img data-src="${i.feed.image}" src="${placeholderImg}" class="lazy-img">` : '<i class="ph ph-article"></i>'}</div><div class="article-body"><div class="article-meta"><span class="article-source">${i.feed?.name || ''}</span><span class="article-time">· ${i.time}</span>${i.unread ? '<span class="article-new">NEW</span>' : ''}</div><div class="article-title">${title}</div>${summary ? `<div class="article-summary">${summary}</div>` : ''}${renderItemTags(i.tags)}</div>${i.image ? `<img class="article-image lazy-img" data-src="${i.image}" src="${placeholderImg}" onerror="this.style.display='none'">` : ''}</div>`;
+      const iconImg = i.feed?.image || i.image;
+      return `<div class="article ${i.unread ? 'unread' : ''}" data-id="${i.id}"><div class="article-icon">${iconImg ? `<img data-src="${iconImg}" src="${placeholderImg}" class="lazy-img">` : '<i class="ph ph-article"></i>'}</div><div class="article-body"><div class="article-meta"><span class="article-source">${i.feed?.name || ''}</span><span class="article-time">· ${i.time}</span>${i.unread ? '<span class="article-new">NEW</span>' : ''}</div><div class="article-title">${title}</div>${summary ? `<div class="article-summary">${summary}</div>` : ''}${renderItemTags(i.tags)}</div>${i.image ? `<img class="article-image lazy-img" data-src="${i.image}" src="${placeholderImg}" onerror="this.style.display='none'">` : ''}</div>`;
     }).join('');
 
     // Add load more button if there are more items
@@ -6555,7 +6556,8 @@
       default: // list
         return `<div class="news-list-view">${articles.map(a => {
           const feed = state.feeds.find(f => f.id === a.feedId);
-          return `<div class="article ${a.unread ? 'unread' : ''}" data-id="${a.id}"><div class="article-icon">${feed?.image ? `<img src="${feed.image}">` : '<i class="ph ph-article"></i>'}</div><div class="article-body"><div class="article-meta"><span class="article-source">${feed?.name || ''}</span><span class="article-time">· ${a.time}</span>${a.unread ? '<span class="article-new">NEW</span>' : ''}</div><div class="article-title">${a.title}</div>${a.summary ? `<div class="article-summary">${a.summary}</div>` : ''}</div>${a.image ? `<img class="article-image" src="${a.image}">` : ''}</div>`;
+          const iconImg = feed?.image || a.image;
+          return `<div class="article ${a.unread ? 'unread' : ''}" data-id="${a.id}"><div class="article-icon">${iconImg ? `<img src="${iconImg}">` : '<i class="ph ph-article"></i>'}</div><div class="article-body"><div class="article-meta"><span class="article-source">${feed?.name || ''}</span><span class="article-time">· ${a.time}</span>${a.unread ? '<span class="article-new">NEW</span>' : ''}</div><div class="article-title">${a.title}</div>${a.summary ? `<div class="article-summary">${a.summary}</div>` : ''}</div>${a.image ? `<img class="article-image" src="${a.image}">` : ''}</div>`;
         }).join('')}</div>`;
     }
   };
@@ -6684,11 +6686,12 @@
     const avatarCached = feedImage && ImageCache.get(feedImage);
     const mediaCached = image && ImageCache.get(image);
 
-    // Generate avatar with lazy loading
+    // Generate avatar with lazy loading - fall back to item image if no feed image
     const podcastIcon = '<i class="ph ph-headphones"></i>';
     const newsIcon = '<i class="ph ph-newspaper"></i>';
-    const avatar = feedImage
-      ? `<img data-src="${feedImage}" src="${placeholderImg}" class="lazy-img" onerror="this.parentElement.innerHTML=\`${type === 'podcast' ? podcastIcon : newsIcon}\`">`
+    const avatarImg = feedImage || item.image;
+    const avatar = avatarImg
+      ? `<img data-src="${avatarImg}" src="${placeholderImg}" class="lazy-img" onerror="this.parentElement.innerHTML=\`${type === 'podcast' ? podcastIcon : newsIcon}\`">`
       : (type === 'podcast' ? podcastIcon : newsIcon);
 
     // Generate tags HTML
