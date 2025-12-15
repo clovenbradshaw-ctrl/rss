@@ -7112,12 +7112,12 @@
   // === RSS FEED FETCHING ===
   // Multiple CORS proxies for reliability - tried in parallel, first success wins
   const CORS_PROXIES = [
-    // Primary proxies - most reliable
+    // Primary: Own Xano proxy (most reliable - we control it)
+    url => `https://xvkq-pq7i-idtl.n7d.xano.io/api:Hj4C6PGO/fetch_url?url=${encodeURIComponent(url)}`,
+    // Fallback proxies
     url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
     url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-    // Backup proxies
     url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
-    url => `https://proxy.cors.sh/${url}`,
     url => `https://thingproxy.freeboard.io/fetch/${url}`
   ];
 
