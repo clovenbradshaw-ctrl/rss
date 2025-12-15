@@ -9102,6 +9102,7 @@
     const bookmarks = state.bookmarks[ep.id] || [];
     const isPlaying = state.currentEp?.id === ep.id && state.playing;
     const isDownloaded = ep.downloaded;
+    const inForLater = isInForLater(ep.id, 'episode');
 
     state.currentEpisodePage = episodeId;
 
@@ -9190,6 +9191,11 @@
         <button class="episode-action-btn" id="episodeBookmarkBtn" data-ep="${ep.id}">
           <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
           Add Bookmark
+        </button>
+        <button class="episode-action-btn ${inForLater ? 'active' : ''}" id="episodeSaveForLaterBtn" data-content-id="${ep.id}" data-content-type="episode">
+          ${inForLater
+            ? '<svg fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Saved'
+            : '<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Save for Later'}
         </button>
       </div>
       ${(ep.descHtml || ep.desc) ? `
@@ -10921,6 +10927,16 @@
         // If not playing, start playing first then user can add bookmark
         toast('Start playing to add a bookmark');
       }
+      return;
+    }
+
+    // Save for Later button
+    const saveForLaterBtn = e.target.closest('#episodeSaveForLaterBtn');
+    if (saveForLaterBtn) {
+      const contentId = parseInt(saveForLaterBtn.dataset.contentId);
+      const contentType = saveForLaterBtn.dataset.contentType;
+      addToForLater(contentId, contentType);
+      renderEpisodePage(state.currentEpisodePage); // Re-render to update button state
       return;
     }
 
