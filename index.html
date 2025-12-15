@@ -945,11 +945,6 @@
     .add-to-later-btn:hover { background: var(--blue); color: #fff; transform: scale(1.1); }
     .add-to-later-btn.added { background: var(--blue); color: #fff; opacity: 1; }
 
-    /* Queue add button on episodes */
-    .queue-add-btn { position: absolute; top: 12px; right: 48px; width: 32px; height: 32px; border-radius: 50%; background: rgba(255,107,53,0.2); border: none; color: var(--orange); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; opacity: 0; font-size: 16px; z-index: 1; }
-    .spotify-ep:hover .queue-add-btn, .feed-post:hover .queue-add-btn { opacity: 1; }
-    .queue-add-btn:hover { background: var(--orange); color: #fff; transform: scale(1.1); }
-    .queue-add-btn:active { transform: scale(0.95); }
 
     /* Social Media Feed Styles */
     .feed-nav { display: flex; background: var(--bg2); border-bottom: 1px solid var(--border2); padding: 0 24px; gap: 4px; }
@@ -9244,10 +9239,7 @@
         ${inProgress ? `<div class="spotify-ep-progress"><div class="spotify-ep-progress-fill" style="width:${pct}%"></div></div>` : ''}
         <div class="spotify-ep-duration">${done ? '<i class="ph ph-check-circle"></i> Played' : pr > 0 ? fmt(ep.duration - pr) + ' left' : fmt(ep.duration)}</div>
       </div>
-      <button class="queue-add-btn" data-ep-id="${ep.id}" title="Add to Queue">
-        <i class="ph ph-queue"></i>
-      </button>
-      <button class="add-to-later-btn ${inForLater ? 'added' : ''}" data-content-id="${ep.id}" data-content-type="episode" title="Add to For Later">
+      <button class="add-to-later-btn ${inForLater ? 'added' : ''}" data-content-id="${ep.id}" data-content-type="episode" title="Save">
         <i class="ph ${inForLater ? 'ph-check' : 'ph-clock'}"></i>
       </button>
     </div>`;
@@ -9770,7 +9762,7 @@
         <button class="episode-action-btn ${inForLater ? 'active' : ''}" id="episodeSaveForLaterBtn" data-content-id="${ep.id}" data-content-type="episode">
           ${inForLater
             ? '<svg fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Saved'
-            : '<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Save for Later'}
+            : '<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Save'}
         </button>
       </div>
       ${(ep.descHtml || ep.desc) ? `
@@ -9927,7 +9919,7 @@
           ${podcastMeta}
           ${newsActions}
         </div>
-        <button class="add-to-later-btn ${inForLater ? 'added' : ''}" data-content-id="${item.id}" data-content-type="${contentType}" title="Add to For Later">
+        <button class="add-to-later-btn ${inForLater ? 'added' : ''}" data-content-id="${item.id}" data-content-type="${contentType}" title="Save">
           <i class="ph ${inForLater ? 'ph-check' : 'ph-clock'}"></i>
         </button>
       </div>
@@ -11375,18 +11367,6 @@
   };
 
   el.podcastInboxList.onclick = e => {
-    // Check for queue add button
-    const queueBtn = e.target.closest('.queue-add-btn');
-    if (queueBtn) {
-      e.stopPropagation();
-      const epId = queueBtn.dataset.epId;
-      const ep = state.podcasts.find(p => p.id === epId);
-      if (ep) {
-        addToQueue(ep);
-      }
-      return;
-    }
-
     // Check for add to later button first
     const laterBtn = e.target.closest('.add-to-later-btn');
     if (laterBtn) {
