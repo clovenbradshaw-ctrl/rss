@@ -7318,15 +7318,39 @@
       // Extract ETag for future conditional requests
       const etag = response.headers.get('ETag') || response.headers.get('etag');
 
-      const text = await response.text();
+      let text = await response.text();
 
       if (!text || text.trim().length === 0) {
         throw new Error('Empty response');
       }
 
+      // Handle JSON-wrapped responses (e.g., from Xano rss-proxy)
+      // The proxy may return { "content": "<xml>...", "statusCode": 200 } or similar
+      const trimmedText = text.trim();
+      if (trimmedText.startsWith('{') || trimmedText.startsWith('[')) {
+        try {
+          const jsonResponse = JSON.parse(trimmedText);
+          // Try common field names for the XML content
+          const xmlContent = jsonResponse.content || jsonResponse.body || jsonResponse.data ||
+                           jsonResponse.result || jsonResponse.xml || jsonResponse.response;
+          if (xmlContent && typeof xmlContent === 'string') {
+            console.log('[Proxy] Extracted XML from JSON wrapper');
+            text = xmlContent;
+          } else {
+            console.warn('[Proxy] JSON response but no XML content found:', Object.keys(jsonResponse));
+            throw new Error('JSON response without XML content');
+          }
+        } catch (e) {
+          if (e.message === 'JSON response without XML content') throw e;
+          // Not valid JSON, might be XML with leading whitespace issues
+          console.warn('[Proxy] Response starts with { but is not valid JSON');
+        }
+      }
+
       // Basic validation that this looks like XML
       if (!text.trim().startsWith('<?xml') && !text.trim().startsWith('<rss') && !text.trim().startsWith('<feed')) {
         console.warn('Response does not look like XML:', text.substring(0, 100));
+        throw new Error('Response is not valid XML');
       }
 
       return { text, etag };
