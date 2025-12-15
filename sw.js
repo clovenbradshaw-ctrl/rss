@@ -1,6 +1,6 @@
 // BRSST Service Worker - Offline caching and performance optimization
-const CACHE_NAME = 'brsst-v2';
-const RUNTIME_CACHE = 'brsst-runtime-v2';
+const CACHE_NAME = 'brsst-v3';
+const RUNTIME_CACHE = 'brsst-runtime-v3';
 
 // Resources to cache immediately on install
 const PRECACHE_URLS = [
@@ -60,34 +60,63 @@ self.addEventListener('fetch', event => {
   // For images - cache first, then network
   if (event.request.destination === 'image' ||
       url.pathname.match(/\.(jpg|jpeg|png|gif|webp|svg|ico)$/i)) {
+
+    // Check if this is a cross-origin request
+    const isCrossOrigin = url.origin !== self.location.origin;
+
     event.respondWith(
       caches.open(RUNTIME_CACHE).then(cache => {
         return cache.match(event.request).then(cachedResponse => {
           if (cachedResponse) {
-            // Return cached image, refresh in background
-            fetch(event.request).then(networkResponse => {
-              // Only cache valid, non-opaque responses
-              if (networkResponse && networkResponse.ok && networkResponse.status !== 0) {
-                cache.put(event.request, networkResponse.clone()).catch(() => {});
-              }
-            }).catch(() => {});
+            // Return cached image, refresh in background (silently)
+            if (isCrossOrigin) {
+              // For cross-origin images, use no-cors mode to avoid CORS errors
+              fetch(event.request.url, { mode: 'no-cors' }).then(networkResponse => {
+                // Opaque responses have type 'opaque' and status 0
+                if (networkResponse && networkResponse.type === 'opaque') {
+                  cache.put(event.request, networkResponse.clone()).catch(() => {});
+                }
+              }).catch(() => {});
+            } else {
+              fetch(event.request).then(networkResponse => {
+                if (networkResponse && networkResponse.ok) {
+                  cache.put(event.request, networkResponse.clone()).catch(() => {});
+                }
+              }).catch(() => {});
+            }
             return cachedResponse;
           }
 
           // Not in cache, fetch from network
-          return fetch(event.request).then(networkResponse => {
-            // Only cache valid, non-opaque responses
-            if (networkResponse && networkResponse.ok && networkResponse.status !== 0) {
-              cache.put(event.request, networkResponse.clone()).catch(() => {});
-            }
-            return networkResponse;
-          }).catch(() => {
-            // Return placeholder for failed images
-            return new Response(
-              '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="#1a1a1a" width="100" height="100"/><text x="50" y="55" text-anchor="middle" fill="#666" font-size="12">Image</text></svg>',
-              { headers: { 'Content-Type': 'image/svg+xml' } }
-            );
-          });
+          if (isCrossOrigin) {
+            // For cross-origin images, use no-cors mode to avoid CORS errors
+            return fetch(event.request.url, { mode: 'no-cors' }).then(networkResponse => {
+              // Opaque responses can still be cached and displayed
+              if (networkResponse && (networkResponse.type === 'opaque' || networkResponse.ok)) {
+                cache.put(event.request, networkResponse.clone()).catch(() => {});
+              }
+              return networkResponse;
+            }).catch(() => {
+              // Return placeholder for failed images
+              return new Response(
+                '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="#1a1a1a" width="100" height="100"/><text x="50" y="55" text-anchor="middle" fill="#666" font-size="12">Image</text></svg>',
+                { headers: { 'Content-Type': 'image/svg+xml' } }
+              );
+            });
+          } else {
+            return fetch(event.request).then(networkResponse => {
+              if (networkResponse && networkResponse.ok) {
+                cache.put(event.request, networkResponse.clone()).catch(() => {});
+              }
+              return networkResponse;
+            }).catch(() => {
+              // Return placeholder for failed images
+              return new Response(
+                '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="#1a1a1a" width="100" height="100"/><text x="50" y="55" text-anchor="middle" fill="#666" font-size="12">Image</text></svg>',
+                { headers: { 'Content-Type': 'image/svg+xml' } }
+              );
+            });
+          }
         });
       })
     );
