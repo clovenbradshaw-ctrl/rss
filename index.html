@@ -5190,24 +5190,24 @@
         // Find feeds on server that we don't have locally
         const newFeeds = serverFeeds.filter(sf => !localFeedUrls.has(sf.url));
 
-        // Find feeds we have locally that were removed on server
-        // IMPORTANT: Protect recently-added feeds from being removed before sync completes
-        // This prevents race condition where beacon hasn't reached server yet
-        const SYNC_PROTECTION_MS = 15000; // 15 seconds grace period for sync
-        const now = Date.now();
-        const removedFeeds = state.feeds.filter(lf => {
-          if (!serverFeedUrls.has(lf.url)) {
-            // Check if this feed was added recently (within protection window)
-            if (lf.addedAt && (now - lf.addedAt) < SYNC_PROTECTION_MS) {
-              console.log('[FeedScanner] Protecting recently-added feed from removal:', lf.name, '(added', Math.round((now - lf.addedAt) / 1000), 's ago)');
-              return false; // Don't remove - it may not have synced yet
-            }
-            return true; // Safe to remove - not recently added
-          }
-          return false;
-        });
+        // Find feeds we have locally that aren't on server yet
+        // IMPORTANT: Never delete local feeds - instead re-sync them to server
+        // Local device is authoritative for its own feeds
+        const localOnlyFeeds = state.feeds.filter(lf => !serverFeedUrls.has(lf.url));
 
-        if (newFeeds.length === 0 && removedFeeds.length === 0) {
+        // Re-sync local-only feeds to server (they may have failed to sync initially)
+        for (const localFeed of localOnlyFeeds) {
+          console.log('[FeedScanner] Re-syncing local feed to server:', localFeed.name || localFeed.url);
+          Mem.log('feed_added', localFeed.id, {
+            url: localFeed.url,
+            name: localFeed.name || 'Loading...',
+            type: localFeed.type || 'news',
+            category: localFeed.category || 'Uncategorized',
+            author: localFeed.author || ''
+          });
+        }
+
+        if (newFeeds.length === 0 && localOnlyFeeds.length === 0) {
           // Also sync progress and bookmarks even if no feed changes
           const hasProgressChanges = this._mergeProgress(serverState.data.progress);
           const hasBookmarkChanges = this._mergeBookmarks(serverState.data.bookmarks);
@@ -5228,17 +5228,7 @@
           return;
         }
 
-        console.log('[FeedScanner] Found', newFeeds.length, 'new feeds,', removedFeeds.length, 'removed feeds');
-
-        // Create a snapshot before sync changes (safety net for cross-device conflicts)
-        if (removedFeeds.length > 0) {
-          try {
-            await SnapshotDB.createSnapshot('before_sync');
-            console.log('[FeedScanner] Created pre-sync snapshot');
-          } catch (e) {
-            console.warn('[FeedScanner] Failed to create pre-sync snapshot:', e);
-          }
-        }
+        console.log('[FeedScanner] Found', newFeeds.length, 'new feeds from server,', localOnlyFeeds.length, 'local feeds to re-sync');
 
         // Add new feeds from other devices
         for (const serverFeed of newFeeds) {
@@ -5269,25 +5259,6 @@
           } catch (e) {
             console.warn('[FeedScanner] Failed to fetch content for:', feed.name, e.message);
           }
-        }
-
-        // Remove feeds that were deleted on other devices
-        for (const localFeed of removedFeeds) {
-          console.log('[FeedScanner] Removing feed deleted on other device:', localFeed.name);
-
-          // Archive content before removing
-          if (localFeed.type === 'news') {
-            const feedArticles = state.articles.filter(a => a.feedId === localFeed.id);
-            state.archivedArticles.push(...feedArticles);
-            state.articles = state.articles.filter(a => a.feedId !== localFeed.id);
-          } else {
-            const feedPodcasts = state.podcasts.filter(p => p.feedId === localFeed.id);
-            state.archivedPodcasts.push(...feedPodcasts);
-            state.podcasts = state.podcasts.filter(p => p.feedId !== localFeed.id);
-          }
-
-          // Remove feed from state
-          state.feeds = state.feeds.filter(f => f.id !== localFeed.id);
         }
 
         // Update existing feeds with metadata changes from server
@@ -5331,7 +5302,7 @@
         localStorage.setItem('feedr2', JSON.stringify(state));
 
         // Re-render UI to show changes
-        if (newFeeds.length > 0 || removedFeeds.length > 0 || updatedFeeds > 0) {
+        if (newFeeds.length > 0 || localOnlyFeeds.length > 0 || updatedFeeds > 0) {
           renderNewsSources();
           renderPodcastSources();
           renderCategories();
@@ -5346,7 +5317,7 @@
           // Notify user of sync
           const changes = [];
           if (newFeeds.length > 0) changes.push(`${newFeeds.length} added`);
-          if (removedFeeds.length > 0) changes.push(`${removedFeeds.length} removed`);
+          if (localOnlyFeeds.length > 0) changes.push(`${localOnlyFeeds.length} re-synced`);
           if (updatedFeeds > 0) changes.push(`${updatedFeeds} updated`);
           if (changes.length > 0) {
             toast(`Synced feeds: ${changes.join(', ')}`);
@@ -5354,7 +5325,7 @@
         }
 
         // Exponential backoff: adjust scan interval based on whether changes were detected
-        const anyChanges = newFeeds.length > 0 || removedFeeds.length > 0 || updatedFeeds > 0;
+        const anyChanges = newFeeds.length > 0 || localOnlyFeeds.length > 0 || updatedFeeds > 0;
         if (anyChanges) {
           // Changes detected - reset to base interval
           this.consecutiveNoChanges = 0;
