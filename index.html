@@ -4906,8 +4906,8 @@
         }
       };
 
-      // Use text/plain to avoid CORS preflight
-      const blob = new Blob([JSON.stringify(payload)], { type: 'text/plain' });
+      // Use application/json for proper parsing by Xano
+      const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
       const success = navigator.sendBeacon(this.endpoint, blob);
 
       if (success) {
