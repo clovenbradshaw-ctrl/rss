@@ -1614,6 +1614,7 @@
       .news-sidebar { display: none !important; }
       .podcast-sidebar { display: none !important; }
       .show-hero, .source-hero { flex-direction: column; align-items: center; text-align: center; padding: 24px; }
+      .show-hero > .back-btn, .source-hero > .back-btn, .episode-hero > .back-btn { align-self: flex-start; margin-bottom: 16px; }
       .show-hero-art, .source-hero-art { width: 160px; height: 160px; }
       .show-hero-title, .source-hero-title { font-size: 26px; }
       .episode-hero { flex-direction: column; align-items: center; text-align: center; padding: 24px 20px; gap: 20px; }
@@ -9230,8 +9231,6 @@
     el.sourcePage.innerHTML = `
       <div class="source-hero">
         <button class="back-btn" id="sourceBackBtn"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg> Back</button>
-      </div>
-      <div class="source-hero" style="padding-top:0">
         <img class="source-hero-art" src="${source.image || placeholderImg}" onerror="this.src='${placeholderImg}'">
         <div class="source-hero-info">
           <div class="source-hero-type">News Feed</div>
@@ -9273,8 +9272,6 @@
     el.showPage.innerHTML = `
       <div class="show-hero">
         <button class="back-btn" id="showBackBtn"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg> Back</button>
-      </div>
-      <div class="show-hero" style="padding-top:0">
         <img class="show-hero-art" src="${show.image || placeholderImg}" onerror="this.src='${placeholderImg}'">
         <div class="show-hero-info">
           <div class="show-hero-type">Podcast</div>
@@ -9360,8 +9357,6 @@
           <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
           Back
         </button>
-      </div>
-      <div class="episode-hero" style="padding-top:0">
         <img class="episode-hero-art" src="${ep.image || show?.image || placeholderImg}" onerror="this.src='${placeholderImg}'">
         <div class="episode-hero-info">
           <div class="episode-hero-show" data-show="${ep.feedId}">
