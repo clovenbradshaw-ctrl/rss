@@ -222,9 +222,9 @@ async function syncState() {
     const pending = await tx.store.getAll();
 
     for (const item of pending) {
+      // Don't set Content-Type to avoid CORS preflight (server accepts JSON regardless)
       await fetch(item.url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(item.data)
       });
     }
