@@ -1912,135 +1912,10 @@
       }
 
       /* ==================
-         PHASE 5: MOBILE MINI PLAYER - SPOTIFY STYLE
+         PHASE 5: MOBILE MINI PLAYER - Full functionality
          ================== */
 
-      /* Slim bottom bar - tapping opens fullscreen */
-      .player {
-        position: fixed;
-        bottom: calc(56px + var(--sab));
-        left: 50%;
-        transform: translateX(-50%);
-        width: calc(100% - 16px);
-        max-width: 464px;
-        padding: 8px 12px;
-        border-radius: 12px;
-        z-index: var(--z-mobile-player);
-        background: linear-gradient(135deg, var(--bg3) 0%, var(--bg2) 100%);
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-        cursor: pointer;
-      }
-
-      .player-main {
-        gap: 12px;
-        margin-bottom: 0;
-        align-items: center;
-      }
-
-      /* Smaller album art */
-      .player-art {
-        width: 44px;
-        height: 44px;
-        border-radius: 6px;
-        flex-shrink: 0;
-      }
-
-      .player-info {
-        flex: 1;
-        min-width: 0;
-      }
-
-      .player-title {
-        font-size: var(--mobile-text-sm);
-        font-weight: 600;
-        margin-bottom: 2px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-
-      .player-show {
-        font-size: var(--mobile-text-xs);
-        color: var(--text3);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-
-      /* Hide center controls - just keep play button on right */
-      .player-center {
-        display: none !important;
-      }
-
-      /* Minimal controls on right side */
-      .player-controls {
-        gap: 8px;
-      }
-
-      /* Hide skip buttons in mini player */
-      .player-skip {
-        display: none !important;
-      }
-
-      /* Compact play button */
-      .player-play {
-        width: 40px;
-        height: 40px;
-        background: var(--blue);
-        border-radius: 50%;
-      }
-
-      .player-play svg {
-        width: 16px;
-        height: 16px;
-      }
-
-      /* Hide progress bar in mini player */
-      .player-progress {
-        display: none !important;
-      }
-
-      /* Hide all extra buttons - full controls in expanded view */
-      .player-right {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-      }
-
-      .player-btn,
-      .speed-btn,
-      .volume-control,
-      .player-track-btn,
-      #pExpand {
-        display: none !important;
-      }
-
-      /* Show only play button in player-right area */
-      .player-right .player-play {
-        display: flex !important;
-      }
-
-      /* Mini progress bar at bottom of mini player */
-      .player::after {
-        content: '';
-        position: absolute;
-        bottom: 0;
-        left: 12px;
-        right: 12px;
-        height: 3px;
-        background: var(--bg4);
-        border-radius: 0 0 12px 12px;
-      }
-
-      .player .player-fill-indicator {
-        position: absolute;
-        bottom: 0;
-        left: 12px;
-        height: 3px;
-        background: var(--blue);
-        border-radius: 0 0 0 12px;
-        z-index: 1;
-      }
+      /* Mini player stays at bottom with all controls visible */
 
       /* ==================
          PHASE 6: EXPANDED PLAYER
@@ -3180,7 +3055,7 @@
         width: 32px;
         height: 32px;
         font-size: 11px;
-        display: none; /* Hide skip buttons on mini player mobile */
+        padding: 4px;
       }
 
       .player-play {
@@ -3193,8 +3068,50 @@
         height: 16px;
       }
 
+      .player-track-btn {
+        padding: 6px;
+      }
+
+      .player-track-btn svg {
+        width: 16px;
+        height: 16px;
+      }
+
       .player-right {
-        display: none; /* Hide extra buttons on mini player mobile */
+        display: flex;
+        gap: 6px;
+      }
+
+      .player-btn {
+        padding: 6px;
+      }
+
+      .player-btn svg {
+        width: 14px;
+        height: 14px;
+      }
+
+      .speed-btn {
+        font-size: 11px;
+        padding: 6px 10px;
+      }
+
+      .volume-control {
+        display: flex;
+        gap: 4px;
+      }
+
+      .volume-slider {
+        width: 60px;
+      }
+
+      #pExpand {
+        padding: 6px;
+      }
+
+      #pExpand svg {
+        width: 14px;
+        height: 14px;
       }
 
       .player-progress {
