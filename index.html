@@ -1118,13 +1118,6 @@
     .episode-description-content pre { background: var(--bg3); padding: 1em; border-radius: 8px; overflow-x: auto; margin: 1em 0; }
     .episode-description-content hr { border: none; border-top: 1px solid var(--border2); margin: 1.5em 0; }
     .episode-description-content img { max-width: 100%; height: auto; border-radius: 8px; margin: 1em 0; }
-    .episode-bookmarks { padding: 0 32px 140px; }
-    .episode-bookmarks-title { font-size: 18px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
-    .episode-bookmarks-list { display: flex; flex-direction: column; gap: 12px; }
-    .episode-bookmark-item { background: var(--bg3); border: 1px solid var(--border2); border-radius: 12px; padding: 16px; display: flex; align-items: center; gap: 16px; cursor: pointer; transition: all 0.15s; }
-    .episode-bookmark-item:hover { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.15); }
-    .episode-bookmark-time { font-size: 14px; font-weight: 600; color: var(--blue); white-space: nowrap; }
-    .episode-bookmark-note { flex: 1; font-size: 14px; color: var(--text2); }
     .episode-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
     .episode-tag { background: rgba(255,255,255,0.05); border: 1px solid var(--border2); color: var(--text2); padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; }
 
@@ -1479,23 +1472,6 @@
     .speed-preset-btn:hover { background: rgba(255,255,255,0.08); color: var(--text); }
     .speed-preset-btn.active { background: var(--blue); border-color: var(--blue); color: #fff; box-shadow: 0 2px 6px rgba(59,130,246,0.3); }
 
-    /* Bookmarks */
-    .bookmarks-panel { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: var(--bg3); border: 1px solid var(--border2); border-radius: 16px; padding: 20px; width: 340px; max-height: 320px; display: none; z-index: 110; box-shadow: 0 -8px 32px rgba(0,0,0,0.4); overflow-y: auto; }
-    .bookmarks-panel.active { display: block; }
-    .bookmarks-title { font-size: 15px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; }
-    .bookmark-add-btn { background: var(--blue); border: none; color: #fff; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 16px; transition: all 0.15s; box-shadow: 0 2px 6px rgba(59,130,246,0.3); }
-    .bookmark-add-btn:hover { background: var(--blue2); transform: scale(1.05); }
-    .bookmark-item { display: flex; align-items: center; gap: 12px; padding: 12px; background: var(--bg4); border-radius: 12px; margin-bottom: 8px; cursor: pointer; transition: all 0.15s; border: 1px solid var(--border); }
-    .bookmark-item:hover { background: rgba(255,255,255,0.06); border-color: var(--border2); }
-    .bookmark-time { font-family: -apple-system, system-ui, monospace; font-size: 13px; font-weight: 600; color: var(--blue); min-width: 54px; }
-    .bookmark-note { flex: 1; font-size: 13px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .bookmark-delete { background: none; border: none; color: var(--text3); cursor: pointer; padding: 6px; opacity: 0; transition: all 0.15s; border-radius: 50%; }
-    .bookmark-item:hover .bookmark-delete { opacity: 1; }
-    .bookmark-delete:hover { color: #ef4444; background: rgba(239,68,68,0.1); }
-    .bookmark-marker { position: absolute; top: -4px; width: 10px; height: 10px; background: var(--orange); border-radius: 50%; transform: translateX(-50%); cursor: pointer; z-index: 5; box-shadow: 0 2px 6px rgba(255,107,53,0.4); }
-    .bookmark-marker:hover { transform: translateX(-50%) scale(1.3); }
-    .bookmarks-empty { text-align: center; color: var(--text3); padding: 24px; font-size: 14px; }
-
     /* Scrubbing Preview */
     .scrub-preview { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: var(--bg3); border: 1px solid var(--border2); border-radius: 10px; padding: 8px 14px; font-family: -apple-system, system-ui, monospace; font-size: 14px; font-weight: 600; display: none; white-space: nowrap; pointer-events: none; }
     .scrub-preview.active { display: block; }
@@ -1530,7 +1506,6 @@
       .episode-play-btn { width: 100%; justify-content: center; }
       .episode-action-btn { flex: 1; min-width: 100px; justify-content: center; }
       .episode-description { padding: 0 20px 24px; }
-      .episode-bookmarks { padding: 0 20px 120px; }
       .episode-progress-section { padding: 0 20px 16px; }
       .episode-tags { justify-content: center; }
       .player { padding: 12px 16px; }
@@ -2136,8 +2111,7 @@
         transform: translateX(-50%) translateY(0);
       }
 
-      .speed-panel-title,
-      .bookmarks-title {
+      .speed-panel-title {
         font-size: var(--mobile-text-2xl);
         margin-bottom: var(--mobile-space-lg);
       }
@@ -2165,27 +2139,6 @@
         min-height: var(--mobile-touch-min);
         padding: 12px 16px;
         font-size: var(--mobile-text-base);
-      }
-
-      .bookmark-item {
-        min-height: var(--mobile-touch-comfortable);
-        padding: var(--mobile-space-md);
-        margin-bottom: var(--mobile-space-sm);
-      }
-
-      .bookmark-time {
-        font-size: var(--mobile-text-base);
-      }
-
-      .bookmark-note {
-        font-size: var(--mobile-text-sm);
-      }
-
-      .bookmark-delete {
-        min-width: var(--mobile-touch-min);
-        min-height: var(--mobile-touch-min);
-        padding: 12px;
-        opacity: 1;
       }
 
       /* Modal */
@@ -3908,7 +3861,6 @@
         </div>
       </div>
       <div class="player-right">
-        <button class="player-btn" id="pBookmark" title="Bookmarks (B)"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg></button>
         <button class="player-btn" id="pSleep" title="Sleep Timer (Ctrl+M)"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg><span class="sleep-badge" id="sleepBadge" style="display:none"></span></button>
         <button class="speed-btn" id="pSpeed" title="Speed (S)">1x</button>
         <div class="volume-control" title="Volume (M to mute, Shift+↑↓ to adjust)">
@@ -3938,14 +3890,6 @@
           <button class="speed-preset-btn" data-speed="1.5">1.5x</button>
           <button class="speed-preset-btn" data-speed="2">2x</button>
         </div>
-      </div>
-      <!-- Bookmarks Panel -->
-      <div class="bookmarks-panel" id="bookmarksPanel">
-        <div class="bookmarks-title">
-          <span>Bookmarks</span>
-          <button class="bookmark-add-btn" id="addBookmarkBtn" title="Add bookmark at current position">+</button>
-        </div>
-        <div id="bookmarksList"></div>
       </div>
     </div>
   </div>
@@ -3991,10 +3935,6 @@
         <button class="expanded-btn" id="expSleep">
           <i class="ph ph-moon"></i>
           <span>Sleep</span>
-        </button>
-        <button class="expanded-btn" id="expBookmark">
-          <i class="ph ph-bookmark-simple"></i>
-          <span>Save</span>
         </button>
       </div>
     </div>
@@ -4369,7 +4309,6 @@
       'playback_progress',   // Significant progress updates
       'returned_to_episode', // Resumption patterns
       'seek',                // Intentional navigation within content
-      'bookmark_added',      // User marked important moment
       'download_completed',  // Content acquisition
       'download_removed',    // Content removal
       'feed_added',          // Subscription change
@@ -4604,7 +4543,6 @@
         })),
         preferences: {
           viewPrefs: state.viewPrefs,
-          bookmarks: Object.keys(state.bookmarks).length,
           progress: Object.keys(state.progress).length
         },
         session: this.session,
@@ -4635,7 +4573,6 @@
         data: {
           feeds: stateData.feeds,
           progress: stateData.progress,
-          bookmarks: stateData.bookmarks,
           feedLastViewed: stateData.feedLastViewed
         },
         created_at: new Date().toISOString()
@@ -4696,7 +4633,6 @@
             baseState = {
               feeds: item.data.feeds || [],
               progress: item.data.progress || {},
-              bookmarks: item.data.bookmarks || {},
               feedLastViewed: item.data.feedLastViewed || {}
             };
             baseIndex = i;
@@ -4710,7 +4646,6 @@
           baseState = {
             feeds: [],
             progress: {},
-            bookmarks: {},
             feedLastViewed: {}
           };
           console.log('[StateSync] No snapshot found, reconstructing from scratch');
@@ -4766,20 +4701,6 @@
               }
               break;
 
-            case 'article_bookmarked':
-            case 'podcast_bookmarked':
-              if (item.data.target) {
-                baseState.bookmarks[item.data.target] = true;
-              }
-              break;
-
-            case 'article_unbookmarked':
-            case 'podcast_unbookmarked':
-              if (item.data.target) {
-                delete baseState.bookmarks[item.data.target];
-              }
-              break;
-
             case 'progress_updated':
               if (item.data.target && item.data.progress !== undefined) {
                 baseState.progress[item.data.target] = item.data.progress;
@@ -4790,7 +4711,6 @@
 
         console.log('[StateSync] Reconstructed state:', {
           feeds: baseState.feeds.length,
-          bookmarks: Object.keys(baseState.bookmarks).length,
           progress: Object.keys(baseState.progress).length
         });
 
@@ -4835,7 +4755,6 @@
             data: {
               feeds: stateData.feeds,
               progress: stateData.progress,
-              bookmarks: stateData.bookmarks,
               feedLastViewed: stateData.feedLastViewed
             },
             created_at: new Date().toISOString()
@@ -5008,11 +4927,10 @@
         const removedFeeds = state.feeds.filter(lf => !serverFeedUrls.has(lf.url));
 
         if (newFeeds.length === 0 && removedFeeds.length === 0) {
-          // Also sync progress and bookmarks even if no feed changes
+          // Also sync progress even if no feed changes
           const hasProgressChanges = this._mergeProgress(serverState.data.progress);
-          const hasBookmarkChanges = this._mergeBookmarks(serverState.data.bookmarks);
 
-          if (hasProgressChanges || hasBookmarkChanges) {
+          if (hasProgressChanges) {
             save();
           }
 
@@ -5123,9 +5041,8 @@
           }
         }
 
-        // Merge progress and bookmarks
+        // Merge progress
         this._mergeProgress(serverState.data.progress);
-        this._mergeBookmarks(serverState.data.bookmarks);
 
         // Save locally (but don't trigger server sync since data came from server)
         localStorage.setItem('feedr2', JSON.stringify(state));
@@ -5185,20 +5102,6 @@
         // Only update if server has higher progress (user listened further on another device)
         if (!state.progress[id] || progress > state.progress[id]) {
           state.progress[id] = progress;
-          changed = true;
-        }
-      }
-      return changed;
-    },
-
-    // Merge server bookmarks with local (union of both)
-    _mergeBookmarks(serverBookmarks) {
-      if (!serverBookmarks) return false;
-
-      let changed = false;
-      for (const [id, isBookmarked] of Object.entries(serverBookmarks)) {
-        if (isBookmarked && !state.bookmarks[id]) {
-          state.bookmarks[id] = true;
           changed = true;
         }
       }
@@ -5408,8 +5311,6 @@
 
       const feedAdds = new Map();  // url -> activity
       const feedRemoves = new Map();
-      const bookmarkAdds = new Map();  // id -> activity
-      const bookmarkRemoves = new Map();
       const toDelete = [];
 
       for (const activity of activities) {
@@ -5426,20 +5327,6 @@
               toDelete.push(feedAdds.get(url).id);
               toDelete.push(activity.id);
               feedAdds.delete(url);
-            }
-            break;
-          case 'bookmark_added':
-          case 'article_bookmarked':
-          case 'podcast_bookmarked':
-            if (id) bookmarkAdds.set(id, activity);
-            break;
-          case 'bookmark_removed':
-          case 'article_unbookmarked':
-          case 'podcast_unbookmarked':
-            if (id && bookmarkAdds.has(id)) {
-              toDelete.push(bookmarkAdds.get(id).id);
-              toDelete.push(activity.id);
-              bookmarkAdds.delete(id);
             }
             break;
         }
@@ -5480,7 +5367,6 @@
       // Count by action
       const progressByEpisode = new Map();
       const feedAdds = new Set();
-      const bookmarkAdds = new Set();
       const cutoff = Date.now() - (7 * 24 * 60 * 60 * 1000);
       let latestSnapshotIndex = -1;
 
@@ -5513,13 +5399,6 @@
         if (a.action === 'feed_removed' && url && feedAdds.has(url)) {
           stats.potentialSavings.redundantPairs += 2;
           feedAdds.delete(url);
-        }
-        if (['bookmark_added', 'article_bookmarked', 'podcast_bookmarked'].includes(a.action) && id) {
-          bookmarkAdds.add(id);
-        }
-        if (['bookmark_removed', 'article_unbookmarked', 'podcast_unbookmarked'].includes(a.action) && id && bookmarkAdds.has(id)) {
-          stats.potentialSavings.redundantPairs += 2;
-          bookmarkAdds.delete(id);
         }
       });
 
@@ -6205,14 +6084,12 @@
           archivedArticles: JSON.parse(JSON.stringify(state.archivedArticles || [])),
           archivedPodcasts: JSON.parse(JSON.stringify(state.archivedPodcasts || [])),
           progress: JSON.parse(JSON.stringify(state.progress)),
-          bookmarks: JSON.parse(JSON.stringify(state.bookmarks)),
           feedLastViewed: JSON.parse(JSON.stringify(state.feedLastViewed || {}))
         },
         stats: {
           feedCount: state.feeds.length,
           archivedArticleCount: (state.archivedArticles || []).length,
-          archivedPodcastCount: (state.archivedPodcasts || []).length,
-          bookmarkCount: Object.keys(state.bookmarks || {}).length
+          archivedPodcastCount: (state.archivedPodcasts || []).length
         }
       };
 
@@ -6293,7 +6170,6 @@
       state.archivedArticles = s.archivedArticles || [];
       state.archivedPodcasts = s.archivedPodcasts || [];
       state.progress = s.progress || {};
-      state.bookmarks = s.bookmarks || {};
       state.feedLastViewed = s.feedLastViewed || {};
 
       // Rebuild categories from restored feeds
@@ -6554,10 +6430,8 @@
     currentSourcePage: null, // Currently viewing source page (news)
     currentShowPage: null, // Currently viewing show page (podcasts)
     currentEpisodePage: null, // Currently viewing episode page (episode detail)
-    bookmarks: {}, // { episodeId: [{ time, note, created }] }
     sleepTimer: null, // { endTime, intervalId, fadeIntervalId }
     speedPanelOpen: false,
-    bookmarksPanelOpen: false,
     feedLastViewed: {}, // { feedId: timestamp } - when user last viewed each feed
     userBehavior: { // Track user behavior for API sync
       reads: [], // { articleId, timestamp, duration }
@@ -6595,10 +6469,9 @@
     player: $('player'), playerArt: $('playerArt'), playerTitle: $('playerTitle'),
     playerShow: $('playerShow'), pPlay: $('pPlay'), pPlayIcon: $('pPlayIcon'),
     pCur: $('pCur'), pDur: $('pDur'), pBar: $('pBar'), pFill: $('pFill'), pSpeed: $('pSpeed'), scrubTooltip: $('scrubTooltip'),
-    pBookmark: $('pBookmark'), pSleep: $('pSleep'), pPrev: $('pPrev'), pNext: $('pNext'),
+    pSleep: $('pSleep'), pPrev: $('pPrev'), pNext: $('pNext'),
     volumeSlider: $('volumeSlider'), pVolumeBtn: $('pVolumeBtn'), volumeIcon: $('volumeIcon'),
     speedPanel: $('speedPanel'), speedSlider: $('speedSlider'), speedValue: $('speedValue'),
-    bookmarksPanel: $('bookmarksPanel'), bookmarksList: $('bookmarksList'), addBookmarkBtn: $('addBookmarkBtn'),
     sleepBadge: $('sleepBadge'),
     expanded: $('expanded'), expArt: $('expArt'), expTitle: $('expTitle'),
     expShow: $('expShow'), expPlay: $('expPlay'), expPlayIcon: $('expPlayIcon'),
@@ -6654,7 +6527,6 @@
       progress: state.progress,
       view: state.view,
       viewPrefs: state.viewPrefs,
-      bookmarks: state.bookmarks,
       userBehavior: state.userBehavior,
       feedLastViewed: state.feedLastViewed,
       openLinksInNewTab: state.openLinksInNewTab,
@@ -6678,7 +6550,6 @@
         image: f.image
       })),
       progress: state.progress,
-      bookmarks: state.bookmarks,
       feedLastViewed: state.feedLastViewed
     };
 
@@ -6704,7 +6575,6 @@
     state.progress = d.progress || {};
     if (d.view) state.view = d.view;
     state.viewPrefs = d.viewPrefs || {};
-    state.bookmarks = d.bookmarks || {};
     state.userBehavior = d.userBehavior || { reads: [], plays: [], searches: [], subscriptions: [] };
     state.feedLastViewed = d.feedLastViewed || {};
     if (typeof d.openLinksInNewTab === 'boolean') state.openLinksInNewTab = d.openLinksInNewTab;
@@ -6773,9 +6643,8 @@
           state.articles = state.articles.filter(a => activeFeedIds.has(a.feedId));
           state.podcasts = state.podcasts.filter(p => activeFeedIds.has(p.feedId));
 
-          // Merge progress/bookmarks (both directions)
+          // Merge progress (both directions)
           state.progress = { ...state.progress, ...serverData.data.progress };
-          state.bookmarks = { ...state.bookmarks, ...serverData.data.bookmarks };
           state.feedLastViewed = { ...state.feedLastViewed, ...serverData.data.feedLastViewed };
 
           console.log('[Load] Merged to', state.feeds.length, 'feeds');
@@ -9099,7 +8968,6 @@
     const pr = state.progress[ep.id] || 0;
     const pct = ep.duration ? (pr / ep.duration) * 100 : 0;
     const done = pr >= ep.duration * 0.95;
-    const bookmarks = state.bookmarks[ep.id] || [];
     const isPlaying = state.currentEp?.id === ep.id && state.playing;
     const isDownloaded = ep.downloaded;
 
@@ -9116,24 +8984,6 @@
           const tagInfo = getTagInfo(tag);
           return `<span class="episode-tag">#${tagInfo.label.toLowerCase().replace(/\s+/g, '')}</span>`;
         }).join('')}</div>`
-      : '';
-
-    // Generate bookmarks HTML
-    const bookmarksHtml = bookmarks.length > 0
-      ? `<div class="episode-bookmarks">
-          <div class="episode-bookmarks-title">
-            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
-            Bookmarks (${bookmarks.length})
-          </div>
-          <div class="episode-bookmarks-list">
-            ${bookmarks.map(b => `
-              <div class="episode-bookmark-item" data-time="${b.time}">
-                <span class="episode-bookmark-time">${fmtLong(b.time)}</span>
-                <span class="episode-bookmark-note">${b.note || 'No note'}</span>
-              </div>
-            `).join('')}
-          </div>
-        </div>`
       : '';
 
     el.episodePage.innerHTML = `
@@ -9187,10 +9037,6 @@
             ? '<svg fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Downloaded'
             : '<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Download'}
         </button>
-        <button class="episode-action-btn" id="episodeBookmarkBtn" data-ep="${ep.id}">
-          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
-          Add Bookmark
-        </button>
       </div>
       ${(ep.descHtml || ep.desc) ? `
         <div class="episode-description">
@@ -9198,7 +9044,6 @@
           <div class="episode-description-content">${ep.descHtml ? sanitizeHtml(ep.descHtml) : linkifyText(ep.desc)}</div>
         </div>
       ` : ''}
-      ${bookmarksHtml}
     `;
 
     // Setup lazy loading for images
@@ -9822,7 +9667,6 @@
     }
     updatePlayer();
     updateMediaSession();
-    renderBookmarkMarkers();
   });
 
   el.audio.addEventListener('error', (e) => {
@@ -9896,7 +9740,6 @@
     state.playing = true;
     updatePlayer();
     updateMediaSession();
-    renderBookmarkMarkers();
   };
 
   const togglePlay = () => {
@@ -10189,73 +10032,6 @@
     }
   };
 
-  // === BOOKMARKS ===
-  const addBookmark = () => {
-    if (!state.currentEp) return;
-    const time = el.audio.currentTime;
-    const epId = state.currentEp.id;
-    if (!state.bookmarks[epId]) state.bookmarks[epId] = [];
-    state.bookmarks[epId].push({ time, note: 'Bookmark', created: Date.now() });
-    state.bookmarks[epId].sort((a, b) => a.time - b.time);
-    save();
-    renderBookmarks();
-    toast('Bookmark added at ' + fmt(time));
-    Mem.log('bookmark_added', epId, { time, audioUrl: state.currentEp.audioUrl });
-  };
-
-  const deleteBookmark = (epId, index) => {
-    if (state.bookmarks[epId]) {
-      state.bookmarks[epId].splice(index, 1);
-      if (state.bookmarks[epId].length === 0) delete state.bookmarks[epId];
-      save();
-      renderBookmarks();
-    }
-  };
-
-  const jumpToBookmark = (time) => {
-    seekTo(time);
-    closeAllPanels();
-  };
-
-  const renderBookmarks = () => {
-    if (!state.currentEp) {
-      el.bookmarksList.innerHTML = '<div class="bookmarks-empty">No episode playing</div>';
-      return;
-    }
-    const epId = state.currentEp.id;
-    const bookmarks = state.bookmarks[epId] || [];
-    if (bookmarks.length === 0) {
-      el.bookmarksList.innerHTML = '<div class="bookmarks-empty">No bookmarks yet. Click + to add one.</div>';
-      return;
-    }
-    el.bookmarksList.innerHTML = bookmarks.map((b, i) => `
-      <div class="bookmark-item" data-time="${b.time}">
-        <span class="bookmark-time">${fmt(b.time)}</span>
-        <span class="bookmark-note">${b.note}</span>
-        <button class="bookmark-delete" data-index="${i}"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 5L5 15M5 5l10 10"/></svg></button>
-      </div>
-    `).join('');
-  };
-
-  const renderBookmarkMarkers = () => {
-    // Remove existing markers
-    document.querySelectorAll('.bookmark-marker').forEach(m => m.remove());
-    if (!state.currentEp) return;
-    const epId = state.currentEp.id;
-    const bookmarks = state.bookmarks[epId] || [];
-    const duration = el.audio.duration || state.currentEp.duration;
-
-    bookmarks.forEach(b => {
-      const pct = (b.time / duration) * 100;
-      const marker = document.createElement('div');
-      marker.className = 'bookmark-marker';
-      marker.style.left = pct + '%';
-      marker.title = fmt(b.time);
-      marker.onclick = (e) => { e.stopPropagation(); jumpToBookmark(b.time); };
-      el.pBar.appendChild(marker);
-    });
-  };
-
   // === FOR LATER ===
   const addToForLater = (contentId, contentType) => {
     // Check if already in list
@@ -10475,9 +10251,7 @@
   // === PANEL MANAGEMENT ===
   const closeAllPanels = () => {
     el.speedPanel.classList.remove('active');
-    el.bookmarksPanel.classList.remove('active');
     state.speedPanelOpen = false;
-    state.bookmarksPanelOpen = false;
   };
 
   const toggleSpeedPanel = () => {
@@ -10489,19 +10263,9 @@
     }
   };
 
-  const toggleBookmarksPanel = () => {
-    const wasOpen = state.bookmarksPanelOpen;
-    closeAllPanels();
-    if (!wasOpen) {
-      renderBookmarks();
-      el.bookmarksPanel.classList.add('active');
-      state.bookmarksPanelOpen = true;
-    }
-  };
-
   // Close panels when clicking outside
   document.addEventListener('click', (e) => {
-    if (!e.target.closest('.player-right') && !e.target.closest('.speed-panel') && !e.target.closest('.bookmarks-panel')) {
+    if (!e.target.closest('.player-right') && !e.target.closest('.speed-panel')) {
       closeAllPanels();
     }
   });
@@ -10908,38 +10672,6 @@
       return;
     }
 
-    // Add bookmark button
-    const bookmarkBtn = e.target.closest('#episodeBookmarkBtn');
-    if (bookmarkBtn) {
-      const epId = bookmarkBtn.dataset.ep;
-      // If the episode is playing, add bookmark at current time
-      if (state.currentEp?.id === epId) {
-        addBookmark();
-        toast('Bookmark saved');
-        renderEpisodePage(epId);
-      } else {
-        // If not playing, start playing first then user can add bookmark
-        toast('Start playing to add a bookmark');
-      }
-      return;
-    }
-
-    // Bookmark item click - seek to that time
-    const bookmarkItem = e.target.closest('.episode-bookmark-item');
-    if (bookmarkItem) {
-      const time = parseFloat(bookmarkItem.dataset.time);
-      const epId = state.currentEpisodePage;
-      // If this episode is currently loaded, seek to time
-      if (state.currentEp?.id === epId) {
-        seekTo(time);
-      } else {
-        // Play the episode first
-        playEp(epId);
-        // Seek after a short delay to allow audio to load
-        setTimeout(() => seekTo(time), 500);
-      }
-      return;
-    }
   };
 
   // News inbox view event handlers
@@ -11034,10 +10766,6 @@
   $('expSleep').onclick = () => {
     el.expanded.classList.remove('active');
     el.sleepTimerModal.classList.add('active');
-  };
-  $('expBookmark').onclick = () => {
-    addBookmark();
-    toast('Bookmark saved');
   };
 
   // Tapping the player opens expanded player on mobile
@@ -11458,12 +11186,6 @@
       return;
     }
 
-    // Bookmarks
-    if (e.key === 'b' || e.key === 'B') {
-      if (!e.shiftKey) { e.preventDefault(); addBookmark(); }
-      return;
-    }
-
     // Speed panel
     if (e.key === 's' || e.key === 'S') {
       if (!e.ctrlKey && !e.metaKey) { e.preventDefault(); toggleSpeedPanel(); }
@@ -11851,24 +11573,6 @@
     if (btn) setSpeed(parseFloat(btn.dataset.speed));
   };
 
-  // Bookmarks Panel
-  el.pBookmark.onclick = (e) => { e.stopPropagation(); toggleBookmarksPanel(); };
-  el.addBookmarkBtn.onclick = (e) => { e.stopPropagation(); addBookmark(); };
-  el.bookmarksList.onclick = e => {
-    e.stopPropagation();
-    const del = e.target.closest('.bookmark-delete');
-    if (del) {
-      const epId = state.currentEp?.id;
-      const idx = parseInt(del.dataset.index);
-      if (epId !== undefined) deleteBookmark(epId, idx);
-      return;
-    }
-    const item = e.target.closest('.bookmark-item');
-    if (item) {
-      jumpToBookmark(parseFloat(item.dataset.time));
-    }
-  };
-
   // ==========================================
   // MOBILE TOUCH ENHANCEMENTS
   // ==========================================
@@ -12074,16 +11778,8 @@
         };
       }
 
-      const originalToggleBookmarks = window.toggleBookmarksPanel;
-      if (originalToggleBookmarks) {
-        window.toggleBookmarksPanel = () => {
-          originalToggleBookmarks();
-          this.updateBackdrop(el.bookmarksPanel?.classList.contains('active'));
-        };
-      }
-
       // Close on swipe down
-      [el.speedPanel, el.bookmarksPanel].forEach(panel => {
+      [el.speedPanel].forEach(panel => {
         if (!panel) return;
 
         let startY = 0;
