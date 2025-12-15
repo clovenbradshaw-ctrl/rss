@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="mobile-web-app-capable" content="yes">
@@ -933,9 +933,15 @@
     .for-later-item:hover .for-later-item-remove { opacity: 1; }
     .for-later-item-remove:hover { background: rgba(255,107,53,0.2); color: var(--orange); }
     .for-later-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 80px 32px; text-align: center; color: var(--text3); }
-    .for-later-empty-icon { font-size: 56px; margin-bottom: 16px; }
-    .for-later-empty-title { font-size: 18px; font-weight: 600; color: var(--text); margin-bottom: 8px; }
-    .for-later-empty-desc { font-size: 14px; color: var(--text3); }
+    .for-later-empty-icon { font-size: 64px; margin-bottom: 20px; color: var(--blue); opacity: 0.6; }
+    .for-later-empty-title { font-size: 20px; font-weight: 600; color: var(--text); margin-bottom: 12px; }
+    .for-later-empty-desc { font-size: 14px; color: var(--text2); line-height: 1.6; max-width: 280px; }
+    .for-later-empty-hint { margin-top: 24px; padding: 16px 20px; background: var(--bg3); border-radius: 12px; border: 1px solid var(--border2); display: flex; align-items: center; gap: 12px; }
+    .for-later-empty-hint-icon { font-size: 20px; color: var(--blue); }
+    .for-later-empty-hint-text { font-size: 13px; color: var(--text2); text-align: left; }
+    .for-later-browse-btn { margin-top: 24px; background: var(--blue); border: none; color: #fff; padding: 12px 24px; border-radius: 24px; font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit; transition: all 0.15s; box-shadow: 0 4px 12px rgba(59,130,246,0.3); }
+    .for-later-browse-btn:hover { background: var(--blue2); transform: scale(1.02); }
+    .for-later-browse-btn:active { transform: scale(0.98); }
     .add-to-later-btn { position: absolute; top: 12px; right: 12px; width: 32px; height: 32px; border-radius: 50%; background: rgba(59,130,246,0.2); border: none; color: var(--blue); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; opacity: 0; font-size: 16px; z-index: 1; }
     .article:hover .add-to-later-btn, .spotify-ep:hover .add-to-later-btn, .feed-post:hover .add-to-later-btn { opacity: 1; }
     .add-to-later-btn:hover { background: var(--blue); color: #fff; transform: scale(1.1); }
@@ -1620,6 +1626,44 @@
       .mobile-shows-title .add-show-btn:hover {
         background: var(--blue2);
         transform: scale(1.05);
+      }
+
+      .mobile-shows-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .mobile-shows-title .discover-show-btn {
+        background: var(--bg3);
+        border: 1px solid var(--border2);
+        color: var(--text);
+        height: 32px;
+        padding: 0 14px;
+        border-radius: 16px;
+        cursor: pointer;
+        font-size: var(--mobile-text-sm);
+        font-weight: 500;
+        font-family: inherit;
+        transition: all 0.15s;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+      }
+
+      .mobile-shows-title .discover-show-btn:hover {
+        background: var(--bg4);
+        border-color: var(--blue);
+        color: var(--blue);
+      }
+
+      .mobile-shows-title .discover-show-btn:active {
+        transform: scale(0.96);
+      }
+
+      .mobile-shows-title .discover-show-btn i {
+        font-size: 14px;
       }
 
       .mobile-news-title {
@@ -8539,7 +8583,10 @@
     el.mobileShowsHeader.innerHTML = `
       <div class="mobile-shows-title">
         <h3>Your Shows</h3>
-        <button class="add-show-btn" id="mobileAddShowBtn">+</button>
+        <div class="mobile-shows-actions">
+          <button class="discover-show-btn" id="mobileDiscoverBtn" title="Discover Podcasts"><i class="ph ph-magnifying-glass"></i> Discover</button>
+          <button class="add-show-btn" id="mobileAddShowBtn" title="Add by URL">+</button>
+        </div>
       </div>
       <div class="mobile-shows-scroll">
         <div class="mobile-show-card all-shows ${!state.selectedPodcastSource ? 'active' : ''}" data-show-id="all">
@@ -8567,7 +8614,16 @@
       };
     });
 
-    // Add show button
+    // Discover button - opens podcast search
+    const discoverBtn = el.mobileShowsHeader.querySelector('#mobileDiscoverBtn');
+    if (discoverBtn) {
+      discoverBtn.onclick = () => {
+        el.podcastSearchModal.classList.add('active');
+        el.podcastSearchInput.focus();
+      };
+    }
+
+    // Add show button - add by URL
     const addBtn = el.mobileShowsHeader.querySelector('#mobileAddShowBtn');
     if (addBtn) {
       addBtn.onclick = () => {
@@ -9556,11 +9612,21 @@
     if (!state.forLater || state.forLater.length === 0) {
       el.forLaterList.innerHTML = `
         <div class="for-later-empty">
-          <div class="for-later-empty-icon"><i class="ph ph-clock"></i></div>
-          <div class="for-later-empty-title">No items saved for later</div>
-          <div class="for-later-empty-desc">Click the clock icon on any article or podcast to save it here</div>
+          <div class="for-later-empty-icon"><i class="ph ph-bookmark-simple"></i></div>
+          <div class="for-later-empty-title">Save items for later</div>
+          <div class="for-later-empty-desc">Build your personal queue of articles and podcast episodes to enjoy when you have time.</div>
+          <div class="for-later-empty-hint">
+            <div class="for-later-empty-hint-icon"><i class="ph ph-clock"></i></div>
+            <div class="for-later-empty-hint-text">Tap the <strong>clock icon</strong> on any article or episode to save it here</div>
+          </div>
+          <button class="for-later-browse-btn" id="forLaterBrowseBtn">Browse Podcasts</button>
         </div>
       `;
+      // Add click handler for browse button
+      const browseBtn = document.getElementById('forLaterBrowseBtn');
+      if (browseBtn) {
+        browseBtn.onclick = () => setView('podcasts');
+      }
       return;
     }
 
