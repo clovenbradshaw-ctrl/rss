@@ -4635,7 +4635,8 @@
         }
       };
 
-      const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+      // Use text/plain to avoid CORS preflight (server accepts JSON regardless of Content-Type)
+      const blob = new Blob([JSON.stringify(payload)], { type: 'text/plain' });
       const success = navigator.sendBeacon(this.endpoint, blob);
 
       if (success) {
@@ -4819,7 +4820,8 @@
       };
 
       // sendBeacon guarantees delivery even during page unload
-      const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+      // Use text/plain to avoid CORS preflight (server accepts JSON regardless of Content-Type)
+      const blob = new Blob([JSON.stringify(payload)], { type: 'text/plain' });
       const success = navigator.sendBeacon(this.endpoint, blob);
 
       if (success) {
