@@ -7099,11 +7099,15 @@
   };
 
   // === RSS FEED FETCHING ===
-  // Simpler, more reliable CORS proxy configuration
+  // Multiple CORS proxies for reliability - tried in parallel, first success wins
   const CORS_PROXIES = [
-    url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+    // Primary proxies - most reliable
     url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
-    url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`
+    url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+    // Backup proxies
+    url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+    url => `https://proxy.cors.sh/${url}`,
+    url => `https://thingproxy.freeboard.io/fetch/${url}`
   ];
 
   // === PODCASTINDEX API ===
