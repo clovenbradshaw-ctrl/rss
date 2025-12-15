@@ -9893,7 +9893,7 @@
 
     const item = e.target.closest('.for-later-item');
     if (item && !e.target.closest('.for-later-checkbox') && !e.target.closest('.for-later-item-remove')) {
-      const contentId = parseInt(item.dataset.contentId);
+      const contentId = item.dataset.contentId;
       const contentType = item.dataset.contentType;
 
       if (contentType === 'article') {
@@ -9984,7 +9984,7 @@
     const laterBtn = e.target.closest('.add-to-later-btn');
     if (laterBtn) {
       e.stopPropagation();
-      const contentId = parseInt(laterBtn.dataset.contentId);
+      const contentId = laterBtn.dataset.contentId;
       const contentType = laterBtn.dataset.contentType;
       addToForLater(contentId, contentType);
       renderAll(); // Re-render to update button state
@@ -11087,7 +11087,7 @@
     const laterBtn = e.target.closest('.add-to-later-btn');
     if (laterBtn) {
       e.stopPropagation();
-      const contentId = parseInt(laterBtn.dataset.contentId);
+      const contentId = laterBtn.dataset.contentId;
       const contentType = laterBtn.dataset.contentType;
       addToForLater(contentId, contentType);
       renderPodcastInbox(); // Re-render to update button state
@@ -11308,7 +11308,7 @@
     // Save for Later button
     const saveForLaterBtn = e.target.closest('#episodeSaveForLaterBtn');
     if (saveForLaterBtn) {
-      const contentId = parseInt(saveForLaterBtn.dataset.contentId);
+      const contentId = saveForLaterBtn.dataset.contentId;
       const contentType = saveForLaterBtn.dataset.contentType;
       addToForLater(contentId, contentType);
       renderEpisodePage(state.currentEpisodePage); // Re-render to update button state
