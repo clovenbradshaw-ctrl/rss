@@ -156,7 +156,6 @@
     .news-list-view { display: flex; flex-direction: column; gap: 12px; }
     .news-header { padding: 12px 24px; border-bottom: 1px solid var(--border2); display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
     .news-title { font-size: 20px; font-weight: 600; letter-spacing: -0.02em; }
-    .news-view-options { display: flex; gap: 4px; margin-right: auto; }
     .category-chips { display: flex; gap: 8px; overflow-x: auto; flex: 1; min-width: 200px; }
 
     /* Mobile news header - hidden on desktop */
@@ -210,7 +209,6 @@
     .podcast-inbox-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
     .podcast-inbox-header { padding: 12px 24px; border-bottom: 1px solid var(--border2); display: flex; align-items: center; gap: 16px; }
     .podcast-inbox-header .inbox-title { font-size: 20px; font-weight: 600; letter-spacing: -0.02em; }
-    .podcast-view-options { display: flex; gap: 4px; margin-left: auto; }
     .podcast-inbox-list { flex: 1; overflow-y: auto; padding: 16px 24px 120px; }
 
     /* Podcast Episode Item (inbox style) */
@@ -952,9 +950,6 @@
 
     /* Hide mobile view toggle on desktop */
     .mobile-view-toggle { display: none; }
-
-    /* All view options on desktop */
-    .all-view-options { display: flex; gap: 4px; margin-left: auto; padding: 8px 0; }
 
     .feed-container { flex: 1; overflow-y: auto; display: flex; justify-content: center; background: var(--bg); }
     .feed-scroll { max-width: 600px; width: 100%; padding: 0; padding-bottom: 140px; }
@@ -3819,7 +3814,6 @@
         <div class="mobile-news-header" id="mobileNewsHeader"></div>
         <div class="news-header">
           <div class="news-title" id="newsTitle">All Articles</div>
-          <div class="news-view-options" id="newsViewOptions"></div>
           <div class="category-chips" id="categoryChips"></div>
         </div>
         <div class="tag-filter-section" id="tagFilterSection">
@@ -3843,7 +3837,6 @@
         <div class="mobile-shows-header" id="mobileShowsHeader"></div>
         <div class="podcast-inbox-header" id="podcastInboxHeader">
           <div class="inbox-title">Latest Episodes</div>
-          <div class="podcast-view-options" id="podcastViewOptions"></div>
         </div>
         <div class="podcast-inbox-list" id="podcastInboxList"></div>
       </div>
@@ -3872,7 +3865,6 @@
         <button class="mobile-view-toggle" id="mobileViewToggle" title="Change card layout">
           <i class="ph ph-rows" id="mobileViewIcon"></i>
         </button>
-        <div class="all-view-options" id="allViewOptions"></div>
       </nav>
       <div class="feed-container">
         <div class="feed-scroll" id="feedScroll"></div>
@@ -6606,9 +6598,6 @@
     mobileShowsHeader: $('mobileShowsHeader'),
     mobileNewsHeader: $('mobileNewsHeader'),
     podcastInboxHeader: $('podcastInboxHeader'),
-    podcastViewOptions: $('podcastViewOptions'),
-    newsViewOptions: $('newsViewOptions'),
-    allViewOptions: $('allViewOptions'),
     showPage: $('showPage'),
     episodePage: $('episodePage'),
     player: $('player'), playerArt: $('playerArt'), playerTitle: $('playerTitle'),
@@ -8375,10 +8364,9 @@
   const renderNews = (append = false) => {
     Perf.mark('renderNews');
 
-    // Render mobile news header and view options
+    // Render mobile news header
     if (!append) {
       renderMobileNewsHeader();
-      renderInboxViewOptions();
     }
 
     // Only recalculate items on fresh render
@@ -8866,7 +8854,6 @@
 
     renderPodcastSources();
     renderMobileShowsHeader();
-    renderInboxViewOptions();
     renderPodcastInbox();
   };
 
@@ -8908,22 +8895,6 @@
     return `<div class="view-options" data-source="${sourceId}">${views.map(v =>
       `<button class="view-btn ${currentView === v ? 'active' : ''}" data-view="${v}" title="${labels[v]}">${icons[v]}</button>`
     ).join('')}</div>`;
-  };
-
-  // Render view options for inbox views
-  const renderInboxViewOptions = () => {
-    // News inbox view options
-    if (el.newsViewOptions) {
-      el.newsViewOptions.innerHTML = renderViewOptions('newsInbox', state.newsInboxView, ['list', 'cards', 'table', 'masonry']);
-    }
-    // Podcast inbox view options
-    if (el.podcastViewOptions) {
-      el.podcastViewOptions.innerHTML = renderViewOptions('podcastInbox', state.podcastInboxView, ['list', 'cards']);
-    }
-    // All view options
-    if (el.allViewOptions) {
-      el.allViewOptions.innerHTML = renderViewOptions('allView', state.allView, ['list', 'cards']);
-    }
   };
 
   // Render article in different view modes
@@ -9418,11 +9389,6 @@
 
   const renderAll = (append = false) => {
     Perf.mark('renderAll');
-
-    // Render view options on fresh render
-    if (!append) {
-      renderInboxViewOptions();
-    }
 
     // Only recalculate items on fresh render
     if (!append) {
@@ -10651,34 +10617,11 @@
       return;
     }
 
-    // View options
+    // View options for individual source pages
     const viewBtn = e.target.closest('.view-btn');
     if (viewBtn) {
       const sourceKey = viewBtn.closest('.view-options').dataset.source;
       const newView = viewBtn.dataset.view;
-
-      // Handle inbox view options separately
-      if (sourceKey === 'newsInbox') {
-        state.newsInboxView = newView;
-        try { localStorage.setItem('newsInboxView', newView); } catch (e) {}
-        renderInboxViewOptions();
-        renderNews();
-        return;
-      }
-      if (sourceKey === 'podcastInbox') {
-        state.podcastInboxView = newView;
-        try { localStorage.setItem('podcastInboxView', newView); } catch (e) {}
-        renderInboxViewOptions();
-        renderPodcastInbox();
-        return;
-      }
-      if (sourceKey === 'allView') {
-        state.allView = newView;
-        try { localStorage.setItem('allView', newView); } catch (e) {}
-        renderInboxViewOptions();
-        renderAll();
-        return;
-      }
 
       // Source-specific view options
       setViewPref(sourceKey, newView);
@@ -10996,60 +10939,6 @@
         setTimeout(() => seekTo(time), 500);
       }
       return;
-    }
-  };
-
-  // News inbox view event handlers
-  el.newsContent.onclick = e => {
-    // View options
-    const viewBtn = e.target.closest('.view-btn');
-    if (viewBtn) {
-      const sourceKey = viewBtn.closest('.view-options').dataset.source;
-      const newView = viewBtn.dataset.view;
-
-      if (sourceKey === 'newsInbox') {
-        state.newsInboxView = newView;
-        try { localStorage.setItem('newsInboxView', newView); } catch (e) {}
-        renderInboxViewOptions();
-        renderNews();
-        return;
-      }
-    }
-  };
-
-  // Podcast inbox view event handlers
-  el.podcastInboxContent.onclick = e => {
-    // View options
-    const viewBtn = e.target.closest('.view-btn');
-    if (viewBtn) {
-      const sourceKey = viewBtn.closest('.view-options').dataset.source;
-      const newView = viewBtn.dataset.view;
-
-      if (sourceKey === 'podcastInbox') {
-        state.podcastInboxView = newView;
-        try { localStorage.setItem('podcastInboxView', newView); } catch (e) {}
-        renderInboxViewOptions();
-        renderPodcastInbox();
-        return;
-      }
-    }
-  };
-
-  // All view event handlers
-  document.getElementById('allView').onclick = e => {
-    // View options
-    const viewBtn = e.target.closest('.view-btn');
-    if (viewBtn) {
-      const sourceKey = viewBtn.closest('.view-options').dataset.source;
-      const newView = viewBtn.dataset.view;
-
-      if (sourceKey === 'allView') {
-        state.allView = newView;
-        try { localStorage.setItem('allView', newView); } catch (e) {}
-        renderInboxViewOptions();
-        renderAll();
-        return;
-      }
     }
   };
 
