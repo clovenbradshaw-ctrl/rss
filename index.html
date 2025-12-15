@@ -6841,25 +6841,114 @@
   const fmtLong = s => { if (isNaN(s) || s < 0) return '0:00'; const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = Math.floor(s % 60); return h > 0 ? h + ':' + String(m).padStart(2, '0') + ':' + String(sec).padStart(2, '0') : m + ':' + String(sec).padStart(2, '0'); };
   const toast = m => { el.toast.textContent = m; el.toast.classList.add('show'); setTimeout(() => el.toast.classList.remove('show'), 2500); };
   const openArticleLink = url => { if (url) state.openLinksInNewTab ? window.open(url, '_blank') : window.location.href = url; };
+
+  // Prune state data to fit within localStorage quota (~5MB limit)
+  const pruneStateForStorage = () => {
+    const MAX_ARTICLES_PER_FEED = 50;
+    const MAX_PODCASTS_PER_FEED = 75;
+    const MAX_ARCHIVED_PER_FEED = 100;
+    const MAX_BEHAVIOR_ENTRIES = 200;
+
+    // Group articles by feed and keep only most recent
+    const articlesByFeed = {};
+    state.articles.forEach(a => {
+      if (!articlesByFeed[a.feedId]) articlesByFeed[a.feedId] = [];
+      articlesByFeed[a.feedId].push(a);
+    });
+    const prunedArticles = [];
+    Object.values(articlesByFeed).forEach(feedArticles => {
+      feedArticles.sort((a, b) => new Date(b.pubDate || 0) - new Date(a.pubDate || 0));
+      prunedArticles.push(...feedArticles.slice(0, MAX_ARTICLES_PER_FEED));
+    });
+    const articlesPruned = state.articles.length - prunedArticles.length;
+
+    // Group podcasts by feed and keep only most recent
+    const podcastsByFeed = {};
+    state.podcasts.forEach(p => {
+      if (!podcastsByFeed[p.feedId]) podcastsByFeed[p.feedId] = [];
+      podcastsByFeed[p.feedId].push(p);
+    });
+    const prunedPodcasts = [];
+    Object.values(podcastsByFeed).forEach(feedPodcasts => {
+      feedPodcasts.sort((a, b) => new Date(b.pubDate || 0) - new Date(a.pubDate || 0));
+      prunedPodcasts.push(...feedPodcasts.slice(0, MAX_PODCASTS_PER_FEED));
+    });
+    const podcastsPruned = state.podcasts.length - prunedPodcasts.length;
+
+    // Prune archived content per feed
+    const archivedByFeed = {};
+    state.archivedArticles.forEach(a => {
+      if (!archivedByFeed[a.feedId]) archivedByFeed[a.feedId] = [];
+      archivedByFeed[a.feedId].push(a);
+    });
+    const prunedArchivedArticles = [];
+    Object.values(archivedByFeed).forEach(feedArchived => {
+      feedArchived.sort((a, b) => new Date(b.pubDate || 0) - new Date(a.pubDate || 0));
+      prunedArchivedArticles.push(...feedArchived.slice(0, MAX_ARCHIVED_PER_FEED));
+    });
+
+    const archivedPodcastsByFeed = {};
+    state.archivedPodcasts.forEach(p => {
+      if (!archivedPodcastsByFeed[p.feedId]) archivedPodcastsByFeed[p.feedId] = [];
+      archivedPodcastsByFeed[p.feedId].push(p);
+    });
+    const prunedArchivedPodcasts = [];
+    Object.values(archivedPodcastsByFeed).forEach(feedArchived => {
+      feedArchived.sort((a, b) => new Date(b.pubDate || 0) - new Date(a.pubDate || 0));
+      prunedArchivedPodcasts.push(...feedArchived.slice(0, MAX_ARCHIVED_PER_FEED));
+    });
+
+    // Clean up progress for non-existent podcasts
+    const validPodcastIds = new Set([...prunedPodcasts.map(p => p.id), ...prunedArchivedPodcasts.map(p => p.id)]);
+    const prunedProgress = {};
+    Object.entries(state.progress).forEach(([id, val]) => {
+      if (validPodcastIds.has(id)) prunedProgress[id] = val;
+    });
+
+    // Limit userBehavior arrays
+    const prunedBehavior = {
+      reads: (state.userBehavior.reads || []).slice(-MAX_BEHAVIOR_ENTRIES),
+      plays: (state.userBehavior.plays || []).slice(-MAX_BEHAVIOR_ENTRIES),
+      searches: (state.userBehavior.searches || []).slice(-MAX_BEHAVIOR_ENTRIES),
+      subscriptions: (state.userBehavior.subscriptions || []).slice(-MAX_BEHAVIOR_ENTRIES)
+    };
+
+    if (articlesPruned > 0 || podcastsPruned > 0) {
+      console.log(`[Prune] Trimmed ${articlesPruned} articles, ${podcastsPruned} podcasts for storage`);
+    }
+
+    return {
+      articles: prunedArticles,
+      podcasts: prunedPodcasts,
+      archivedArticles: prunedArchivedArticles,
+      archivedPodcasts: prunedArchivedPodcasts,
+      progress: prunedProgress,
+      userBehavior: prunedBehavior
+    };
+  };
+
   const save = (immediate = false) => {
-    // Full state for localStorage (includes all content for offline access)
+    // Prune data to fit within localStorage quota before saving
+    const pruned = pruneStateForStorage();
+
+    // Full state for localStorage (includes pruned content for offline access)
     const fullStateData = {
       feeds: state.feeds,
-      articles: state.articles,
-      podcasts: state.podcasts,
-      archivedArticles: state.archivedArticles,
-      archivedPodcasts: state.archivedPodcasts,
-      progress: state.progress,
+      articles: pruned.articles,
+      podcasts: pruned.podcasts,
+      archivedArticles: pruned.archivedArticles,
+      archivedPodcasts: pruned.archivedPodcasts,
+      progress: pruned.progress,
       view: state.view,
       viewPrefs: state.viewPrefs,
       bookmarks: state.bookmarks,
-      userBehavior: state.userBehavior,
+      userBehavior: pruned.userBehavior,
       feedLastViewed: state.feedLastViewed,
       openLinksInNewTab: state.openLinksInNewTab,
       forLater: state.forLater
     };
     // Save full state to localStorage for immediate local access
-    console.log('[Save] Saving to localStorage:', state.feeds.length, 'feeds,', state.podcasts.length, 'podcasts,', state.articles.length, 'articles');
+    console.log('[Save] Saving to localStorage:', state.feeds.length, 'feeds,', pruned.podcasts.length, 'podcasts,', pruned.articles.length, 'articles');
     try {
       localStorage.setItem('feedr2', JSON.stringify(fullStateData));
       console.log('[Save] ✓ localStorage save complete');
