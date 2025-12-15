@@ -4867,6 +4867,17 @@
               console.warn('[StateSync] Failed to parse data for activity:', item.action, e);
             }
           }
+
+          // FIX: Handle case where entire payload was stored in data field
+          // This happens when sendBeacon sends as text/plain and Xano stores whole body in 'data'
+          // The structure becomes: item.data = { action, data: { feeds: [...] }, created_at }
+          // We need to unwrap it to: item.action, item.data = { feeds: [...] }
+          if (!item.action && item.data && item.data.action) {
+            item.action = item.data.action;
+            item.created_at = item.data.created_at || item.created_at;
+            item.data = item.data.data; // Unwrap nested data
+            console.log('[StateSync] Unwrapped nested payload, action:', item.action);
+          }
         }
 
         // Strategy: Find most recent state snapshot, then apply subsequent actions
