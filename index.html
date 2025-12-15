@@ -1355,9 +1355,9 @@
     .hamburger:hover { background: rgba(255,255,255,0.05); }
     @media (max-width: 768px) { .hamburger { display: flex; } }
 
-    /* Mobile Bottom Tab Bar */
+    /* Bottom Tab Bar */
     .mobile-tab-bar {
-      display: none;
+      display: flex;
       position: fixed;
       bottom: 0;
       left: 0;
@@ -1370,13 +1370,10 @@
       justify-content: space-around;
       align-items: center;
     }
-    @media (max-width: 768px) {
-      .mobile-tab-bar { display: flex; }
-      /* Adjust content padding when tab bar is visible */
-      .news-list, .podcast-inbox-list, .for-later-content, .feed-scroll,
-      .episode-page, .show-page, .source-page {
-        padding-bottom: 180px !important;
-      }
+    /* Adjust content padding when tab bar is visible */
+    .news-list, .podcast-inbox-list, .for-later-content, .feed-scroll,
+    .episode-page, .show-page, .source-page {
+      padding-bottom: 180px !important;
     }
     .mobile-tab {
       display: flex;
@@ -3931,12 +3928,6 @@
   <header class="header">
     <button class="hamburger" id="hamburgerBtn"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
     <div class="logo"><img src="https://storage.googleapis.com/intelechia-content/im/BRRST%20(2).png" alt="BRRST"></div>
-    <div class="main-toggle">
-      <button class="toggle-btn active" data-view="podcasts"><span><i class="ph ph-headphones"></i></span><span>Podcasts</span></button>
-      <button class="toggle-btn" data-view="all"><span><i class="ph ph-books"></i></span><span>All</span></button>
-      <button class="toggle-btn" data-view="news"><span><i class="ph ph-newspaper"></i></span><span>News</span></button>
-      <button class="toggle-btn" data-view="forLater"><span><i class="ph ph-clock"></i></span><span>For Later</span></button>
-    </div>
     <div class="spacer"></div>
     <div class="search-box" id="searchBox">
       <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="7" cy="7" r="5"/><path d="M12 12l3 3"/></svg>
@@ -10937,9 +10928,6 @@
     state.view = viewName;
     Mem.log('view_changed', 'view_' + state.view, { prev });
 
-    // Update toggle buttons
-    document.querySelectorAll('.toggle-btn').forEach(b => b.classList.toggle('active', b.dataset.view === viewName));
-
     // Update view containers
     el.newsView.classList.toggle('active', state.view === 'news');
     el.podcastView.classList.toggle('active', state.view === 'podcasts');
@@ -10968,12 +10956,6 @@
   };
 
   // === EVENTS ===
-  document.querySelector('.main-toggle').onclick = e => {
-    const btn = e.target.closest('.toggle-btn');
-    if (!btn) return;
-    setView(btn.dataset.view);
-  };
-  
   el.newsSources.onclick = e => {
     const src = e.target.closest('.source-item');
     if (!src) return;
@@ -11928,14 +11910,12 @@
     const id = item.dataset.id;
     closeDrawer();
     if (type === 'podcast') {
-      document.querySelectorAll('.toggle-btn').forEach(b => b.classList.toggle('active', b.dataset.view === 'podcasts'));
       state.view = 'podcasts';
       el.newsView.classList.remove('active');
       el.podcastView.classList.add('active');
       el.allView.classList.remove('active');
       renderShowPage(id);
     } else if (type === 'news') {
-      document.querySelectorAll('.toggle-btn').forEach(b => b.classList.toggle('active', b.dataset.view === 'news'));
       state.view = 'news';
       el.newsView.classList.add('active');
       el.podcastView.classList.remove('active');
@@ -12843,14 +12823,12 @@
 
     // Apply saved view state
     const applyView = () => {
-      // Update toggle buttons
-      document.querySelectorAll('.toggle-btn').forEach(b => {
-        b.classList.toggle('active', b.dataset.view === state.view);
-      });
       // Update view visibility
       el.newsView.classList.toggle('active', state.view === 'news');
       el.podcastView.classList.toggle('active', state.view === 'podcasts');
       el.allView.classList.toggle('active', state.view === 'all');
+      // Update mobile tab bar
+      if (typeof updateMobileTabBar === 'function') updateMobileTabBar();
     };
 
     applyView();
