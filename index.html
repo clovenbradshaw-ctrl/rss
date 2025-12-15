@@ -4495,7 +4495,6 @@
           const { id, ts, session, action, target, content_url, ctx, local_only, ...rest } = m;
           await fetch(this.endpoint, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               session_id: session,
               action,
@@ -4667,10 +4666,7 @@
       if (!this.endpoint) return null;
 
       try {
-        const response = await fetch(this.endpoint, {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json' }
-        });
+        const response = await fetch(this.endpoint);
 
         if (!response.ok) {
           console.warn('[StateSync] Server returned', response.status);
@@ -4848,7 +4844,6 @@
 
           const response = await fetch(this.endpoint, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
           });
 
@@ -5250,8 +5245,7 @@
     async deleteActivity(activityId) {
       try {
         const response = await fetch(`${this.endpoint}/${activityId}`, {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' }
+          method: 'DELETE'
         });
         if (response.ok) {
           console.log('[ActivityCleanup] Deleted activity:', activityId);
@@ -5288,10 +5282,7 @@
     // Fetch all activities from remote
     async fetchActivities() {
       try {
-        const response = await fetch(this.endpoint, {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json' }
-        });
+        const response = await fetch(this.endpoint);
 
         if (!response.ok) return [];
 
