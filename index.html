@@ -253,6 +253,7 @@
       cursor: pointer;
       transition: background 0.15s;
       border-bottom: 1px solid var(--border);
+      position: relative;
     }
     .spotify-ep:hover { background: rgba(255,255,255,0.05); }
     .spotify-ep:active { background: rgba(255,255,255,0.08); }
@@ -903,6 +904,43 @@
       .all-cards { grid-template-columns: 1fr; }
     }
 
+    /* === FOR LATER VIEW === */
+    .for-later-view { display: none; height: 100%; flex-direction: column; }
+    .for-later-view.active { display: flex; }
+    .for-later-content { flex: 1; overflow-y: auto; padding: 24px 32px; padding-bottom: 140px; }
+    .for-later-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border2); }
+    .for-later-title { font-size: 24px; font-weight: 600; display: flex; align-items: center; gap: 12px; letter-spacing: -0.02em; }
+    .for-later-title i { font-size: 28px; color: var(--blue); }
+    .for-later-list { display: flex; flex-direction: column; gap: 12px; }
+    .for-later-item { display: flex; gap: 16px; padding: 20px; background: var(--bg3); border-radius: 16px; border: 1px solid var(--border2); transition: all 0.2s ease-out; position: relative; }
+    .for-later-item:hover { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.15); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+    .for-later-item.completed { opacity: 0.6; }
+    .for-later-item.completed .for-later-item-title { text-decoration: line-through; color: var(--text3); }
+    .for-later-checkbox { width: 24px; height: 24px; border: 2px solid var(--border2); border-radius: 6px; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.15s; background: var(--bg4); }
+    .for-later-checkbox:hover { border-color: var(--blue); background: rgba(59,130,246,0.1); }
+    .for-later-checkbox.checked { background: var(--blue); border-color: var(--blue); }
+    .for-later-checkbox.checked::after { content: '✓'; color: #fff; font-size: 14px; font-weight: 700; }
+    .for-later-item-icon { width: 48px; height: 48px; border-radius: 12px; background: var(--bg4); display: flex; align-items: center; justify-content: center; font-size: 22px; overflow: hidden; flex-shrink: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+    .for-later-item-icon img { width: 100%; height: 100%; object-fit: cover; }
+    .for-later-item-body { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; cursor: pointer; }
+    .for-later-item-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 13px; }
+    .for-later-item-type { background: var(--bg4); color: var(--text2); padding: 3px 8px; border-radius: 6px; font-size: 10px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; }
+    .for-later-item-source { color: var(--blue); font-weight: 500; }
+    .for-later-item-time { color: var(--text3); }
+    .for-later-item-title { font-size: 16px; font-weight: 600; line-height: 1.4; margin-bottom: 6px; }
+    .for-later-item-desc { font-size: 14px; color: var(--text2); line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .for-later-item-remove { position: absolute; top: 16px; right: 16px; width: 28px; height: 28px; border-radius: 50%; background: rgba(255,255,255,0.05); border: none; color: var(--text3); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; opacity: 0; }
+    .for-later-item:hover .for-later-item-remove { opacity: 1; }
+    .for-later-item-remove:hover { background: rgba(255,107,53,0.2); color: var(--orange); }
+    .for-later-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 80px 32px; text-align: center; color: var(--text3); }
+    .for-later-empty-icon { font-size: 56px; margin-bottom: 16px; }
+    .for-later-empty-title { font-size: 18px; font-weight: 600; color: var(--text); margin-bottom: 8px; }
+    .for-later-empty-desc { font-size: 14px; color: var(--text3); }
+    .add-to-later-btn { position: absolute; top: 12px; right: 12px; width: 32px; height: 32px; border-radius: 50%; background: rgba(59,130,246,0.2); border: none; color: var(--blue); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; opacity: 0; font-size: 16px; z-index: 1; }
+    .article:hover .add-to-later-btn, .spotify-ep:hover .add-to-later-btn, .feed-post:hover .add-to-later-btn { opacity: 1; }
+    .add-to-later-btn:hover { background: var(--blue); color: #fff; transform: scale(1.1); }
+    .add-to-later-btn.added { background: var(--blue); color: #fff; opacity: 1; }
+
     /* Social Media Feed Styles */
     .feed-nav { display: flex; background: var(--bg2); border-bottom: 1px solid var(--border2); padding: 0 24px; gap: 4px; }
     .feed-nav-btn { padding: 10px 20px; background: none; border: none; border-bottom: 3px solid transparent; color: var(--text2); font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.2s; display: flex; align-items: center; gap: 8px; }
@@ -924,7 +962,7 @@
     /* Social Media Post Card */
     .feed-post { background: var(--bg2); border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.15s; }
     .feed-post:hover { background: var(--bg3); }
-    .feed-post-inner { padding: 16px 20px; }
+    .feed-post-inner { padding: 16px 20px; position: relative; }
     .feed-post-header { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 10px; }
     .feed-post-avatar { width: 48px; height: 48px; border-radius: 50%; background: var(--bg4); display: flex; align-items: center; justify-content: center; font-size: 22px; overflow: hidden; flex-shrink: 0; }
     .feed-post-avatar img { width: 100%; height: 100%; object-fit: cover; }
@@ -3736,6 +3774,7 @@
       <button class="toggle-btn active" data-view="podcasts"><span><i class="ph ph-headphones"></i></span><span>Podcasts</span></button>
       <button class="toggle-btn" data-view="all"><span><i class="ph ph-books"></i></span><span>All</span></button>
       <button class="toggle-btn" data-view="news"><span><i class="ph ph-newspaper"></i></span><span>News</span></button>
+      <button class="toggle-btn" data-view="forLater"><span><i class="ph ph-clock"></i></span><span>For Later</span></button>
     </div>
     <div class="spacer"></div>
     <div class="search-box" id="searchBox">
@@ -3817,6 +3856,19 @@
       </nav>
       <div class="feed-container">
         <div class="feed-scroll" id="feedScroll"></div>
+      </div>
+    </div>
+
+    <!-- FOR LATER VIEW -->
+    <div class="for-later-view" id="forLaterView">
+      <div class="for-later-content">
+        <div class="for-later-header">
+          <div class="for-later-title">
+            <i class="ph ph-clock"></i>
+            <span>For Later</span>
+          </div>
+        </div>
+        <div class="for-later-list" id="forLaterList"></div>
       </div>
     </div>
   </div>
@@ -6490,14 +6542,15 @@
       searches: [], // { query, timestamp, results }
       subscriptions: [] // { feedId, timestamp, action: 'add'|'remove' }
     },
-    openLinksInNewTab: true // Whether clicking articles opens in new tab (true) or same tab (false)
+    openLinksInNewTab: true, // Whether clicking articles opens in new tab (true) or same tab (false)
+    forLater: [] // For Later list: [{ id, contentId, contentType: 'article'|'episode', addedAt, completed }]
   };
   
   // === DOM ===
   const $ = id => document.getElementById(id);
   const el = {
-    newsView: $('newsView'), podcastView: $('podcastView'), allView: $('allView'),
-    feedNav: $('feedNav'), feedScroll: $('feedScroll'),
+    newsView: $('newsView'), podcastView: $('podcastView'), allView: $('allView'), forLaterView: $('forLaterView'),
+    feedNav: $('feedNav'), feedScroll: $('feedScroll'), forLaterList: $('forLaterList'),
     mobileViewToggle: $('mobileViewToggle'), mobileViewIcon: $('mobileViewIcon'),
     feedCountAll: $('feedCountAll'), feedCountNews: $('feedCountNews'), feedCountPodcast: $('feedCountPodcast'),
     newsSources: $('newsSources'), newsTitle: $('newsTitle'),
@@ -6579,7 +6632,8 @@
       bookmarks: state.bookmarks,
       userBehavior: state.userBehavior,
       feedLastViewed: state.feedLastViewed,
-      openLinksInNewTab: state.openLinksInNewTab
+      openLinksInNewTab: state.openLinksInNewTab,
+      forLater: state.forLater
     };
     // Save full state to localStorage for immediate local access
     localStorage.setItem('feedr2', JSON.stringify(fullStateData));
@@ -6629,6 +6683,7 @@
     state.userBehavior = d.userBehavior || { reads: [], plays: [], searches: [], subscriptions: [] };
     state.feedLastViewed = d.feedLastViewed || {};
     if (typeof d.openLinksInNewTab === 'boolean') state.openLinksInNewTab = d.openLinksInNewTab;
+    state.forLater = d.forLater || [];
 
     // Migrate: ensure all feeds have tags array
     state.feeds.forEach(f => {
@@ -8545,6 +8600,7 @@
     const imgSrc = ep.image || show?.image || placeholderImg;
     const isPlaying = state.currentEp?.id === ep.id && state.playing;
     const isCached = ImageCache.get(imgSrc);
+    const inForLater = isInForLater(ep.id, 'episode');
 
     // Apply search highlighting if query provided
     const title = searchQuery ? highlightSearch(ep.title, searchQuery) : ep.title;
@@ -8568,6 +8624,9 @@
         ${inProgress ? `<div class="spotify-ep-progress"><div class="spotify-ep-progress-fill" style="width:${pct}%"></div></div>` : ''}
         <div class="spotify-ep-duration">${done ? '<i class="ph ph-check-circle"></i> Played' : pr > 0 ? fmt(ep.duration - pr) + ' left' : fmt(ep.duration)}</div>
       </div>
+      <button class="add-to-later-btn ${inForLater ? 'added' : ''}" data-content-id="${ep.id}" data-content-type="episode" title="Add to For Later">
+        <i class="ph ${inForLater ? 'ph-check' : 'ph-clock'}"></i>
+      </button>
     </div>`;
   };
 
@@ -9189,6 +9248,8 @@
     const image = item.image || feed?.image;
     const isUnread = type === 'news' && item.unread;
     const duration = type === 'podcast' && item.duration ? fmtLong(item.duration) : '';
+    const contentType = type === 'podcast' ? 'episode' : 'article';
+    const inForLater = isInForLater(item.id, contentType);
 
     // Apply search highlighting
     const title = searchQuery ? highlightSearch(item.title, searchQuery) : item.title;
@@ -9260,6 +9321,9 @@
           ${podcastMeta}
           ${newsActions}
         </div>
+        <button class="add-to-later-btn ${inForLater ? 'added' : ''}" data-content-id="${item.id}" data-content-type="${contentType}" title="Add to For Later">
+          <i class="ph ${inForLater ? 'ph-check' : 'ph-clock'}"></i>
+        </button>
       </div>
     </article>`;
   };
@@ -9430,6 +9494,109 @@
     if (loadMoreEl) feedScrollObserver.observe(loadMoreEl);
   };
 
+  // === FOR LATER VIEW ===
+  const renderForLater = () => {
+    if (!state.forLater || state.forLater.length === 0) {
+      el.forLaterList.innerHTML = `
+        <div class="for-later-empty">
+          <div class="for-later-empty-icon"><i class="ph ph-clock"></i></div>
+          <div class="for-later-empty-title">No items saved for later</div>
+          <div class="for-later-empty-desc">Click the clock icon on any article or podcast to save it here</div>
+        </div>
+      `;
+      return;
+    }
+
+    const items = state.forLater.map(item => {
+      let content = null;
+      let feed = null;
+
+      if (item.contentType === 'article') {
+        content = state.articles.find(a => a.id === item.contentId);
+        if (!content) content = state.archivedArticles.find(a => a.id === item.contentId);
+        if (content) feed = state.feeds.find(f => f.id === content.feedId);
+      } else if (item.contentType === 'episode') {
+        content = state.podcasts.find(p => p.id === item.contentId);
+        if (!content) content = state.archivedPodcasts.find(p => p.id === item.contentId);
+        if (content) feed = state.feeds.find(f => f.id === content.feedId);
+      }
+
+      if (!content) return null;
+
+      const timeAgo = (() => {
+        const diff = Date.now() - item.addedAt;
+        const minutes = Math.floor(diff / 60000);
+        const hours = Math.floor(minutes / 60);
+        const days = Math.floor(hours / 24);
+        if (days > 0) return `${days}d ago`;
+        if (hours > 0) return `${hours}h ago`;
+        if (minutes > 0) return `${minutes}m ago`;
+        return 'Just now';
+      })();
+
+      const icon = feed?.image || (item.contentType === 'podcast' ? '🎧' : '📰');
+      const iconHtml = feed?.image ? `<img src="${icon}" alt="">` : icon;
+
+      return `
+        <div class="for-later-item ${item.completed ? 'completed' : ''}" data-item-id="${item.id}" data-content-id="${content.id}" data-content-type="${item.contentType}">
+          <div class="for-later-checkbox ${item.completed ? 'checked' : ''}" data-item-id="${item.id}"></div>
+          <div class="for-later-item-icon">${iconHtml}</div>
+          <div class="for-later-item-body">
+            <div class="for-later-item-meta">
+              <span class="for-later-item-type">${item.contentType}</span>
+              <span class="for-later-item-source">${feed?.name || 'Unknown'}</span>
+              <span class="for-later-item-time">${timeAgo}</span>
+            </div>
+            <div class="for-later-item-title">${content.title}</div>
+            ${content.summary || content.desc ? `<div class="for-later-item-desc">${content.summary || content.desc}</div>` : ''}
+          </div>
+          <button class="for-later-item-remove" data-item-id="${item.id}" title="Remove from For Later">
+            <i class="ph ph-x"></i>
+          </button>
+        </div>
+      `;
+    }).filter(Boolean).join('');
+
+    el.forLaterList.innerHTML = items || `
+      <div class="for-later-empty">
+        <div class="for-later-empty-icon"><i class="ph ph-clock"></i></div>
+        <div class="for-later-empty-title">Items no longer available</div>
+        <div class="for-later-empty-desc">The saved items may have been removed from your feeds</div>
+      </div>
+    `;
+  };
+
+  // For Later list click handler
+  el.forLaterList.onclick = e => {
+    const checkbox = e.target.closest('.for-later-checkbox');
+    if (checkbox) {
+      const itemId = parseInt(checkbox.dataset.itemId);
+      toggleForLaterComplete(itemId);
+      return;
+    }
+
+    const removeBtn = e.target.closest('.for-later-item-remove');
+    if (removeBtn) {
+      const itemId = parseInt(removeBtn.dataset.itemId);
+      removeFromForLater(itemId);
+      return;
+    }
+
+    const item = e.target.closest('.for-later-item');
+    if (item && !e.target.closest('.for-later-checkbox') && !e.target.closest('.for-later-item-remove')) {
+      const contentId = parseInt(item.dataset.contentId);
+      const contentType = item.dataset.contentType;
+
+      if (contentType === 'article') {
+        const article = state.articles.find(a => a.id === contentId);
+        if (article) openArticleLink(article.link);
+      } else if (contentType === 'episode') {
+        const episode = state.podcasts.find(p => p.id === contentId);
+        if (episode) playEpisode(episode.id);
+      }
+    }
+  };
+
   // Handle feed nav filter clicks
   el.feedNav.onclick = e => {
     const btn = e.target.closest('.feed-nav-btn');
@@ -9504,6 +9671,17 @@
 
   // Handle clicks in feed scroll
   el.feedScroll.onclick = e => {
+    // Check for add to later button first
+    const laterBtn = e.target.closest('.add-to-later-btn');
+    if (laterBtn) {
+      e.stopPropagation();
+      const contentId = parseInt(laterBtn.dataset.contentId);
+      const contentType = laterBtn.dataset.contentType;
+      addToForLater(contentId, contentType);
+      renderAll(); // Re-render to update button state
+      return;
+    }
+
     const post = e.target.closest('.feed-post');
     if (!post) return;
 
@@ -10006,6 +10184,49 @@
     });
   };
 
+  // === FOR LATER ===
+  const addToForLater = (contentId, contentType) => {
+    // Check if already in list
+    const existing = state.forLater.find(item => item.contentId === contentId && item.contentType === contentType);
+    if (existing) {
+      toast('Already in For Later list');
+      return;
+    }
+
+    const item = {
+      id: Date.now(),
+      contentId: contentId,
+      contentType: contentType,
+      addedAt: Date.now(),
+      completed: false
+    };
+
+    state.forLater.unshift(item);
+    save();
+    toast('Added to For Later');
+    if (state.view === 'forLater') renderForLater();
+  };
+
+  const removeFromForLater = (itemId) => {
+    state.forLater = state.forLater.filter(item => item.id !== itemId);
+    save();
+    renderForLater();
+    toast('Removed from For Later');
+  };
+
+  const toggleForLaterComplete = (itemId) => {
+    const item = state.forLater.find(i => i.id === itemId);
+    if (item) {
+      item.completed = !item.completed;
+      save();
+      renderForLater();
+    }
+  };
+
+  const isInForLater = (contentId, contentType) => {
+    return state.forLater.some(item => item.contentId === contentId && item.contentType === contentType);
+  };
+
   // === SPEED PANEL ===
   const setSpeed = (speed) => {
     const prev = state.speed;
@@ -10225,6 +10446,7 @@
     el.newsView.classList.toggle('active', state.view === 'news');
     el.podcastView.classList.toggle('active', state.view === 'podcasts');
     el.allView.classList.toggle('active', state.view === 'all');
+    el.forLaterView.classList.toggle('active', state.view === 'forLater');
     // Reset search scope when changing views (keep query)
     state.searchScope = null;
     updateSearchUI();
@@ -10235,6 +10457,7 @@
     if (state.view === 'news') renderNews();
     if (state.view === 'podcasts') renderPodcasts();
     if (state.view === 'all') renderAll();
+    if (state.view === 'forLater') renderForLater();
     save();
   };
   
@@ -10407,6 +10630,17 @@
   };
 
   el.podcastInboxList.onclick = e => {
+    // Check for add to later button first
+    const laterBtn = e.target.closest('.add-to-later-btn');
+    if (laterBtn) {
+      e.stopPropagation();
+      const contentId = parseInt(laterBtn.dataset.contentId);
+      const contentType = laterBtn.dataset.contentType;
+      addToForLater(contentId, contentType);
+      renderPodcastInbox(); // Re-render to update button state
+      return;
+    }
+
     // Play button overlay click - directly plays the episode
     const playBtn = e.target.closest('.spotify-ep-play-overlay');
     if (playBtn) {
