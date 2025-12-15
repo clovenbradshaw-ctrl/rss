@@ -4921,8 +4921,8 @@
 
       console.log('[FeedScanner] Starting periodic scan (every', this.currentScanInterval / 1000, 'seconds)');
 
-      // Do initial scan after a short delay (let app fully load first)
-      setTimeout(() => this.scan(), 3000);
+      // Do initial scan after delay (let app fully load and initial sync complete)
+      setTimeout(() => this.scan(), 10000);
 
       // Set up periodic scanning with current interval
       this.intervalId = setInterval(() => this.scan(), this.currentScanInterval);
@@ -5010,7 +5010,21 @@
         const newFeeds = serverFeeds.filter(sf => !localFeedUrls.has(sf.url));
 
         // Find feeds we have locally that were removed on server
-        const removedFeeds = state.feeds.filter(lf => !serverFeedUrls.has(lf.url));
+        // IMPORTANT: Protect recently-added feeds from being removed before sync completes
+        // This prevents race condition where beacon hasn't reached server yet
+        const SYNC_PROTECTION_MS = 15000; // 15 seconds grace period for sync
+        const now = Date.now();
+        const removedFeeds = state.feeds.filter(lf => {
+          if (!serverFeedUrls.has(lf.url)) {
+            // Check if this feed was added recently (within protection window)
+            if (lf.addedAt && (now - lf.addedAt) < SYNC_PROTECTION_MS) {
+              console.log('[FeedScanner] Protecting recently-added feed from removal:', lf.name, '(added', Math.round((now - lf.addedAt) / 1000), 's ago)');
+              return false; // Don't remove - it may not have synced yet
+            }
+            return true; // Safe to remove - not recently added
+          }
+          return false;
+        });
 
         if (newFeeds.length === 0 && removedFeeds.length === 0) {
           // Also sync progress and bookmarks even if no feed changes
@@ -8139,7 +8153,8 @@
       author: author || '',
       unread: 0,
       tags: [], // Will be auto-detected during fetch
-      description: ''
+      description: '',
+      addedAt: Date.now() // Track when feed was added locally for sync protection
     };
 
     console.log('[AddFeed] Adding new feed:', { url, name, type, category });
