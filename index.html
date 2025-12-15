@@ -4861,6 +4861,17 @@
           new Date(a.created_at || 0) - new Date(b.created_at || 0)
         );
 
+        // Parse data field if it's a JSON string (Xano stores as text)
+        for (const item of activities) {
+          if (item.data && typeof item.data === 'string') {
+            try {
+              item.data = JSON.parse(item.data);
+            } catch (e) {
+              console.warn('[StateSync] Failed to parse data for activity:', item.action, e);
+            }
+          }
+        }
+
         // Strategy: Find most recent state snapshot, then apply subsequent actions
         let baseState = null;
         let baseIndex = -1;
