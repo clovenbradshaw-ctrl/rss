@@ -1350,6 +1350,33 @@
     .toast { position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%); background: var(--bg3); color: var(--text); padding: 14px 28px; border-radius: 14px; font-size: 14px; font-weight: 500; z-index: 400; opacity: 0; transition: opacity 0.3s; pointer-events: none; border: 1px solid var(--border2); box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
     .toast.show { opacity: 1; }
 
+    /* Article Details Modal */
+    .article-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; z-index: 350; backdrop-filter: blur(8px); padding: 20px; }
+    .article-modal.active { display: flex; }
+    .article-modal-box { background: var(--bg2); border-radius: 20px; width: 100%; max-width: 600px; max-height: 90vh; overflow: hidden; border: 1px solid var(--border2); box-shadow: 0 24px 80px rgba(0,0,0,0.6); display: flex; flex-direction: column; }
+    .article-modal-header { padding: 16px 20px; display: flex; justify-content: flex-end; position: absolute; top: 0; right: 0; z-index: 10; }
+    .article-modal-close { background: rgba(0,0,0,0.5); border: none; color: var(--text); cursor: pointer; padding: 10px; border-radius: 50%; transition: all 0.15s; backdrop-filter: blur(4px); }
+    .article-modal-close:hover { background: rgba(0,0,0,0.7); transform: scale(1.05); }
+    .article-modal-body { overflow-y: auto; display: flex; flex-direction: column; }
+    .article-modal-image { width: 100%; aspect-ratio: 16/9; object-fit: cover; cursor: pointer; transition: opacity 0.15s; }
+    .article-modal-image:hover { opacity: 0.9; }
+    .article-modal-content { padding: 24px; }
+    .article-modal-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+    .article-modal-source { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--text2); font-weight: 500; }
+    .article-modal-source img { width: 20px; height: 20px; border-radius: 4px; object-fit: cover; }
+    .article-modal-time { font-size: 13px; color: var(--text3); }
+    .article-modal-title { font-size: 24px; font-weight: 700; line-height: 1.3; margin-bottom: 16px; color: var(--text); letter-spacing: -0.02em; }
+    .article-modal-summary { font-size: 16px; line-height: 1.7; color: var(--text2); margin-bottom: 24px; }
+    .article-modal-link { display: inline-flex; align-items: center; gap: 8px; padding: 14px 24px; background: var(--blue); color: #fff; text-decoration: none; border-radius: 12px; font-size: 15px; font-weight: 600; transition: all 0.15s; }
+    .article-modal-link:hover { background: var(--blue2); transform: translateY(-1px); }
+    .article-modal-link i { font-size: 18px; }
+    @media (max-width: 768px) {
+      .article-modal { padding: 0; }
+      .article-modal-box { max-width: 100%; max-height: 100%; border-radius: 0; height: 100%; }
+      .article-modal-title { font-size: 20px; }
+      .article-modal-summary { font-size: 15px; }
+    }
+
     /* Mobile Hamburger & Drawer */
     .hamburger { display: none; background: none; border: none; color: var(--text); cursor: pointer; padding: 8px 12px; border-radius: 8px; transition: all 0.15s; }
     .hamburger:hover { background: rgba(255,255,255,0.05); }
@@ -4360,6 +4387,18 @@
   </div>
 </div>
 
+<!-- Article Details Modal -->
+<div class="article-modal" id="articleModal">
+  <div class="article-modal-box">
+    <div class="article-modal-header">
+      <button class="article-modal-close" id="articleModalClose"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 5L5 15M5 5l10 10"/></svg></button>
+    </div>
+    <div class="article-modal-body" id="articleModalBody">
+      <!-- Content populated by JS -->
+    </div>
+  </div>
+</div>
+
 <!-- Audio element for actual playback -->
 <audio id="audioPlayer" preload="metadata"></audio>
 
@@ -6811,7 +6850,10 @@
     // Podcast search modal
     podcastSearchModal: $('podcastSearchModal'), podcastSearchClose: $('podcastSearchClose'),
     podcastSearchInput: $('podcastSearchInput'), podcastSearchBtn: $('podcastSearchBtn'),
-    podcastSearchResults: $('podcastSearchResults'), podcastSearchStatus: $('podcastSearchStatus')
+    podcastSearchResults: $('podcastSearchResults'), podcastSearchStatus: $('podcastSearchStatus'),
+    // Article details modal
+    articleModal: $('articleModal'), articleModalClose: $('articleModalClose'),
+    articleModalBody: $('articleModalBody')
   };
   
   // === UTILS ===
@@ -6819,6 +6861,34 @@
   const fmtLong = s => { if (isNaN(s) || s < 0) return '0:00'; const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = Math.floor(s % 60); return h > 0 ? h + ':' + String(m).padStart(2, '0') + ':' + String(sec).padStart(2, '0') : m + ':' + String(sec).padStart(2, '0'); };
   const toast = m => { el.toast.textContent = m; el.toast.classList.add('show'); setTimeout(() => el.toast.classList.remove('show'), 2500); };
   const openArticleLink = url => { if (url) state.openLinksInNewTab ? window.open(url, '_blank') : window.location.href = url; };
+
+  // Show article details modal
+  const showArticleModal = (article) => {
+    const feed = state.feeds.find(f => f.id === article.feedId);
+    const feedIcon = feed?.image || feed?.icon || '';
+    const feedName = feed?.name || 'Unknown Source';
+
+    el.articleModalBody.innerHTML = `
+      ${article.image ? `<img class="article-modal-image" src="${article.image}" alt="" onerror="this.style.display='none'" data-link="${article.link || ''}">` : ''}
+      <div class="article-modal-content">
+        <div class="article-modal-meta">
+          <div class="article-modal-source">
+            ${feedIcon ? `<img src="${feedIcon}" alt="" onerror="this.style.display='none'">` : ''}
+            <span>${feedName}</span>
+          </div>
+          <span class="article-modal-time">· ${article.time || ''}</span>
+        </div>
+        <h2 class="article-modal-title">${article.title || 'Untitled'}</h2>
+        ${article.summary ? `<p class="article-modal-summary">${article.summary}</p>` : ''}
+        ${article.link ? `<a href="${article.link}" class="article-modal-link" target="_blank" rel="noopener"><i class="ph ph-arrow-square-out"></i> Read Full Article</a>` : ''}
+      </div>
+    `;
+    el.articleModal.classList.add('active');
+  };
+
+  const closeArticleModal = () => {
+    el.articleModal.classList.remove('active');
+  };
 
   // Prune state data to fit within localStorage quota (~5MB limit)
   const pruneStateForStorage = () => {
@@ -11042,8 +11112,9 @@
         Mem.log('article_opened', id, { source: art.feedId, link: art.link });
         art.unread = false;
         save();
-        openArticleLink(art.link);
+        showArticleModal(art);
         if (state.currentSourcePage) renderSourcePage(state.currentSourcePage);
+        else renderNews();
       }
       return;
     }
@@ -11057,8 +11128,9 @@
         Mem.log('article_opened', id, { source: art.feedId, link: art.link });
         art.unread = false;
         save();
-        openArticleLink(art.link);
+        showArticleModal(art);
         if (state.currentSourcePage) renderSourcePage(state.currentSourcePage);
+        else renderNews();
       }
     }
   };
@@ -11423,6 +11495,17 @@
   el.editModalClose.onclick = () => el.editModal.classList.remove('active');
   el.editModal.onclick = e => { if (e.target === el.editModal) el.editModal.classList.remove('active'); };
 
+  // Article modal handlers
+  el.articleModalClose.onclick = () => closeArticleModal();
+  el.articleModal.onclick = e => {
+    if (e.target === el.articleModal) closeArticleModal();
+    // Handle image click to open external link
+    if (e.target.classList.contains('article-modal-image')) {
+      const link = e.target.dataset.link;
+      if (link) openArticleLink(link);
+    }
+  };
+
   el.editSubmit.onclick = () => {
     const feedId = el.editFeedId.value;
     const feed = state.feeds.find(f => f.id === feedId);
@@ -11766,6 +11849,12 @@
   // === KEYBOARD SHORTCUTS ===
   document.onkeydown = e => {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+    // Close article modal with Escape
+    if (e.key === 'Escape' && el.articleModal.classList.contains('active')) {
+      closeArticleModal();
+      return;
+    }
 
     // Basic playback
     if (e.code === 'Space') { e.preventDefault(); togglePlay(); return; }
