@@ -1412,18 +1412,8 @@
       transform: scale(1.1);
     }
     /* Hide tab bar when player is expanded */
-    .expanded.active ~ .mobile-tab-bar,
     body.player-expanded .mobile-tab-bar {
       display: none !important;
-    }
-    /* Shift tab bar up when mini player is visible */
-    .player.active ~ .mobile-tab-bar {
-      bottom: 70px;
-    }
-    @media (max-width: 768px) {
-      .player.active ~ .mobile-tab-bar {
-        bottom: max(70px, calc(70px + env(safe-area-inset-bottom)));
-      }
     }
 
     .drawer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 150; opacity: 0; pointer-events: none; transition: opacity 0.3s; backdrop-filter: blur(4px); }
@@ -3728,21 +3718,27 @@
       display: none !important;
     }
 
-    /* Force mobile player styles - full width, flush to bottom */
+    /* Force mobile player styles - full width, positioned above tab bar */
     .player {
       position: fixed;
-      bottom: 0;
+      bottom: 65px; /* Position above mobile tab bar */
       left: 0;
       right: 0;
       width: 100%;
       max-width: none;
       padding: 12px 16px;
-      padding-bottom: max(12px, var(--sab));
-      border-radius: 0;
+      border-radius: 12px 12px 0 0;
       z-index: var(--z-mobile-player);
       background: linear-gradient(180deg, var(--bg3) 0%, var(--bg2) 100%);
       box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
       transform: none;
+    }
+
+    /* Account for safe area on devices with home indicator */
+    @supports (padding-bottom: env(safe-area-inset-bottom)) {
+      .player {
+        bottom: calc(65px + env(safe-area-inset-bottom));
+      }
     }
 
     /* Hide bottom nav when player is active */
