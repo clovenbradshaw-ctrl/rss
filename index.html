@@ -4828,6 +4828,144 @@
   };
   window.Memory = Mem;
 
+  // === FEEDING ACTIVITY SYNC ===
+  // Syncs all feeding-related activities (add, edit, remove) to dedicated activity-post endpoint
+  const FeedingActivity = {
+    endpoint: 'https://xvkq-pq7i-idtl.n7d.xano.io/api:Hj4C6PGO/activity-post',
+    pending: [],
+    syncing: false,
+
+    // Log and sync a feeding activity
+    log(action, feedData) {
+      const activity = {
+        id: 'fa_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+        ts: new Date().toISOString(),
+        session: Mem.session,
+        action,
+        ...feedData
+      };
+
+      console.log('[FeedingActivity] Logging:', action, feedData.feedId || feedData.url);
+
+      // Use beacon for guaranteed delivery
+      this.syncWithBeacon(activity);
+    },
+
+    // Sync using sendBeacon for guaranteed delivery
+    syncWithBeacon(activity) {
+      if (!this.endpoint) return false;
+
+      const payload = {
+        session_id: activity.session,
+        action: activity.action,
+        timestamp: activity.ts,
+        data: {
+          feedId: activity.feedId,
+          url: activity.url,
+          name: activity.name,
+          type: activity.type,
+          category: activity.category,
+          author: activity.author,
+          image: activity.image,
+          tags: activity.tags,
+          description: activity.description
+        }
+      };
+
+      // Use text/plain to avoid CORS preflight
+      const blob = new Blob([JSON.stringify(payload)], { type: 'text/plain' });
+      const success = navigator.sendBeacon(this.endpoint, blob);
+
+      if (success) {
+        console.log('[FeedingActivity] Beacon sent:', activity.action);
+      } else {
+        // Fallback: queue for fetch-based sync
+        console.warn('[FeedingActivity] Beacon failed, queuing for retry');
+        this.pending.push(activity);
+        this._savePendingQueue();
+        this.sync();
+      }
+      return success;
+    },
+
+    // Fallback sync using fetch
+    async sync() {
+      if (!this.endpoint || !this.pending.length || this.syncing) return;
+      this.syncing = true;
+
+      while (this.pending.length > 0) {
+        const activity = this.pending[0];
+        try {
+          const payload = {
+            session_id: activity.session,
+            action: activity.action,
+            timestamp: activity.ts,
+            data: {
+              feedId: activity.feedId,
+              url: activity.url,
+              name: activity.name,
+              type: activity.type,
+              category: activity.category,
+              author: activity.author,
+              image: activity.image,
+              tags: activity.tags,
+              description: activity.description
+            }
+          };
+
+          const response = await fetch(this.endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+
+          if (!response.ok) {
+            console.warn('[FeedingActivity] Sync failed:', response.status);
+            break;
+          }
+
+          this.pending.shift();
+          this._savePendingQueue();
+          console.log('[FeedingActivity] Synced:', activity.action);
+        } catch (e) {
+          console.warn('[FeedingActivity] Sync error:', e);
+          break;
+        }
+      }
+      this.syncing = false;
+    },
+
+    _savePendingQueue() {
+      try {
+        if (this.pending.length > 0) {
+          localStorage.setItem('feeding_activity_pending', JSON.stringify(this.pending));
+        } else {
+          localStorage.removeItem('feeding_activity_pending');
+        }
+      } catch (e) {}
+    },
+
+    _loadPendingQueue() {
+      try {
+        const saved = localStorage.getItem('feeding_activity_pending');
+        if (saved) {
+          this.pending = JSON.parse(saved) || [];
+          if (this.pending.length > 0) {
+            console.log('[FeedingActivity] Restored', this.pending.length, 'pending activities');
+          }
+        }
+      } catch (e) {}
+    },
+
+    init() {
+      this._loadPendingQueue();
+      if (this.pending.length > 0) {
+        setTimeout(() => this.sync(), 2000);
+      }
+    }
+  };
+  window.FeedingActivity = FeedingActivity;
+
   // === STATE SYNC - Activity-Only Storage ===
   // Everything stored as activities: both state snapshots AND individual actions
   const StateSync = {
@@ -8494,6 +8632,16 @@
       author: author || ''
     });
 
+    // Sync feeding activity to activity-post endpoint
+    FeedingActivity.log('feed_added', {
+      feedId: id,
+      url: url,
+      name: name || 'Loading...',
+      type: type,
+      category: category || 'Uncategorized',
+      author: author || ''
+    });
+
     console.log('[AddFeed] Saving to localStorage and syncing to API...');
     save(true); // Immediate sync for feed addition
 
@@ -8576,6 +8724,14 @@
 
     // Log feed removal to Xano memory for cross-device tracking
     Mem.log('feed_removed', feedId, {
+      url: feedUrl,
+      name: feedName,
+      type: feedType
+    });
+
+    // Sync feeding activity to activity-post endpoint
+    FeedingActivity.log('feed_removed', {
+      feedId: feedId,
       url: feedUrl,
       name: feedName,
       type: feedType
@@ -11526,6 +11682,19 @@
         description: feed.description,
         image: feed.image
       });
+
+      // Sync feeding activity to activity-post endpoint
+      FeedingActivity.log('feed_updated', {
+        feedId: feedId,
+        url: feed.url,
+        name: feed.name,
+        type: feed.type,
+        category: feed.category,
+        author: feed.author,
+        image: feed.image,
+        tags: feed.tags,
+        description: feed.description
+      });
     }
 
     save(hasChanges); // Immediate sync if changes made
@@ -12924,6 +13093,9 @@
     // Initialize activity tracking (syncs to Xano)
     Mem.init();
 
+    // Initialize feeding activity sync to activity-post endpoint
+    FeedingActivity.init();
+
     // Start feed scanner to detect new feeds from other devices
     FeedScanner.start();
 
@@ -12942,6 +13114,7 @@
     console.log('[FeedScanner] Scanning for new feeds every', FeedScanner.scanInterval / 1000, 'seconds');
     console.log('[Mobile] Mobile optimizations active:', window.innerWidth <= 640);
     console.log('[Activity] Syncing to Xano:', Mem.endpoint);
+    console.log('[FeedingActivity] Syncing feeding actions to:', FeedingActivity.endpoint);
     console.log('[API] User Behavior API:');
     console.log('  Memory.getLocal() - Get all local behavior logs');
     console.log('  Memory.getStats() - Get aggregated behavior statistics');
