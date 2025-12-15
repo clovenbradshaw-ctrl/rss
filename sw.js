@@ -1,6 +1,6 @@
 // BRSST Service Worker - Offline caching and performance optimization
-const CACHE_NAME = 'brsst-v1';
-const RUNTIME_CACHE = 'brsst-runtime';
+const CACHE_NAME = 'brsst-v2';
+const RUNTIME_CACHE = 'brsst-runtime-v2';
 
 // Resources to cache immediately on install
 const PRECACHE_URLS = [
@@ -66,8 +66,9 @@ self.addEventListener('fetch', event => {
           if (cachedResponse) {
             // Return cached image, refresh in background
             fetch(event.request).then(networkResponse => {
-              if (networkResponse.ok) {
-                cache.put(event.request, networkResponse.clone());
+              // Only cache valid, non-opaque responses
+              if (networkResponse && networkResponse.ok && networkResponse.status !== 0) {
+                cache.put(event.request, networkResponse.clone()).catch(() => {});
               }
             }).catch(() => {});
             return cachedResponse;
@@ -75,8 +76,9 @@ self.addEventListener('fetch', event => {
 
           // Not in cache, fetch from network
           return fetch(event.request).then(networkResponse => {
-            if (networkResponse.ok) {
-              cache.put(event.request, networkResponse.clone());
+            // Only cache valid, non-opaque responses
+            if (networkResponse && networkResponse.ok && networkResponse.status !== 0) {
+              cache.put(event.request, networkResponse.clone()).catch(() => {});
             }
             return networkResponse;
           }).catch(() => {
@@ -103,8 +105,14 @@ self.addEventListener('fetch', event => {
             return cachedResponse;
           }
           return fetch(event.request).then(networkResponse => {
-            cache.put(event.request, networkResponse.clone());
+            // Only cache valid responses
+            if (networkResponse && networkResponse.ok) {
+              cache.put(event.request, networkResponse.clone()).catch(() => {});
+            }
             return networkResponse;
+          }).catch(() => {
+            // Return empty response for failed font/icon requests
+            return new Response('', { status: 503, statusText: 'Service Unavailable' });
           });
         });
       })
@@ -120,10 +128,10 @@ self.addEventListener('fetch', event => {
       caches.open(RUNTIME_CACHE).then(cache => {
         return fetch(event.request)
           .then(networkResponse => {
-            // Cache successful responses for 5 minutes
-            if (networkResponse.ok) {
+            // Cache successful responses
+            if (networkResponse && networkResponse.ok) {
               const responseToCache = networkResponse.clone();
-              cache.put(event.request, responseToCache);
+              cache.put(event.request, responseToCache).catch(() => {});
             }
             return networkResponse;
           })
@@ -134,7 +142,15 @@ self.addEventListener('fetch', event => {
                 console.log('[SW] Returning cached feed:', url.href);
                 return cachedResponse;
               }
-              throw new Error('No cached response available');
+              // Return a proper error response instead of throwing
+              return new Response(
+                JSON.stringify({ error: 'Network unavailable and no cached data' }),
+                {
+                  status: 503,
+                  statusText: 'Service Unavailable',
+                  headers: { 'Content-Type': 'application/json' }
+                }
+              );
             });
           });
       })
@@ -148,9 +164,11 @@ self.addEventListener('fetch', event => {
       fetch(event.request)
         .then(networkResponse => {
           // Cache the latest version
-          caches.open(CACHE_NAME).then(cache => {
-            cache.put(event.request, networkResponse.clone());
-          });
+          if (networkResponse && networkResponse.ok) {
+            caches.open(CACHE_NAME).then(cache => {
+              cache.put(event.request, networkResponse.clone()).catch(() => {});
+            });
+          }
           return networkResponse;
         })
         .catch(() => {
@@ -168,20 +186,23 @@ self.addEventListener('fetch', event => {
     fetch(event.request)
       .then(response => {
         // Don't cache non-successful responses
-        if (!response.ok) {
+        if (!response || !response.ok) {
           return response;
         }
 
-        // Clone and cache
+        // Clone and cache (with error handling)
         const responseToCache = response.clone();
         caches.open(RUNTIME_CACHE).then(cache => {
-          cache.put(event.request, responseToCache);
+          cache.put(event.request, responseToCache).catch(() => {});
         });
 
         return response;
       })
       .catch(() => {
-        return caches.match(event.request);
+        return caches.match(event.request).then(cachedResponse => {
+          // Return cached response or a generic error response
+          return cachedResponse || new Response('', { status: 503, statusText: 'Service Unavailable' });
+        });
       })
   );
 });
