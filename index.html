@@ -6578,7 +6578,19 @@
       forLater: state.forLater
     };
     // Save full state to localStorage for immediate local access
-    localStorage.setItem('feedr2', JSON.stringify(fullStateData));
+    console.log('[Save] Saving to localStorage:', state.feeds.length, 'feeds,', state.podcasts.length, 'podcasts,', state.articles.length, 'articles');
+    try {
+      localStorage.setItem('feedr2', JSON.stringify(fullStateData));
+      console.log('[Save] ✓ localStorage save complete');
+    } catch (e) {
+      console.error('[Save] ✗ localStorage save FAILED:', e.message);
+      // Show user-friendly error if quota exceeded
+      if (e.name === 'QuotaExceededError') {
+        toast('Storage full - please clear old data');
+      } else {
+        toast('Failed to save locally: ' + e.message);
+      }
+    }
 
     // Minimal state for Xano sync (only subscriptions + user data, NOT content)
     // Articles/podcasts are fetched fresh from RSS feeds on each device
@@ -6603,9 +6615,11 @@
     if (immediate) {
       // Immediate sync for critical operations (feed add/remove)
       // Use sendBeacon for guaranteed delivery even if page is closing
+      console.log('[Save] Immediate sync to API with', syncData.feeds.length, 'feeds');
       StateSync.syncWithBeacon(syncData);
     } else {
       // Debounced sync for normal operations
+      console.log('[Save] Debounced sync to API');
       StateSync.saveState(syncData);
     }
   };
@@ -6649,7 +6663,8 @@
     // Step 1: Load from localStorage (immediate)
     try {
       localData = JSON.parse(localStorage.getItem('feedr2'));
-      if (localData && localData.feeds && localData.feeds.length > 0) {
+      if (localData && localData.feeds) {
+        // localStorage is valid - apply it (even if feeds array is empty)
         loaded = applyStateData(localData);
         console.log('[Load] From localStorage:', state.feeds.length, 'feeds');
       }
@@ -6719,8 +6734,9 @@
     // Update categories
     state.feeds.forEach(f => f.category && state.categories.add(f.category));
 
-    // Load demo if nothing
-    if (!loaded || state.feeds.length === 0) {
+    // Load demo only if both: failed to load AND no feeds
+    // Changed from || to && to prevent wiping user data
+    if (!loaded && state.feeds.length === 0) {
       loadDemo();
     }
   };
@@ -6804,6 +6820,7 @@
   
   const loadDemo = () => {
     // No sample data - users add their own feeds
+    console.log('[LoadDemo] Initializing empty state (no feeds found)');
     state.feeds = [];
     state.articles = [];
     state.podcasts = [];
@@ -8037,8 +8054,10 @@
       description: ''
     };
 
+    console.log('[AddFeed] Adding new feed:', { url, name, type, category });
     state.feeds.push(feed);
     state.categories.add(feed.category);
+    console.log('[AddFeed] Total feeds now:', state.feeds.length);
 
     // Track subscription for user behavior API
     state.userBehavior.subscriptions.push({
@@ -8057,6 +8076,7 @@
       author: author || ''
     });
 
+    console.log('[AddFeed] Saving to localStorage and syncing to API...');
     save(true); // Immediate sync for feed addition
 
     toast('Adding feed...');
@@ -8068,6 +8088,7 @@
         const tagLabels = feed.tags.map(t => getTagInfo(t).label).join(', ');
         console.log(`Feed ${feed.name} auto-tagged: ${tagLabels}`);
       }
+      console.log('[AddFeed] Feed content loaded successfully. Saving again...');
       save(true); // Immediate sync after content loaded
       renderNewsSources();
       renderPodcastSources(); // Always update podcast sidebar too (for image/name updates)
