@@ -4799,14 +4799,17 @@
       if (!this.endpoint) return false;
 
       const payload = {
+        session_id: Mem.session,
         action: 'state_snapshot',
+        content_url: null,
         data: {
           feeds: stateData.feeds,
           progress: stateData.progress,
           bookmarks: stateData.bookmarks,
-          feedLastViewed: stateData.feedLastViewed
-        },
-        created_at: new Date().toISOString()
+          feedLastViewed: stateData.feedLastViewed,
+          ctx: { view: state.view, tab: state.tab },
+          ts: new Date().toISOString()
+        }
       };
 
       // sendBeacon guarantees delivery even during page unload
@@ -5019,14 +5022,17 @@
 
         if (shouldSnapshot) {
           const payload = {
+            session_id: Mem.session,
             action: 'state_snapshot',
+            content_url: null,
             data: {
               feeds: stateData.feeds,
               progress: stateData.progress,
               bookmarks: stateData.bookmarks,
-              feedLastViewed: stateData.feedLastViewed
-            },
-            created_at: new Date().toISOString()
+              feedLastViewed: stateData.feedLastViewed,
+              ctx: { view: state.view, tab: state.tab },
+              ts: new Date().toISOString()
+            }
           };
 
           const response = await fetch(this.endpoint, {
