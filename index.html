@@ -4367,7 +4367,10 @@
 
     // Sync critical activity using sendBeacon - guaranteed even during page unload
     syncWithBeacon(m) {
-      if (!this.endpoint) return false;
+      if (!this.endpoint) {
+        console.error('[Mem] Cannot sync - no endpoint configured');
+        return false;
+      }
 
       const { id, ts, session, action, target, content_url, ctx, local_only, ...rest } = m;
       const payload = {
@@ -4382,24 +4385,27 @@
         }
       };
 
+      console.log('[Mem] Syncing', action, 'activity to API (beacon)');
       const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
       const success = navigator.sendBeacon(this.endpoint, blob);
 
       if (success) {
-        console.log('[Mem] Beacon sent', action, 'activity');
+        console.log('[Mem] ✓ Beacon sent', action, 'activity');
 
         // Trigger immediate cross-tab/cross-device sync for feed changes
         if (action === 'feed_added' || action === 'feed_removed' || action === 'feed_updated') {
           try {
             localStorage.setItem('feed_sync_trigger', Date.now().toString());
-            console.log('[Mem] Set cross-tab sync trigger for', action);
-          } catch(e) {}
+            console.log('[Mem] ✓ Set cross-tab sync trigger for', action);
+          } catch(e) {
+            console.warn('[Mem] Failed to set sync trigger:', e.message);
+          }
         }
       } else {
-        // Fallback: queue for regular sync
-        console.warn('[Mem] Beacon failed for', action, ', queuing for retry');
+        // Fallback: queue for regular sync with retry
+        console.warn('[Mem] ✗ Beacon failed for', action, ', queuing for retry via fetch');
         this.pending.push(m);
-        this.sync();
+        this.sync(); // This will retry using fetch instead of beacon
       }
       return success;
     },
@@ -4553,7 +4559,10 @@
     // Sync using sendBeacon - guaranteed to complete even if page is closing
     // This is critical for feed additions/removals to ensure cross-device sync
     syncWithBeacon(stateData) {
-      if (!this.endpoint) return false;
+      if (!this.endpoint) {
+        console.error('[StateSync] Cannot sync - no endpoint configured');
+        return false;
+      }
 
       const payload = {
         action: 'state_snapshot',
@@ -4566,6 +4575,13 @@
         created_at: new Date().toISOString()
       };
 
+      console.log('[StateSync] Syncing state snapshot to API:', {
+        feeds: stateData.feeds.length,
+        feedUrls: stateData.feeds.map(f => f.url),
+        progress: Object.keys(stateData.progress || {}).length,
+        bookmarks: Object.keys(stateData.bookmarks || {}).length
+      });
+
       // sendBeacon guarantees delivery even during page unload
       const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
       const success = navigator.sendBeacon(this.endpoint, blob);
@@ -4573,9 +4589,16 @@
       if (success) {
         this.changeCounter = 0;
         this.lastSyncedFeeds = JSON.stringify(stateData.feeds.map(f => f.url).sort());
-        console.log('[StateSync] Beacon sent state snapshot with', stateData.feeds.length, 'feeds');
+        console.log('[StateSync] ✓ Beacon sent state snapshot with', stateData.feeds.length, 'feeds');
+
+        // Trigger cross-tab sync so other tabs/devices know to refresh
+        try {
+          localStorage.setItem('feed_sync_trigger', Date.now().toString());
+        } catch(e) {
+          console.warn('[StateSync] Failed to set sync trigger:', e.message);
+        }
       } else {
-        console.warn('[StateSync] Beacon failed, falling back to fetch');
+        console.warn('[StateSync] ✗ Beacon failed, falling back to fetch');
         // Fallback to regular fetch if beacon fails (rare)
         this._doSync();
       }
@@ -4652,16 +4675,21 @@
             case 'feed_added':
               const url = item.data.url || item.content_url;
               if (url && !baseState.feeds.find(f => f.url === url)) {
-                baseState.feeds.push({
+                const newFeed = {
                   id: item.data.target || GUID.forFeed(url),
                   url: url,
                   name: item.data.name || 'Unknown',
                   type: item.data.type || 'news',
                   author: item.data.author || '',
                   category: item.data.category || 'Uncategorized',
-                  tags: item.data.tags || []
-                });
-                console.log('[StateSync] Applied feed_added:', item.data.name);
+                  tags: item.data.tags || [],
+                  description: item.data.description || '',
+                  image: item.data.image || ''
+                };
+                baseState.feeds.push(newFeed);
+                console.log('[StateSync] ✓ Applied feed_added:', item.data.name, '(', url, ')');
+              } else if (url) {
+                console.log('[StateSync] Skipped duplicate feed_added:', item.data.name, '(', url, ')');
               }
               break;
 
@@ -4671,7 +4699,7 @@
                 const beforeCount = baseState.feeds.length;
                 baseState.feeds = baseState.feeds.filter(f => f.url !== removeUrl);
                 if (baseState.feeds.length < beforeCount) {
-                  console.log('[StateSync] Applied feed_removed:', item.data.name || removeUrl);
+                  console.log('[StateSync] ✓ Applied feed_removed:', item.data.name || removeUrl);
                 }
               }
               break;
@@ -4686,7 +4714,10 @@
                   if (item.data.category) existingFeed.category = item.data.category;
                   if (item.data.description !== undefined) existingFeed.description = item.data.description;
                   if (item.data.image !== undefined) existingFeed.image = item.data.image;
-                  console.log('[StateSync] Applied feed_updated:', item.data.name || updateUrl);
+                  if (item.data.author !== undefined) existingFeed.author = item.data.author;
+                  console.log('[StateSync] ✓ Applied feed_updated:', item.data.name || updateUrl);
+                } else {
+                  console.warn('[StateSync] Cannot update feed - not found:', updateUrl);
                 }
               }
               break;
@@ -4967,7 +4998,7 @@
 
         // Add new feeds from other devices
         for (const serverFeed of newFeeds) {
-          console.log('[FeedScanner] Adding new feed from other device:', serverFeed.name || serverFeed.url);
+          console.log('[FeedScanner] ✓ Adding new feed from other device:', serverFeed.name || serverFeed.url);
 
           // Create local feed object
           const feed = {
@@ -4990,9 +5021,9 @@
           // Fetch content for the new feed
           try {
             await fetchAndParseFeed(feed);
-            console.log('[FeedScanner] Fetched content for:', feed.name);
+            console.log('[FeedScanner] ✓ Fetched content for:', feed.name);
           } catch (e) {
-            console.warn('[FeedScanner] Failed to fetch content for:', feed.name, e.message);
+            console.warn('[FeedScanner] ✗ Failed to fetch content for:', feed.name, e.message);
           }
         }
 
@@ -6645,6 +6676,21 @@
     return true;
   };
 
+  // Load state from localStorage and sync with API
+  // LOAD/REFRESH FLOW:
+  // 1. Load from localStorage (fast, immediate)
+  // 2. Fetch from API (sync across devices)
+  //    - Get activity log from API
+  //    - Find most recent state_snapshot
+  //    - Apply feed_added/feed_removed/feed_updated actions after snapshot
+  //    - Reconstruct complete feed list
+  // 3. Bidirectional merge:
+  //    - Keep feeds from both local and server
+  //    - Preserve local content (articles/podcasts)
+  //    - Merge progress and bookmarks
+  // 4. If local has feeds not on server, push to server
+  //
+  // This ensures new feeds added on ANY device appear on ALL devices after refresh
   const load = async () => {
     let loaded = false;
     let localData = null;
@@ -6660,8 +6706,9 @@
       console.warn('[Load] localStorage failed:', e.message);
     }
 
-    // Step 2: Fetch from server (sync)
+    // Step 2: Fetch from server (sync) - CRITICAL for cross-device feed sync
     try {
+      console.log('[Load] Fetching state from API...');
       const serverData = await StateSync.fetchState();
 
       if (serverData && serverData.data && serverData.data.feeds) {
@@ -6670,20 +6717,31 @@
 
         if (serverFeeds.length > 0 || localFeeds.length > 0) {
           console.log('[Load] Server has', serverFeeds.length, 'feeds, local has', localFeeds.length);
+          console.log('[Load] Server feed URLs:', serverFeeds.map(f => f.url));
+          console.log('[Load] Local feed URLs:', localFeeds.map(f => f.url));
 
           // BIDIRECTIONAL MERGE: Keep feeds from both local and server
-          // Server feeds with local enrichment
+          // Server feeds with local enrichment (preserve local articles/metadata)
           const mergedFeeds = serverFeeds.map(sf => {
             const localFeed = localFeeds.find(lf => lf.url === sf.url);
-            return localFeed ? { ...localFeed, ...sf } : { ...sf, tags: [] };
+            return localFeed ? { ...localFeed, ...sf } : { ...sf, tags: sf.tags || [] };
           });
 
           // Add local-only feeds that aren't on server yet (preserves unsync'd feeds)
           const serverUrls = new Set(serverFeeds.map(sf => sf.url));
           const localOnlyFeeds = localFeeds.filter(lf => !serverUrls.has(lf.url));
           if (localOnlyFeeds.length > 0) {
-            console.log('[Load] Preserving', localOnlyFeeds.length, 'local-only feeds not yet synced');
+            console.log('[Load] Preserving', localOnlyFeeds.length, 'local-only feeds not yet synced:',
+              localOnlyFeeds.map(f => f.url));
             mergedFeeds.push(...localOnlyFeeds);
+          }
+
+          // Check for new feeds from server that weren't in local
+          const localUrls = new Set(localFeeds.map(lf => lf.url));
+          const newFromServer = serverFeeds.filter(sf => !localUrls.has(sf.url));
+          if (newFromServer.length > 0) {
+            console.log('[Load] ✓ Found', newFromServer.length, 'NEW feeds from server:',
+              newFromServer.map(f => ({ name: f.name, url: f.url })));
           }
 
           state.feeds = mergedFeeds;
@@ -6698,22 +6756,24 @@
           state.bookmarks = { ...state.bookmarks, ...serverData.data.bookmarks };
           state.feedLastViewed = { ...state.feedLastViewed, ...serverData.data.feedLastViewed };
 
-          console.log('[Load] Merged to', state.feeds.length, 'feeds');
+          console.log('[Load] ✓ Merged to', state.feeds.length, 'total feeds');
           loaded = true;
 
           // If we had local-only feeds, force sync to push them to server
           if (localOnlyFeeds.length > 0) {
             console.log('[Load] Forcing sync to push local-only feeds to server');
             StateSync.changeCounter = StateSync.snapshotInterval;
+            save(true);
           }
-          save(true);
         } else if (localData && localData.feeds && localData.feeds.length > 0) {
           // Server empty, push local state
-          console.log('[Load] Pushing local state to server');
+          console.log('[Load] Server empty - pushing local state to server');
           StateSync.changeCounter = StateSync.snapshotInterval; // Force snapshot
           save(true);
           loaded = true;
         }
+      } else {
+        console.warn('[Load] No valid server data received');
       }
     } catch (e) {
       console.warn('[Load] Server fetch failed:', e.message);
@@ -8025,6 +8085,21 @@
     }
   };
 
+  // Add a new feed subscription
+  // SYNC FLOW:
+  // 1. Add feed to local state (state.feeds)
+  // 2. Immediately sync state_snapshot to API via beacon (includes new feed)
+  // 3. Log feed_added action to API via beacon (redundancy)
+  // 4. Fetch feed content from RSS source
+  // 5. Auto-detect tags and update feed metadata
+  // 6. Sync updated metadata to API via feed_updated action
+  // 7. Sync final state snapshot to API
+  //
+  // CROSS-DEVICE SYNC:
+  // - State snapshots ensure all devices have the feed subscription
+  // - feed_added/feed_updated actions provide fine-grained change tracking
+  // - FeedScanner (runs every 30s) detects new feeds and adds them locally
+  // - localStorage sync trigger forces immediate cross-tab refresh
   const addFeed = async (url, name, type, category, author) => {
     const id = GUID.forFeed(url);
     const feed = {
@@ -8051,16 +8126,24 @@
       feedType: type
     });
 
-    // Log feed subscription to Xano memory for cross-device tracking
+    console.log('[AddFeed] Adding feed to API:', feed.name, 'ID:', id, 'URL:', url);
+
+    // CRITICAL: Immediately save state snapshot BEFORE logging feed_added action
+    // This ensures the snapshot includes the new feed for guaranteed sync
+    save(true); // Immediate sync with all feeds including the new one
+
+    // CRITICAL: Log feed_added action to API for explicit feed tracking
+    // This provides redundancy - even if snapshot fails, feed_added action will recreate the feed
     Mem.log('feed_added', id, {
       url: url,
       name: name || 'Loading...',
       type: type,
       category: category || 'Uncategorized',
-      author: author || ''
+      author: author || '',
+      tags: [] // Will be populated after fetch
     });
 
-    save(true); // Immediate sync for feed addition
+    console.log('[AddFeed] Feed synced to API. Fetching content...');
 
     toast('Adding feed...');
     const success = await fetchAndParseFeed(feed);
@@ -8069,9 +8152,25 @@
       // Log tags that were auto-detected
       if (feed.tags.length > 0) {
         const tagLabels = feed.tags.map(t => getTagInfo(t).label).join(', ');
-        console.log(`Feed ${feed.name} auto-tagged: ${tagLabels}`);
+        console.log(`[AddFeed] Auto-tagged ${feed.name}: ${tagLabels}`);
+
+        // Log feed update with tags to API for cross-device tag sync
+        Mem.log('feed_updated', id, {
+          url: url,
+          name: feed.name,
+          type: type,
+          category: feed.category,
+          author: feed.author,
+          tags: feed.tags,
+          description: feed.description || '',
+          image: feed.image || ''
+        });
       }
-      save(true); // Immediate sync after content loaded
+
+      // Sync updated feed metadata (name, image, description, tags) to API
+      save(true); // Immediate sync after content loaded and metadata updated
+      console.log('[AddFeed] Feed content loaded and synced:', feed.name);
+
       renderNewsSources();
       renderPodcastSources(); // Always update podcast sidebar too (for image/name updates)
       renderCategories();
@@ -8081,6 +8180,11 @@
       if (state.view === 'all') renderAll();
       toast(`Added: ${feed.name}`);
     } else {
+      // Even if fetch failed, sync the feed subscription to API
+      // This ensures the feed appears on all devices even if content fetch fails
+      save(true);
+      console.warn('[AddFeed] Feed content fetch failed but feed subscription synced:', feed.name);
+
       // Keep the feed but show error - still render to show the feed was added
       renderNewsSources();
       renderPodcastSources();
