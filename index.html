@@ -1568,6 +1568,96 @@
       }
     }
 
+    @media (max-width: 768px) {
+      /* Show mobile headers when sidebar is hidden */
+      .mobile-shows-header {
+        display: block;
+        padding: var(--mobile-space-md);
+        background: var(--bg);
+        border-bottom: 1px solid var(--border);
+      }
+
+      .mobile-news-header {
+        display: block;
+        padding: var(--mobile-space-md);
+        background: var(--bg);
+        border-bottom: 1px solid var(--border);
+      }
+
+      .mobile-shows-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: var(--mobile-space-md);
+      }
+
+      .mobile-shows-title h3 {
+        font-size: var(--mobile-text-lg);
+        font-weight: 600;
+        color: var(--text);
+      }
+
+      .mobile-shows-title .add-show-btn {
+        background: var(--blue);
+        border: none;
+        color: #fff;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        cursor: pointer;
+        font-size: 20px;
+        transition: all 0.15s;
+        box-shadow: 0 2px 8px rgba(59,130,246,0.3);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .mobile-shows-title .add-show-btn:hover {
+        background: var(--blue2);
+        transform: scale(1.05);
+      }
+
+      .mobile-news-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: var(--mobile-space-md);
+      }
+
+      .mobile-news-title h3 {
+        font-size: var(--mobile-text-lg);
+        font-weight: 600;
+        color: var(--text);
+      }
+
+      .mobile-news-title .add-news-btn {
+        background: var(--blue);
+        border: none;
+        color: #fff;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        cursor: pointer;
+        font-size: 20px;
+        transition: all 0.15s;
+        box-shadow: 0 2px 8px rgba(59,130,246,0.3);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .mobile-news-title .add-news-btn:hover {
+        background: var(--blue2);
+        transform: scale(1.05);
+      }
+
+      /* Hide desktop inbox header */
+      .podcast-inbox-header {
+        display: none;
+      }
+    }
+
     @media (max-width: 640px) {
       /* ==================
          PHASE 1: FOUNDATION
@@ -2689,40 +2779,6 @@
          ================== */
 
       /* Mobile Shows Browser - horizontal scroll at top */
-      .mobile-shows-header {
-        display: block;
-        padding: var(--mobile-space-md);
-        background: var(--bg);
-        border-bottom: 1px solid var(--border);
-      }
-
-      .mobile-shows-title {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: var(--mobile-space-md);
-      }
-
-      .mobile-shows-title h3 {
-        font-size: var(--mobile-text-lg);
-        font-weight: 600;
-        color: var(--text);
-      }
-
-      .mobile-shows-title .add-show-btn {
-        background: var(--blue);
-        border: none;
-        color: #fff;
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        font-size: 20px;
-      }
-
       .mobile-shows-scroll {
         display: flex;
         gap: var(--mobile-space-md);
@@ -2826,46 +2882,7 @@
         padding-bottom: calc(140px + var(--sab));
       }
 
-      /* Hide desktop headers on mobile, show mobile versions */
-      .podcast-inbox-header {
-        display: none;
-      }
-
       /* Mobile News Sources Header */
-      .mobile-news-header {
-        display: block;
-        padding: var(--mobile-space-md);
-        background: var(--bg);
-        border-bottom: 1px solid var(--border);
-      }
-
-      .mobile-news-title {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: var(--mobile-space-md);
-      }
-
-      .mobile-news-title h3 {
-        font-size: var(--mobile-text-lg);
-        font-weight: 600;
-        color: var(--text);
-      }
-
-      .mobile-news-title .add-news-btn {
-        background: var(--blue);
-        border: none;
-        color: #fff;
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        font-size: 20px;
-      }
-
       .mobile-news-scroll {
         display: flex;
         gap: var(--mobile-space-md);
