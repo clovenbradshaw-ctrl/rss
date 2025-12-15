@@ -5320,15 +5320,6 @@
             renderPodcastInbox();
           }
           if (state.view === 'all') renderAll();
-
-          // Notify user of sync
-          const changes = [];
-          if (newFeeds.length > 0) changes.push(`${newFeeds.length} added`);
-          if (localOnlyFeeds.length > 0) changes.push(`${localOnlyFeeds.length} re-synced`);
-          if (updatedFeeds > 0) changes.push(`${updatedFeeds} updated`);
-          if (changes.length > 0) {
-            toast(`Synced feeds: ${changes.join(', ')}`);
-          }
         }
 
         // Exponential backoff: adjust scan interval based on whether changes were detected
