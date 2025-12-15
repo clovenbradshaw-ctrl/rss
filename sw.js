@@ -121,7 +121,8 @@ self.addEventListener('fetch', event => {
   }
 
   // For RSS feed proxies - network first with stale-while-revalidate
-  if (url.hostname.includes('allorigins') ||
+  if (url.hostname.includes('xano') ||
+      url.hostname.includes('allorigins') ||
       url.hostname.includes('corsproxy') ||
       url.hostname.includes('codetabs')) {
     event.respondWith(
