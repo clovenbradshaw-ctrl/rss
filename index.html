@@ -4603,6 +4603,7 @@
           this.syncWithBeacon(m);
         } else {
           this.pending.push(m);
+          this._savePendingQueue(); // Persist in case of page refresh
           this.sync();
         }
       }
@@ -4643,6 +4644,7 @@
         // Fallback: queue for regular sync
         console.warn('[Mem] Beacon failed for', action, ', queuing for retry');
         this.pending.push(m);
+        this._savePendingQueue(); // Persist in case of page refresh
         this.sync();
       }
       return success;
@@ -4657,7 +4659,7 @@
         try {
           // POST each activity individually (append-only)
           const { id, ts, session, action, target, content_url, ctx, local_only, ...rest } = m;
-          await fetch(this.endpoint, {
+          const response = await fetch(this.endpoint, {
             method: 'POST',
             body: JSON.stringify({
               session_id: session,
@@ -4671,7 +4673,15 @@
               }
             })
           });
+
+          // Validate response before marking as synced
+          if (!response.ok) {
+            console.warn('[Mem] Activity sync failed with status:', response.status, action);
+            break; // Keep item in queue for retry
+          }
+
           this.pending.shift(); // Remove successfully synced item
+          this._savePendingQueue(); // Persist queue state
 
           // Trigger immediate cross-tab/cross-device sync for feed changes
           if (action === 'feed_added' || action === 'feed_removed' || action === 'feed_updated') {
@@ -4682,7 +4692,7 @@
           }
         } catch(e) {
           // On failure, stop and retry later
-          console.warn('Activity sync failed, will retry:', e);
+          console.warn('[Mem] Activity sync failed, will retry:', e);
           break;
         }
       }
@@ -4699,10 +4709,46 @@
       this.sync();
     },
 
+    // Persist pending queue to localStorage (survives page refresh)
+    _savePendingQueue() {
+      try {
+        if (this.pending.length > 0) {
+          localStorage.setItem('mem_pending', JSON.stringify(this.pending));
+        } else {
+          localStorage.removeItem('mem_pending');
+        }
+      } catch (e) {
+        console.warn('[Mem] Failed to save pending queue:', e);
+      }
+    },
+
+    // Load pending queue from localStorage
+    _loadPendingQueue() {
+      try {
+        const saved = localStorage.getItem('mem_pending');
+        if (saved) {
+          const items = JSON.parse(saved);
+          if (Array.isArray(items) && items.length > 0) {
+            this.pending = items;
+            console.log('[Mem] Restored', items.length, 'pending activities from previous session');
+          }
+        }
+      } catch (e) {
+        console.warn('[Mem] Failed to load pending queue:', e);
+      }
+    },
+
     init() {
+      // Load any pending activities from previous session
+      this._loadPendingQueue();
+
       // Start periodic sync on load
       if (this.endpoint) {
         this.syncInterval = setInterval(() => this.sync(), 30000);
+        // Immediately sync any restored pending items
+        if (this.pending.length > 0) {
+          setTimeout(() => this.sync(), 1000);
+        }
       }
     },
 
@@ -5370,13 +5416,41 @@
     },
 
     // Merge server bookmarks with local (union of both)
+    // Bookmarks are arrays of {time, note, created} objects per episode
     _mergeBookmarks(serverBookmarks) {
       if (!serverBookmarks) return false;
 
       let changed = false;
-      for (const [id, isBookmarked] of Object.entries(serverBookmarks)) {
-        if (isBookmarked && !state.bookmarks[id]) {
-          state.bookmarks[id] = true;
+      for (const [id, serverValue] of Object.entries(serverBookmarks)) {
+        const localValue = state.bookmarks[id];
+
+        // Server has array of bookmarks
+        if (Array.isArray(serverValue)) {
+          if (!localValue) {
+            // No local bookmarks, use server's
+            state.bookmarks[id] = serverValue;
+            changed = true;
+          } else if (Array.isArray(localValue)) {
+            // Both are arrays - merge unique bookmarks by time
+            const localTimes = new Set(localValue.map(b => b.time));
+            for (const serverBookmark of serverValue) {
+              if (!localTimes.has(serverBookmark.time)) {
+                localValue.push(serverBookmark);
+                changed = true;
+              }
+            }
+            // Sort by time after merge
+            if (changed) localValue.sort((a, b) => a.time - b.time);
+          }
+          // If local is not array but server is, server wins
+          else {
+            state.bookmarks[id] = serverValue;
+            changed = true;
+          }
+        }
+        // Server has boolean true (legacy format) - only use if no local data
+        else if (serverValue === true && !localValue) {
+          state.bookmarks[id] = [];
           changed = true;
         }
       }
@@ -8470,6 +8544,7 @@
 
     const feedName = feed.name;
     const feedType = feed.type;
+    const feedUrl = feed.url;
 
     // Confirm deletion
     if (!confirm(`Remove "${feedName}" from your feeds?\n\nThis will also remove all ${feedType === 'news' ? 'articles' : 'episodes'} from this feed.`)) {
@@ -8510,6 +8585,7 @@
 
     // Log feed removal to Xano memory for cross-device tracking
     Mem.log('feed_removed', feedId, {
+      url: feedUrl,
       name: feedName,
       type: feedType
     });
@@ -11428,16 +11504,40 @@
     const feed = state.feeds.find(f => f.id === feedId);
     if (!feed) return;
 
+    // Capture new values
+    const newName = el.editName.value.trim() || feed.name;
+    const newAuthor = el.editAuthor.value.trim();
+    const newCategory = el.editCat.value.trim() || 'Uncategorized';
+    const newImage = el.editImage.value.trim();
+
+    // Check if anything actually changed
+    const hasChanges = feed.name !== newName ||
+                       feed.author !== newAuthor ||
+                       feed.category !== newCategory ||
+                       feed.image !== newImage;
+
     // Update feed properties
-    feed.name = el.editName.value.trim() || feed.name;
-    feed.author = el.editAuthor.value.trim();
-    feed.category = el.editCat.value.trim() || 'Uncategorized';
-    feed.image = el.editImage.value.trim();
+    feed.name = newName;
+    feed.author = newAuthor;
+    feed.category = newCategory;
+    feed.image = newImage;
 
     // Update categories set
     state.categories = new Set(state.feeds.map(f => f.category || 'Uncategorized'));
 
-    save();
+    // Log feed update to Xano for cross-device tracking
+    if (hasChanges) {
+      Mem.log('feed_updated', feedId, {
+        url: feed.url,
+        name: feed.name,
+        category: feed.category,
+        tags: feed.tags,
+        description: feed.description,
+        image: feed.image
+      });
+    }
+
+    save(hasChanges); // Immediate sync if changes made
     el.editModal.classList.remove('active');
     toast('Feed updated');
 
