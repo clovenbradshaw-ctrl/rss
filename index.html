@@ -1226,7 +1226,17 @@
     .player-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
     .speed-btn { font-size: 12px; font-weight: 600; padding: 8px 12px; background: var(--bg4); border: 1px solid var(--border2); border-radius: 8px; color: var(--text2); cursor: pointer; font-family: inherit; transition: all 0.15s; }
     .speed-btn:hover { color: var(--text); background: rgba(255,255,255,0.08); }
-    
+    .player-track-btn { background: none; border: none; color: var(--text2); cursor: pointer; padding: 8px; border-radius: 50%; transition: all 0.15s; display: flex; align-items: center; justify-content: center; }
+    .player-track-btn:hover { color: var(--text); background: rgba(255,255,255,0.05); }
+    .player-track-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+    .volume-control { display: flex; align-items: center; gap: 4px; }
+    .volume-slider { width: 80px; height: 4px; -webkit-appearance: none; appearance: none; background: var(--bg4); border-radius: 2px; outline: none; cursor: pointer; transition: all 0.15s; }
+    .volume-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 12px; height: 12px; border-radius: 50%; background: var(--text); cursor: pointer; transition: all 0.15s; }
+    .volume-slider::-moz-range-thumb { width: 12px; height: 12px; border-radius: 50%; background: var(--text); cursor: pointer; border: none; transition: all 0.15s; }
+    .volume-slider:hover { height: 5px; }
+    .volume-slider:hover::-webkit-slider-thumb { background: var(--blue); }
+    .volume-slider:hover::-moz-range-thumb { background: var(--blue); }
+
     /* Expanded */
     .expanded { position: fixed; inset: 0; background: var(--bg); z-index: 200; display: none; flex-direction: column; }
     .expanded.active { display: flex; }
@@ -1241,7 +1251,10 @@
     .expanded-bar { width: 100%; height: 6px; background: var(--bg4); border-radius: 3px; cursor: pointer; margin-bottom: 10px; overflow: hidden; }
     .expanded-fill { height: 100%; background: linear-gradient(90deg, var(--blue), var(--blue2)); border-radius: 3px; }
     .expanded-times { display: flex; justify-content: space-between; font-size: 13px; color: var(--text3); font-family: -apple-system, system-ui, monospace; }
-    .expanded-controls { display: flex; align-items: center; gap: 32px; }
+    .expanded-controls { display: flex; align-items: center; gap: 24px; }
+    .expanded-track-btn { width: 44px; height: 44px; border-radius: 50%; background: rgba(255,255,255,0.05); border: none; color: var(--text); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+    .expanded-track-btn:hover { background: rgba(255,255,255,0.1); color: var(--blue); }
+    .expanded-track-btn:disabled { opacity: 0.3; cursor: not-allowed; }
     .expanded-skip { width: 48px; height: 48px; border-radius: 50%; background: rgba(255,255,255,0.05); border: none; color: var(--text); cursor: pointer; font-size: 14px; font-weight: 600; font-family: inherit; transition: all 0.15s; }
     .expanded-skip:hover { background: rgba(255,255,255,0.1); }
     .expanded-play { width: 64px; height: 64px; border-radius: 50%; background: var(--blue); border: none; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; box-shadow: 0 6px 20px rgba(59,130,246,0.4); }
@@ -1958,6 +1971,8 @@
 
       .player-btn,
       .speed-btn,
+      .volume-control,
+      .player-track-btn,
       #pExpand {
         display: none !important;
       }
@@ -3833,15 +3848,21 @@
       </div>
       <div class="player-center">
         <div class="player-controls">
-          <button class="player-skip" id="pSkipBack">-15</button>
-          <button class="player-play" id="pPlay"><svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24" id="pPlayIcon"><path d="M8 5v14l11-7z"/></svg></button>
-          <button class="player-skip" id="pSkipFwd">+30</button>
+          <button class="player-track-btn" id="pPrev" title="Previous Episode (Shift+P)"><svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M6 6h2v12H6V6zm3.5 6l8.5 6V6l-8.5 6z"/></svg></button>
+          <button class="player-skip" id="pSkipBack" title="Rewind 15s (←)">-15</button>
+          <button class="player-play" id="pPlay" title="Play/Pause (Space)"><svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24" id="pPlayIcon"><path d="M8 5v14l11-7z"/></svg></button>
+          <button class="player-skip" id="pSkipFwd" title="Forward 30s (→)">+30</button>
+          <button class="player-track-btn" id="pNext" title="Next Episode (Shift+N)"><svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></button>
         </div>
       </div>
       <div class="player-right">
         <button class="player-btn" id="pBookmark" title="Bookmarks (B)"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg></button>
-        <button class="player-btn" id="pSleep" title="Sleep Timer (M)"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg><span class="sleep-badge" id="sleepBadge" style="display:none"></span></button>
+        <button class="player-btn" id="pSleep" title="Sleep Timer (Ctrl+M)"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg><span class="sleep-badge" id="sleepBadge" style="display:none"></span></button>
         <button class="speed-btn" id="pSpeed" title="Speed (S)">1x</button>
+        <div class="volume-control" title="Volume (M to mute, Shift+↑↓ to adjust)">
+          <button class="player-btn" id="pVolumeBtn" title="Mute/Unmute (M)"><svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24" id="volumeIcon"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg></button>
+          <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="100" title="Volume (Shift+↑↓)">
+        </div>
         <button class="icon-btn" id="pExpand" title="Fullscreen (F)"><svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg></button>
       </div>
     </div>
@@ -3904,9 +3925,11 @@
         <div class="expanded-times"><span id="expCur">0:00</span><span id="expDur">0:00</span></div>
       </div>
       <div class="expanded-controls">
+        <button class="expanded-track-btn" id="expPrev" title="Previous Episode (Shift+P)"><svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M6 6h2v12H6V6zm3.5 6l8.5 6V6l-8.5 6z"/></svg></button>
         <button class="expanded-skip" id="expBack">-15</button>
         <button class="expanded-play" id="expPlay"><svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24" id="expPlayIcon"><path d="M8 5v14l11-7z"/></svg></button>
         <button class="expanded-skip" id="expFwd">+30</button>
+        <button class="expanded-track-btn" id="expNext" title="Next Episode (Shift+N)"><svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></button>
       </div>
       <div class="expanded-extra">
         <button class="expanded-btn" id="expSpeed">
@@ -6519,13 +6542,15 @@
     player: $('player'), playerArt: $('playerArt'), playerTitle: $('playerTitle'),
     playerShow: $('playerShow'), pPlay: $('pPlay'), pPlayIcon: $('pPlayIcon'),
     pCur: $('pCur'), pDur: $('pDur'), pBar: $('pBar'), pFill: $('pFill'), pSpeed: $('pSpeed'), scrubTooltip: $('scrubTooltip'),
-    pBookmark: $('pBookmark'), pSleep: $('pSleep'),
+    pBookmark: $('pBookmark'), pSleep: $('pSleep'), pPrev: $('pPrev'), pNext: $('pNext'),
+    volumeSlider: $('volumeSlider'), pVolumeBtn: $('pVolumeBtn'), volumeIcon: $('volumeIcon'),
     speedPanel: $('speedPanel'), speedSlider: $('speedSlider'), speedValue: $('speedValue'),
     bookmarksPanel: $('bookmarksPanel'), bookmarksList: $('bookmarksList'), addBookmarkBtn: $('addBookmarkBtn'),
     sleepBadge: $('sleepBadge'),
     expanded: $('expanded'), expArt: $('expArt'), expTitle: $('expTitle'),
     expShow: $('expShow'), expPlay: $('expPlay'), expPlayIcon: $('expPlayIcon'),
     expCur: $('expCur'), expDur: $('expDur'), expBar: $('expBar'), expFill: $('expFill'),
+    expPrev: $('expPrev'), expNext: $('expNext'),
     swipeContainer: $('swipeContainer'), swipeIndicator: $('swipeIndicator'),
     swipeIcon: $('swipeIcon'), swipeText: $('swipeText'), swipeLabel: $('swipeLabel'),
     modal: $('modal'), fUrl: $('fUrl'), fName: $('fName'), fAuthor: $('fAuthor'), fCat: $('fCat'),
@@ -9563,8 +9588,10 @@
     // Update expanded player speed label
     const expSpeedLabel = $('expSpeedLabel');
     if (expSpeedLabel) expSpeedLabel.textContent = state.speed + 'x';
+    // Update track navigation buttons
+    updateTrackButtons();
   };
-  
+
   let progStart = 0;
 
   // Audio event handlers
@@ -9736,6 +9763,51 @@
     el.audio.playbackRate = state.speed;
     Mem.log('speed_changed', 'settings', { speed: state.speed, prev });
     updatePlayer();
+  };
+
+  // === VOLUME CONTROLS ===
+  const updateVolumeIcon = () => {
+    const volume = el.audio.volume * 100;
+    let iconPath;
+    if (volume === 0) {
+      iconPath = '<path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>';
+    } else if (volume < 30) {
+      iconPath = '<path d="M7 9v6h4l5 5V4l-5 5H7z"/>';
+    } else if (volume < 70) {
+      iconPath = '<path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/>';
+    } else {
+      iconPath = '<path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>';
+    }
+    el.volumeIcon.innerHTML = iconPath;
+  };
+
+  const toggleMute = () => {
+    if (el.audio.volume > 0) {
+      el.audio.dataset.prevVolume = el.audio.volume;
+      el.audio.volume = 0;
+      el.volumeSlider.value = 0;
+    } else {
+      const prevVol = parseFloat(el.audio.dataset.prevVolume || '1');
+      el.audio.volume = prevVol;
+      el.volumeSlider.value = prevVol * 100;
+    }
+    updateVolumeIcon();
+  };
+
+  const updateTrackButtons = () => {
+    if (!state.currentEp) {
+      el.pPrev.disabled = true;
+      el.pNext.disabled = true;
+      el.expPrev.disabled = true;
+      el.expNext.disabled = true;
+      return;
+    }
+    const eps = state.podcasts.filter(p => p.feedId === state.currentEp.feedId);
+    const idx = eps.findIndex(p => p.id === state.currentEp.id);
+    el.pPrev.disabled = idx >= eps.length - 1;
+    el.pNext.disabled = idx <= 0;
+    el.expPrev.disabled = idx >= eps.length - 1;
+    el.expNext.disabled = idx <= 0;
   };
 
   // === SWIPE SEEKING ===
@@ -10697,6 +10769,10 @@
   $('pSkipFwd').onclick = () => skip(30);
   $('expBack').onclick = () => skip(-15);
   $('expFwd').onclick = () => skip(30);
+  el.pPrev.onclick = playPreviousEpisode;
+  el.pNext.onclick = playNextEpisode;
+  el.volumeSlider.oninput = e => { el.audio.volume = e.target.value / 100; updateVolumeIcon(); };
+  el.pVolumeBtn.onclick = toggleMute;
   el.pBar.onclick = e => { if (!state.currentEp) return; const r = el.pBar.getBoundingClientRect(); seekTo((e.clientX - r.left) / r.width * (el.audio.duration || state.currentEp.duration)); };
   el.pBar.onmousemove = e => {
     if (!state.currentEp) return;
@@ -10711,6 +10787,10 @@
   $('pExpand').onclick = () => el.expanded.classList.add('active');
   $('expClose').onclick = () => el.expanded.classList.remove('active');
   el.playerArt.onclick = () => el.expanded.classList.add('active');
+
+  // Expanded player track navigation
+  el.expPrev.onclick = playPreviousEpisode;
+  el.expNext.onclick = playNextEpisode;
 
   // Expanded player extra controls
   $('expSpeed').onclick = () => {
@@ -11109,8 +11189,24 @@
 
     // Basic playback
     if (e.code === 'Space') { e.preventDefault(); togglePlay(); return; }
-    if (e.code === 'ArrowLeft') { skip(-15); return; }
-    if (e.code === 'ArrowRight') { skip(30); return; }
+    if (e.code === 'ArrowLeft' && !e.shiftKey) { skip(-15); return; }
+    if (e.code === 'ArrowRight' && !e.shiftKey) { skip(30); return; }
+
+    // Volume control with Shift+Arrow keys
+    if (e.shiftKey && e.code === 'ArrowUp') {
+      e.preventDefault();
+      el.audio.volume = Math.min(1, el.audio.volume + 0.05);
+      el.volumeSlider.value = el.audio.volume * 100;
+      updateVolumeIcon();
+      return;
+    }
+    if (e.shiftKey && e.code === 'ArrowDown') {
+      e.preventDefault();
+      el.audio.volume = Math.max(0, el.audio.volume - 0.05);
+      el.volumeSlider.value = el.audio.volume * 100;
+      updateVolumeIcon();
+      return;
+    }
 
     // Fullscreen toggle
     if (e.key === 'f' || e.key === 'F') {
@@ -11140,8 +11236,15 @@
       return;
     }
 
-    // Sleep timer
-    if (e.key === 'm' || e.key === 'M') {
+    // Mute toggle with M
+    if ((e.key === 'm' || e.key === 'M') && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+      e.preventDefault();
+      toggleMute();
+      return;
+    }
+
+    // Sleep timer with Ctrl+M
+    if ((e.key === 'm' || e.key === 'M') && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
       el.sleepTimerModal.classList.toggle('active');
       return;
