@@ -2511,15 +2511,16 @@
          PHASE 13: TABLE VIEWS
          ================== */
 
-      /* Tables are problematic on mobile - consider hiding or using cards instead */
+      /* Make tables scroll horizontally on mobile */
       .articles-table,
       .episodes-table,
       .all-table {
-        display: none;
+        display: table;
+        min-width: 600px;
       }
 
-      /* Or alternatively, make tables scroll horizontally */
-      .table-wrapper {
+      .source-articles-content,
+      .show-episodes-content {
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
       }
