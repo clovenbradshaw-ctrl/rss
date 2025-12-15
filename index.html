@@ -1060,9 +1060,9 @@
     .ep-dl.downloading { color: var(--blue); cursor: wait; animation: pulse 1.5s ease-in-out infinite; }
     @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
     
-    /* Show Page, Source Page & Episode Page */
-    .show-page, .source-page, .episode-page { display: none; overflow-y: auto; height: 100%; }
-    .show-page.active, .source-page.active, .episode-page.active { display: block; flex: 1; }
+    /* Show Page, Source Page, Episode Page & Article Page */
+    .show-page, .source-page, .episode-page, .article-page { display: none; overflow-y: auto; height: 100%; }
+    .show-page.active, .source-page.active, .episode-page.active, .article-page.active { display: block; flex: 1; }
     .show-hero, .source-hero { padding: 32px; background: linear-gradient(180deg, rgba(59,130,246,0.15) 0%, var(--bg) 100%); display: flex; gap: 28px; align-items: flex-end; }
     .show-hero-art, .source-hero-art { width: 200px; height: 200px; border-radius: 16px; object-fit: cover; box-shadow: 0 12px 32px rgba(0,0,0,0.5); }
     .show-hero-info, .source-hero-info { flex: 1; }
@@ -1127,6 +1127,33 @@
     .episode-bookmark-note { flex: 1; font-size: 14px; color: var(--text2); }
     .episode-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
     .episode-tag { background: rgba(255,255,255,0.05); border: 1px solid var(--border2); color: var(--text2); padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+
+    /* Article Page */
+    .article-hero { padding: 32px; background: linear-gradient(180deg, rgba(59,130,246,0.15) 0%, var(--bg) 100%); display: flex; gap: 32px; align-items: flex-start; }
+    .article-hero-art { width: 200px; height: 200px; border-radius: 16px; object-fit: cover; box-shadow: 0 12px 32px rgba(0,0,0,0.5); flex-shrink: 0; }
+    .article-hero-info { flex: 1; padding-top: 8px; }
+    .article-hero-source { font-size: 13px; font-weight: 500; color: var(--blue); margin-bottom: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.9; }
+    .article-hero-source:hover { text-decoration: underline; }
+    .article-hero-title { font-size: 28px; font-weight: 700; line-height: 1.3; margin-bottom: 16px; letter-spacing: -0.02em; }
+    .article-hero-meta { display: flex; flex-wrap: wrap; gap: 16px; font-size: 14px; color: var(--text2); }
+    .article-hero-meta span { display: flex; align-items: center; gap: 6px; }
+    .article-hero-meta svg { width: 16px; height: 16px; opacity: 0.7; }
+    .article-actions { padding: 20px 32px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .article-read-btn { background: var(--blue); border: none; color: #fff; padding: 14px 28px; border-radius: 50px; font-size: 15px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: all 0.2s; box-shadow: 0 4px 16px rgba(59,130,246,0.4); text-decoration: none; }
+    .article-read-btn:hover { transform: scale(1.02); background: var(--blue2); }
+    .article-read-btn svg { width: 20px; height: 20px; }
+    .article-action-btn { background: rgba(255,255,255,0.05); border: 1px solid var(--border2); color: var(--text2); padding: 12px 20px; border-radius: 12px; font-size: 14px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.15s; font-family: inherit; }
+    .article-action-btn:hover { background: rgba(255,255,255,0.08); color: var(--text); border-color: rgba(255,255,255,0.15); }
+    .article-action-btn svg { width: 18px; height: 18px; }
+    .article-action-btn.active { background: rgba(59,130,246,0.15); border-color: var(--blue); color: var(--blue); }
+    .article-description { padding: 0 32px 140px; }
+    .article-description-title { font-size: 18px; font-weight: 600; margin-bottom: 16px; }
+    .article-description-content { font-size: 15px; line-height: 1.7; color: var(--text2); }
+    .article-description-content a { color: var(--blue); text-decoration: none; }
+    .article-description-content a:hover { text-decoration: underline; }
+    .article-description-content p { margin: 0 0 1em; }
+    .article-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+    .article-tag { background: rgba(255,255,255,0.05); border: 1px solid var(--border2); color: var(--text2); padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; }
 
     /* Back Button */
     .back-btn { background: rgba(255,255,255,0.05); border: 1px solid var(--border2); color: var(--text2); cursor: pointer; padding: 10px 16px; border-radius: 12px; display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500; font-family: inherit; transition: all 0.15s; }
@@ -1537,6 +1564,17 @@
       .episode-bookmarks { padding: 0 20px 120px; }
       .episode-progress-section { padding: 0 20px 16px; }
       .episode-tags { justify-content: center; }
+      /* Article Page Mobile */
+      .article-hero { flex-direction: column; align-items: center; text-align: center; padding: 24px 20px; gap: 20px; }
+      .article-hero-art { width: 160px; height: 160px; }
+      .article-hero-info { padding-top: 0; }
+      .article-hero-title { font-size: 20px; }
+      .article-hero-meta { justify-content: center; }
+      .article-actions { justify-content: center; flex-wrap: wrap; padding: 16px 20px; }
+      .article-read-btn { width: 100%; justify-content: center; }
+      .article-action-btn { flex: 1; min-width: 100px; justify-content: center; }
+      .article-description { padding: 0 20px 120px; }
+      .article-tags { justify-content: center; }
       .player { padding: 12px 16px; }
       .player-art { width: 48px; height: 48px; }
       .player-play { width: 44px; height: 44px; }
@@ -3831,8 +3869,9 @@
         <div class="news-list" id="newsList"></div>
       </div>
       <div class="source-page" id="sourcePage"></div>
+      <div class="article-page" id="articlePage"></div>
     </div>
-    
+
     <!-- PODCAST VIEW -->
     <div class="podcast-view" id="podcastView">
       <aside class="podcast-sidebar">
@@ -6559,6 +6598,8 @@
     currentSourcePage: null, // Currently viewing source page (news)
     currentShowPage: null, // Currently viewing show page (podcasts)
     currentEpisodePage: null, // Currently viewing episode page (episode detail)
+    currentArticlePage: null, // Currently viewing article page (article detail)
+    articlePagePreviousView: null, // View we came from before opening article page
     bookmarks: {}, // { episodeId: [{ time, note, created }] }
     sleepTimer: null, // { endTime, intervalId, fadeIntervalId }
     speedPanelOpen: false,
@@ -6583,7 +6624,7 @@
     feedCountAll: $('feedCountAll'), feedCountNews: $('feedCountNews'), feedCountPodcast: $('feedCountPodcast'),
     newsSources: $('newsSources'), newsTitle: $('newsTitle'),
     categoryChips: $('categoryChips'), newsList: $('newsList'),
-    newsContent: $('newsContent'), sourcePage: $('sourcePage'),
+    newsContent: $('newsContent'), sourcePage: $('sourcePage'), articlePage: $('articlePage'),
     tagFilterSection: $('tagFilterSection'), tagChips: $('tagChips'),
     // Podcast inbox elements
     podcastSources: $('podcastSources'),
@@ -9251,6 +9292,141 @@
     }
   };
 
+  // === ARTICLE PAGE ===
+  const renderArticlePage = (articleId) => {
+    const art = state.articles.find(a => a.id === articleId);
+    if (!art) {
+      // Check archived articles
+      const archivedArt = state.archivedArticles.find(a => a.id === articleId);
+      if (!archivedArt) return;
+      return renderArticlePageContent(archivedArt);
+    }
+    renderArticlePageContent(art);
+  };
+
+  const renderArticlePageContent = (art) => {
+    const feed = state.feeds.find(f => f.id === art.feedId);
+    const inForLater = isInForLater(art.id, 'article');
+
+    // Track previous view if we're coming from a different view
+    if (state.view !== 'news') {
+      state.articlePagePreviousView = state.view;
+      // Switch to news view
+      state.view = 'news';
+      document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+      document.querySelector('.toggle-btn[data-view="news"]')?.classList.add('active');
+      el.newsView.classList.add('active');
+      el.podcastView.classList.remove('active');
+      el.allView.classList.remove('active');
+      el.forLaterView.classList.remove('active');
+    } else {
+      state.articlePagePreviousView = null;
+    }
+
+    state.currentArticlePage = art.id;
+
+    // Mark as read
+    art.unread = false;
+    save();
+
+    // Hide news content and source page, show article page
+    el.newsContent.style.display = 'none';
+    el.sourcePage.classList.remove('active');
+    el.articlePage.classList.add('active');
+
+    // Generate tags HTML
+    const tagsHtml = art.tags && art.tags.length > 0
+      ? `<div class="article-tags">${art.tags.map(tag => {
+          const tagInfo = getTagInfo(tag);
+          return `<span class="article-tag">#${tagInfo.label.toLowerCase().replace(/\s+/g, '')}</span>`;
+        }).join('')}</div>`
+      : '';
+
+    el.articlePage.innerHTML = `
+      <div class="article-hero">
+        <button class="back-btn" id="articleBackBtn">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+          Back
+        </button>
+      </div>
+      <div class="article-hero" style="padding-top:0">
+        <img class="article-hero-art" src="${art.image || feed?.image || placeholderImg}" onerror="this.src='${placeholderImg}'">
+        <div class="article-hero-info">
+          <div class="article-hero-source" data-feed="${art.feedId}">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+            ${feed?.name || 'Unknown Source'}
+          </div>
+          <div class="article-hero-title">${art.title}</div>
+          <div class="article-hero-meta">
+            <span>
+              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              ${art.time}
+            </span>
+          </div>
+          ${tagsHtml}
+        </div>
+      </div>
+      <div class="article-actions">
+        <a class="article-read-btn" href="${art.link}" target="_blank" rel="noopener noreferrer" id="articleReadBtn">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15,3 21,3 21,9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          Read Article
+        </a>
+        <button class="article-action-btn ${inForLater ? 'active' : ''}" id="articleSaveForLaterBtn" data-content-id="${art.id}" data-content-type="article">
+          ${inForLater
+            ? '<svg fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Saved'
+            : '<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Save for Later'}
+        </button>
+      </div>
+      ${art.summary ? `
+        <div class="article-description">
+          <div class="article-description-title">Summary</div>
+          <div class="article-description-content">${linkifyText(art.summary)}</div>
+        </div>
+      ` : ''}
+    `;
+
+    // Setup lazy loading for images
+    requestAnimationFrame(() => {
+      el.articlePage.querySelectorAll('img[data-src]:not(.loaded)').forEach(img => ImageLoader.loadImage(img, img.dataset.src));
+    });
+
+    // Log article view
+    Mem.log('article_viewed', art.id, { source: art.feedId, link: art.link });
+  };
+
+  const closeArticlePage = () => {
+    state.currentArticlePage = null;
+    el.articlePage.classList.remove('active');
+
+    // If we came from a different view, go back to that view
+    if (state.articlePagePreviousView) {
+      const prevView = state.articlePagePreviousView;
+      state.articlePagePreviousView = null;
+      state.view = prevView;
+      document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+      document.querySelector(`.toggle-btn[data-view="${prevView}"]`)?.classList.add('active');
+      el.newsView.classList.toggle('active', prevView === 'news');
+      el.podcastView.classList.toggle('active', prevView === 'podcasts');
+      el.allView.classList.toggle('active', prevView === 'all');
+      el.forLaterView.classList.toggle('active', prevView === 'forLater');
+      // Re-render the appropriate view
+      if (prevView === 'all') renderAll();
+      if (prevView === 'forLater') renderForLater();
+      // Restore news content visibility for next time
+      el.newsContent.style.display = 'flex';
+    } else {
+      // If we came from source page, show it again, otherwise show news content
+      if (state.currentSourcePage) {
+        el.sourcePage.classList.add('active');
+      } else {
+        el.newsContent.style.display = 'flex';
+        renderMobileNewsHeader(); // Show mobile news browser again
+      }
+      // Re-render news to update read status
+      renderNews();
+    }
+  };
+
   // Helper to convert URLs in text to clickable links
   const linkifyText = (text) => {
     if (!text) return '';
@@ -9646,10 +9822,10 @@
 
       if (contentType === 'article') {
         const article = state.articles.find(a => a.id === contentId);
-        if (article) openArticleLink(article.link);
+        if (article) renderArticlePage(contentId);
       } else if (contentType === 'episode') {
         const episode = state.podcasts.find(p => p.id === contentId);
-        if (episode) playEpisode(episode.id);
+        if (episode) renderEpisodePage(contentId);
       }
     }
   };
@@ -9758,14 +9934,10 @@
         renderEpisodePage(id);
       }
     } else if (type === 'news') {
-      // For news, open the article
+      // For news, open the article page
       const art = state.articles.find(a => a.id === id);
       if (art) {
-        art.unread = false;
-        save();
-        Mem.log('article_opened', id, { source: art.feedId, link: art.link });
-        openArticleLink(art.link);
-        renderAll();
+        renderArticlePage(id);
       }
     }
   };
@@ -10558,6 +10730,7 @@
     if (state.currentEpisodePage) closeEpisodePage();
     if (state.currentShowPage) closeShowPage();
     if (state.currentSourcePage) closeSourcePage();
+    if (state.currentArticlePage) closeArticlePage();
     if (state.view === 'news') renderNews();
     if (state.view === 'podcasts') renderPodcasts();
     if (state.view === 'all') renderAll();
@@ -10619,11 +10792,7 @@
     const id = item.dataset.id;
     const art = state.articles.find(a => a.id === id);
     if (art) {
-      Mem.log('article_opened', id, { source: art.feedId, link: art.link });
-      art.unread = false;
-      save();
-      openArticleLink(art.link);
-      renderNews();
+      renderArticlePage(id);
     }
   };
 
@@ -10693,11 +10862,7 @@
       const id = articleEl.dataset.id;
       const art = state.articles.find(a => a.id === id);
       if (art) {
-        Mem.log('article_opened', id, { source: art.feedId, link: art.link });
-        art.unread = false;
-        save();
-        openArticleLink(art.link);
-        if (state.currentSourcePage) renderSourcePage(state.currentSourcePage);
+        renderArticlePage(id);
       }
       return;
     }
@@ -10708,11 +10873,7 @@
       const id = tableRow.dataset.id;
       const art = state.articles.find(a => a.id === id);
       if (art) {
-        Mem.log('article_opened', id, { source: art.feedId, link: art.link });
-        art.unread = false;
-        save();
-        openArticleLink(art.link);
-        if (state.currentSourcePage) renderSourcePage(state.currentSourcePage);
+        renderArticlePage(id);
       }
     }
   };
@@ -10980,6 +11141,37 @@
         // Seek after a short delay to allow audio to load
         setTimeout(() => seekTo(time), 500);
       }
+      return;
+    }
+  };
+
+  // Article page event handlers
+  el.articlePage.onclick = e => {
+    // Back button
+    const backBtn = e.target.closest('#articleBackBtn');
+    if (backBtn) {
+      closeArticlePage();
+      return;
+    }
+
+    // Source name click - navigate to source page
+    const sourceEl = e.target.closest('.article-hero-source');
+    if (sourceEl) {
+      const feedId = sourceEl.dataset.feed;
+      if (feedId) {
+        closeArticlePage();
+        renderSourcePage(feedId);
+      }
+      return;
+    }
+
+    // Save for Later button
+    const saveForLaterBtn = e.target.closest('#articleSaveForLaterBtn');
+    if (saveForLaterBtn) {
+      const contentId = parseInt(saveForLaterBtn.dataset.contentId);
+      const contentType = saveForLaterBtn.dataset.contentType;
+      addToForLater(contentId, contentType);
+      renderArticlePage(state.currentArticlePage); // Re-render to update button state
       return;
     }
   };
