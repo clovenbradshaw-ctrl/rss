@@ -1791,6 +1791,30 @@
         transform: scale(0.95);
       }
 
+      /* Mobile header logo button for drawer access */
+      .mobile-header-logo {
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        padding: 0;
+        margin-right: 12px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.15s;
+      }
+
+      .mobile-header-logo img {
+        height: 28px;
+        width: auto;
+        object-fit: contain;
+      }
+
+      .mobile-header-logo:active {
+        transform: scale(0.95);
+        opacity: 0.8;
+      }
+
       /* Hide desktop inbox header */
       .podcast-inbox-header {
         display: none;
@@ -8999,7 +9023,7 @@
 
     el.mobileShowsHeader.innerHTML = `
       <div class="mobile-shows-title">
-        <button class="mobile-hamburger" id="mobileShowsHamburger"><i class="ph ph-list"></i></button>
+        <button class="mobile-header-logo" id="mobileShowsHamburger"><img src="https://storage.googleapis.com/intelechia-content/im/BRRST%20(2).png" alt="BRRST"></button>
         <h3>Your Shows</h3>
         <div class="mobile-shows-actions">
           <button class="discover-show-btn" id="mobileDiscoverBtn" title="Discover Podcasts"><i class="ph ph-magnifying-glass"></i> Discover</button>
@@ -9084,7 +9108,7 @@
 
     el.mobileNewsHeader.innerHTML = `
       <div class="mobile-news-title">
-        <button class="mobile-hamburger" id="mobileNewsHamburger"><i class="ph ph-list"></i></button>
+        <button class="mobile-header-logo" id="mobileNewsHamburger"><img src="https://storage.googleapis.com/intelechia-content/im/BRRST%20(2).png" alt="BRRST"></button>
         <h3>Your Sources</h3>
         <button class="add-news-btn" id="mobileAddNewsBtn">+</button>
       </div>
