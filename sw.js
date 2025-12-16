@@ -1,12 +1,15 @@
 // BRSST Service Worker - Offline caching and performance optimization
-const CACHE_NAME = 'brsst-v4';
-const RUNTIME_CACHE = 'brsst-runtime-v4';
+const CACHE_NAME = 'brsst-v5';
+const RUNTIME_CACHE = 'brsst-runtime-v5';
+
+// Base path for GitHub Pages deployment (repo name)
+const BASE_PATH = '/rss/';
 
 // Resources to cache immediately on install
 const PRECACHE_URLS = [
-  './',
-  './index.html',
-  './manifest.json',
+  BASE_PATH,
+  BASE_PATH + 'index.html',
+  BASE_PATH + 'manifest.json',
   'https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap',
   'https://unpkg.com/@phosphor-icons/web'
 ];
@@ -190,7 +193,10 @@ self.addEventListener('fetch', event => {
   }
 
   // For the main app - network first
-  if (url.pathname === '/' || url.pathname.endsWith('index.html')) {
+  // Check for base path (GitHub Pages) or root path (local dev)
+  if (url.pathname === BASE_PATH || url.pathname === '/' ||
+      url.pathname === BASE_PATH.slice(0, -1) ||
+      url.pathname.endsWith('index.html')) {
     event.respondWith(
       fetch(event.request)
         .then(networkResponse => {
@@ -205,7 +211,7 @@ self.addEventListener('fetch', event => {
         .catch(() => {
           // Offline - serve from cache
           return caches.match(event.request).then(cachedResponse => {
-            return cachedResponse || caches.match('./index.html');
+            return cachedResponse || caches.match(BASE_PATH + 'index.html') || caches.match(BASE_PATH);
           });
         })
     );
