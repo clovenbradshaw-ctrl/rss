@@ -74,44 +74,14 @@
     ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.25); }
     
     .app { display: flex; flex-direction: column; height: 100vh; }
-    
-    /* Header - Soft dark with subtle border */
-    .header { background: var(--bg3); border-bottom: 1px solid var(--border2); padding: 10px 24px 8px 24px; display: flex; align-items: center; gap: 16px; }
-    .logo { display: flex; align-items: center; }
-    .logo img { height: 32px; width: auto; }
-    .logo-rss { color: var(--orange); }
-    .main-toggle { display: flex; background: var(--bg4); border-radius: 24px; padding: 3px; border: 1px solid var(--border2); }
-    .toggle-btn { padding: 8px 18px; background: transparent; border: none; border-radius: 20px; color: var(--text2); font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; display: flex; align-items: center; gap: 6px; transition: all 0.2s ease-out; }
-    .toggle-btn.active { background: var(--blue); color: #fff; box-shadow: 0 2px 8px rgba(59,130,246,0.3); }
-    .toggle-btn:not(.active):hover { background: rgba(255,255,255,0.05); color: var(--text); }
-    .spacer { flex: 1; }
-    .search-box { max-width: 280px; flex: 1; position: relative; }
-    .search-box input { width: 100%; padding: 8px 16px 8px 38px; background: var(--bg4); border: 1px solid var(--border2); border-radius: 20px; color: var(--text); font-size: 13px; font-family: inherit; transition: all 0.2s; }
-    .search-box input:focus { outline: none; border-color: var(--blue); background: var(--bg); }
-    .search-box input::placeholder { color: var(--text3); }
-    .search-box svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text3); }
-    .search-box .search-clear { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: var(--bg3); border: none; color: var(--text3); width: 20px; height: 20px; border-radius: 50%; cursor: pointer; display: none; align-items: center; justify-content: center; font-size: 12px; transition: all 0.15s; }
-    .search-box .search-clear:hover { background: var(--bg4); color: var(--text); }
-    .search-box.has-query .search-clear { display: flex; }
-    .search-box.has-query input { padding-right: 36px; }
-    .search-scope { position: absolute; top: 100%; left: 0; right: 0; margin-top: 4px; background: var(--bg2); border: 1px solid var(--border2); border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); z-index: 1000; max-height: 300px; overflow-y: auto; display: none; }
-    .search-scope.active { display: block; }
-    .search-scope-header { padding: 12px 16px; border-bottom: 1px solid var(--border2); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text3); }
-    .search-scope-item { display: flex; align-items: center; gap: 10px; padding: 10px 16px; cursor: pointer; transition: background 0.15s; }
-    .search-scope-item:hover { background: var(--bg4); }
-    .search-scope-item.active { background: var(--bg4); color: var(--blue); }
-    .search-scope-item .scope-icon { width: 24px; height: 24px; border-radius: 6px; background: var(--bg3); display: flex; align-items: center; justify-content: center; font-size: 12px; overflow: hidden; }
-    .search-scope-item .scope-icon img { width: 100%; height: 100%; object-fit: cover; }
-    .search-scope-item .scope-name { flex: 1; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .search-scope-badge { background: var(--bg3); padding: 3px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; color: var(--text2); margin-left: 4px; }
-    .search-scope-badge.active { background: var(--blue); color: #fff; }
+
     .search-results-info { padding: 8px 16px; background: var(--bg3); border-radius: 8px; margin-bottom: 12px; font-size: 12px; color: var(--text2); display: flex; align-items: center; gap: 8px; }
     .search-results-info strong { color: var(--text); }
     .search-results-info .search-scope-tag { background: var(--blue); color: #fff; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; }
     .search-highlight { background: rgba(59,130,246,0.3); color: var(--text); border-radius: 2px; padding: 0 2px; }
     .icon-btn { background: none; border: none; color: var(--text2); cursor: pointer; padding: 8px 12px; border-radius: 8px; transition: all 0.15s ease-out; display: flex; align-items: center; justify-content: center; }
     .icon-btn:hover { background: rgba(255,255,255,0.05); color: var(--text); }
-    
+
     /* Main */
     .main { flex: 1; overflow: hidden; }
     
@@ -1384,11 +1354,6 @@
       .article-modal-summary { font-size: 15px; }
     }
 
-    /* Mobile Hamburger & Drawer */
-    .hamburger { display: none; background: none; border: none; color: var(--text); cursor: pointer; padding: 8px 12px; border-radius: 8px; transition: all 0.15s; }
-    .hamburger:hover { background: rgba(255,255,255,0.05); }
-    @media (max-width: 768px) { .hamburger { display: flex; } }
-
     /* Bottom Tab Bar */
     .mobile-tab-bar {
       display: flex;
@@ -1637,12 +1602,7 @@
     .empty-title { font-size: 18px; font-weight: 600; color: var(--text); letter-spacing: -0.02em; }
 
     @media (max-width: 768px) {
-      .header { gap: 12px; }
-      .header .logo { display: none; }
-      .toggle-btn span:last-child { display: none; }
-      .toggle-btn { padding: 8px 12px; }
       .icon-btn { padding: 8px; }
-      .search-box { display: none; }
       .news-sidebar { display: none !important; }
       .podcast-sidebar { display: none !important; }
       .show-hero, .source-hero { flex-direction: column; align-items: center; text-align: center; padding: 24px; }
@@ -1682,18 +1642,6 @@
         font-size: 15px;
       }
 
-      .header {
-        padding: 10px 20px 8px 20px;
-      }
-
-      .main-toggle {
-        gap: 8px;
-      }
-
-      .toggle-btn {
-        padding: 10px 16px;
-        font-size: 14px;
-      }
     }
 
     @media (max-width: 768px) {
@@ -1816,6 +1764,31 @@
       .mobile-news-title .add-news-btn:hover {
         background: var(--blue2);
         transform: scale(1.05);
+      }
+
+      /* Mobile hamburger button for drawer access */
+      .mobile-hamburger {
+        background: transparent;
+        border: none;
+        color: var(--text);
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 20px;
+        transition: all 0.15s;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 8px;
+      }
+
+      .mobile-hamburger:hover {
+        background: var(--bg3);
+      }
+
+      .mobile-hamburger:active {
+        transform: scale(0.95);
       }
 
       /* Hide desktop inbox header */
@@ -1990,40 +1963,6 @@
       /* ==================
          PHASE 4: SPACING & LAYOUT
          ================== */
-
-      /* Header - Minimal mobile header */
-      .header {
-        padding: var(--mobile-space-sm) var(--mobile-space-md);
-        padding-top: max(var(--mobile-space-lg), var(--sat));
-        gap: var(--mobile-space-sm);
-        position: sticky;
-        top: 0;
-        z-index: var(--z-mobile-header);
-        backdrop-filter: blur(12px);
-        background: rgba(26, 26, 26, 0.95);
-        min-height: auto;
-      }
-
-      /* Hide most header elements on mobile - just keep hamburger */
-      .header .logo,
-      .header .spacer,
-      .header #refreshBtn,
-      .header #settingsBtn,
-      .header #addBtn,
-      .header .search-box {
-        display: none !important;
-      }
-
-      /* Hamburger button is the main nav */
-      .header .hamburger {
-        margin-right: auto;
-        display: flex !important;
-      }
-
-      .main {
-        /* Add top padding to account for sticky header */
-        padding-top: 0;
-      }
 
       /* Toggle moved to bottom navigation */
       .main-toggle {
@@ -3649,33 +3588,6 @@
       -webkit-touch-callout: none;
     }
 
-    /* Force mobile header - hide desktop elements */
-    .header {
-      padding: var(--mobile-space-sm) var(--mobile-space-md);
-      padding-top: max(var(--mobile-space-lg), var(--sat));
-      gap: var(--mobile-space-sm);
-      position: sticky;
-      top: 0;
-      z-index: var(--z-mobile-header);
-      backdrop-filter: blur(12px);
-      background: rgba(26, 26, 26, 0.95);
-      min-height: auto;
-    }
-
-    .header .logo,
-    .header .spacer,
-    .header #refreshBtn,
-    .header #settingsBtn,
-    .header #addBtn,
-    .header .search-box {
-      display: none !important;
-    }
-
-    .header .hamburger {
-      margin-right: auto;
-      display: flex !important;
-    }
-
     /* Force toggle bar to bottom navigation */
     .main-toggle {
       position: fixed;
@@ -3960,20 +3872,6 @@
 </head>
 <body>
 <div class="app">
-  <header class="header">
-    <button class="hamburger" id="hamburgerBtn"><svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
-    <div class="logo"><img src="https://storage.googleapis.com/intelechia-content/im/BRRST%20(2).png" alt="BRRST"></div>
-    <div class="spacer"></div>
-    <div class="search-box" id="searchBox">
-      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="7" cy="7" r="5"/><path d="M12 12l3 3"/></svg>
-      <input type="text" id="searchInput" placeholder="Search all content...">
-      <button class="search-clear" id="searchClear" title="Clear search">&times;</button>
-      <div class="search-scope" id="searchScope"></div>
-    </div>
-    <button class="icon-btn" id="refreshBtn" title="Refresh feeds"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 4v6h6M23 20v-6h-6"/><path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15"/></svg></button>
-    <button class="icon-btn" id="settingsBtn" title="Settings"><svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg></button>
-    <button class="icon-btn" id="addBtn"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button>
-  </header>
   
   <div class="main">
     <!-- NEWS VIEW -->
@@ -7036,11 +6934,10 @@
     editModal: $('editModal'), editFeedId: $('editFeedId'), editName: $('editName'),
     editAuthor: $('editAuthor'), editCat: $('editCat'), editImage: $('editImage'),
     editStatus: $('editStatus'), editSubmit: $('editSubmit'), editModalClose: $('editModalClose'),
-    toast: $('toast'), searchInput: $('searchInput'),
-    searchBox: $('searchBox'), searchClear: $('searchClear'), searchScope: $('searchScope'),
+    toast: $('toast'),
     audio: $('audioPlayer'),
-    // New elements
-    hamburgerBtn: $('hamburgerBtn'), drawer: $('drawer'), drawerOverlay: $('drawerOverlay'),
+    // Drawer elements
+    drawer: $('drawer'), drawerOverlay: $('drawerOverlay'),
     drawerContent: $('drawerContent'), drawerClose: $('drawerClose'),
     mobileTabBar: $('mobileTabBar'),
     sleepTimerModal: $('sleepTimerModal'), sleepTimerContent: $('sleepTimerContent'),
@@ -7048,7 +6945,7 @@
     sleepPresets: $('sleepPresets'), sleepCustomInput: $('sleepCustomInput'),
     sleepCustomBtn: $('sleepCustomBtn'), sleepCancelBtn: $('sleepCancelBtn'),
     // Settings modal
-    settingsBtn: $('settingsBtn'), settingsModal: $('settingsModal'),
+    settingsModal: $('settingsModal'),
     settingsClose: $('settingsClose'), openLinksToggle: $('openLinksToggle'),
     // Activity cleanup
     refreshActivityStats: $('refreshActivityStats'), runActivityCleanup: $('runActivityCleanup'),
@@ -9102,6 +8999,7 @@
 
     el.mobileShowsHeader.innerHTML = `
       <div class="mobile-shows-title">
+        <button class="mobile-hamburger" id="mobileShowsHamburger"><i class="ph ph-list"></i></button>
         <h3>Your Shows</h3>
         <div class="mobile-shows-actions">
           <button class="discover-show-btn" id="mobileDiscoverBtn" title="Discover Podcasts"><i class="ph ph-magnifying-glass"></i> Discover</button>
@@ -9151,6 +9049,12 @@
         el.modal.classList.add('active');
       };
     }
+
+    // Hamburger button - opens drawer
+    const hamburgerBtn = el.mobileShowsHeader.querySelector('#mobileShowsHamburger');
+    if (hamburgerBtn) {
+      hamburgerBtn.onclick = openDrawer;
+    }
   };
 
   // Mobile News Sources Header (similar to podcast shows)
@@ -9180,6 +9084,7 @@
 
     el.mobileNewsHeader.innerHTML = `
       <div class="mobile-news-title">
+        <button class="mobile-hamburger" id="mobileNewsHamburger"><i class="ph ph-list"></i></button>
         <h3>Your Sources</h3>
         <button class="add-news-btn" id="mobileAddNewsBtn">+</button>
       </div>
@@ -9215,6 +9120,12 @@
       addBtn.onclick = () => {
         openModal('news');
       };
+    }
+
+    // Hamburger button - opens drawer
+    const hamburgerBtn = el.mobileNewsHeader.querySelector('#mobileNewsHamburger');
+    if (hamburgerBtn) {
+      hamburgerBtn.onclick = openDrawer;
     }
   };
 
@@ -11209,6 +11120,10 @@
           <div class="drawer-item-icon"><i class="ph ph-clock-counter-clockwise"></i></div>
           <span class="drawer-item-name">History Snapshots</span>
         </div>
+        <div class="drawer-item" id="drawerSettings">
+          <div class="drawer-item-icon"><i class="ph ph-gear"></i></div>
+          <span class="drawer-item-name">Settings</span>
+        </div>
       </div>
     `;
   };
@@ -11855,10 +11770,6 @@
   };
 
   // Settings modal handlers
-  el.settingsBtn.onclick = () => {
-    el.openLinksToggle.checked = state.openLinksInNewTab;
-    el.settingsModal.classList.add('active');
-  };
   el.settingsClose.onclick = () => el.settingsModal.classList.remove('active');
   el.settingsModal.onclick = e => { if (e.target === el.settingsModal) el.settingsModal.classList.remove('active'); };
   el.openLinksToggle.onchange = () => {
@@ -11913,13 +11824,6 @@
 
     el.runActivityCleanup.disabled = false;
     setTimeout(() => { el.cleanupStatus.style.display = 'none'; }, 5000);
-  };
-
-  // Load stats when settings modal opens
-  const originalSettingsOpen = el.settingsBtn.onclick;
-  el.settingsBtn.onclick = () => {
-    originalSettingsOpen();
-    refreshActivityStats();
   };
 
   // Form validation and state
@@ -12039,136 +11943,6 @@
     el.modal.classList.remove('active');
   };
   
-  // === SEARCH FUNCTIONALITY ===
-  let searchTO;
-
-  // Update search box UI state
-  const updateSearchUI = () => {
-    const hasQuery = state.query.length > 0;
-    el.searchBox.classList.toggle('has-query', hasQuery);
-
-    // Update placeholder based on search scope
-    if (state.searchScope) {
-      const feed = state.feeds.find(f => f.id === state.searchScope);
-      el.searchInput.placeholder = feed ? `Search in "${feed.name}"...` : 'Search...';
-    } else {
-      el.searchInput.placeholder = 'Search all content...';
-    }
-  };
-
-  // Render search scope dropdown
-  const renderSearchScope = () => {
-    const currentView = state.view;
-    let feeds = [];
-
-    if (currentView === 'news') {
-      feeds = state.feeds.filter(f => f.type === 'news');
-    } else if (currentView === 'podcasts') {
-      feeds = state.feeds.filter(f => f.type === 'podcast');
-    } else {
-      feeds = state.feeds;
-    }
-
-    const typeLabel = currentView === 'news' ? 'news feeds' : currentView === 'podcasts' ? 'podcasts' : 'all feeds';
-
-    el.searchScope.innerHTML = `
-      <div class="search-scope-header">Search in</div>
-      <div class="search-scope-item ${!state.searchScope ? 'active' : ''}" data-scope="">
-        <div class="scope-icon"><i class="ph ph-globe"></i></div>
-        <span class="scope-name">All ${typeLabel}</span>
-      </div>
-      ${feeds.map(f => `
-        <div class="search-scope-item ${state.searchScope === f.id ? 'active' : ''}" data-scope="${f.id}">
-          <div class="scope-icon">${f.image ? `<img src="${f.image}">` : `<i class="ph ph-${f.type === 'podcast' ? 'microphone-stage' : 'newspaper'}"></i>`}</div>
-          <span class="scope-name">${f.name}</span>
-        </div>
-      `).join('')}
-    `;
-  };
-
-  // Show/hide search scope dropdown
-  const toggleSearchScope = (show) => {
-    if (show) {
-      renderSearchScope();
-      el.searchScope.classList.add('active');
-    } else {
-      el.searchScope.classList.remove('active');
-    }
-  };
-
-  // Handle search scope selection
-  el.searchScope.onclick = e => {
-    const item = e.target.closest('.search-scope-item');
-    if (!item) return;
-
-    const scopeId = item.dataset.scope;
-    state.searchScope = scopeId ? parseInt(scopeId) : null;
-    toggleSearchScope(false);
-    updateSearchUI();
-    triggerSearch();
-  };
-
-  // Trigger search in current view
-  const triggerSearch = () => {
-    if (state.view === 'news') renderNews();
-    else if (state.view === 'podcasts') renderPodcastInbox();
-    else if (state.view === 'all') renderAll();
-  };
-
-  // Search input handler
-  el.searchInput.oninput = e => {
-    clearTimeout(searchTO);
-    searchTO = setTimeout(() => {
-      state.query = e.target.value;
-      updateSearchUI();
-      triggerSearch();
-      // Log search for analytics
-      if (state.query.length >= 2) {
-        Mem.log('search', state.query, { scope: state.searchScope, view: state.view });
-      }
-    }, 200);
-  };
-
-  // Focus search input to show scope dropdown
-  el.searchInput.onfocus = () => {
-    if (state.feeds.length > 0) {
-      toggleSearchScope(true);
-    }
-  };
-
-  // Handle Escape key in search input to clear search
-  el.searchInput.onkeydown = e => {
-    if (e.key === 'Escape') {
-      if (state.query || state.searchScope) {
-        e.preventDefault();
-        state.query = '';
-        state.searchScope = null;
-        el.searchInput.value = '';
-        updateSearchUI();
-        triggerSearch();
-      }
-      el.searchInput.blur();
-      toggleSearchScope(false);
-    }
-  };
-
-  // Clear search
-  el.searchClear.onclick = () => {
-    state.query = '';
-    state.searchScope = null;
-    el.searchInput.value = '';
-    updateSearchUI();
-    triggerSearch();
-    el.searchInput.focus();
-  };
-
-  // Close search scope on click outside
-  document.addEventListener('click', e => {
-    if (!el.searchBox.contains(e.target)) {
-      toggleSearchScope(false);
-    }
-  });
-
   // === KEYBOARD SHORTCUTS ===
   document.onkeydown = e => {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
@@ -12210,7 +11984,6 @@
       el.expanded.classList.remove('active');
       el.sleepTimerModal.classList.remove('active');
       el.snapshotModal.classList.remove('active');
-      toggleSearchScope(false);
       closeAllPanels();
       closeDrawer();
       return;
@@ -12258,19 +12031,11 @@
       if (e.key === 'P' || e.key === 'p') { e.preventDefault(); playPreviousEpisode(); return; }
     }
 
-    // Focus search with / or Ctrl+K
-    if (e.key === '/' || ((e.ctrlKey || e.metaKey) && e.key === 'k')) {
-      e.preventDefault();
-      el.searchInput.focus();
-      el.searchInput.select();
-      return;
-    }
   };
 
   // === NEW FEATURE EVENT HANDLERS ===
 
-  // Hamburger & Drawer
-  el.hamburgerBtn.onclick = openDrawer;
+  // Drawer
   el.drawerClose.onclick = closeDrawer;
   el.drawerOverlay.onclick = closeDrawer;
   el.drawerContent.onclick = e => {
@@ -12294,6 +12059,13 @@
     if (item.id === 'drawerHistory') {
       closeDrawer();
       openSnapshotModal();
+      return;
+    }
+    if (item.id === 'drawerSettings') {
+      closeDrawer();
+      el.openLinksToggle.checked = state.openLinksInNewTab;
+      el.settingsModal.classList.add('active');
+      refreshActivityStats();
       return;
     }
     const type = item.dataset.type;
