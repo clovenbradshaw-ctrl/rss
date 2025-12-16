@@ -945,6 +945,17 @@
     .article:hover .add-to-later-btn, .spotify-ep:hover .add-to-later-btn, .feed-post:hover .add-to-later-btn { opacity: 1; }
     .add-to-later-btn:hover { background: var(--blue); color: #fff; transform: scale(1.1); }
     .add-to-later-btn.added { background: var(--blue); color: #fff; opacity: 1; }
+    .add-to-later-btn.holding { animation: none; transform: scale(1.15); }
+    .add-to-later-btn .hold-progress { position: absolute; width: 100%; height: 100%; border-radius: 50%; pointer-events: none; }
+    .add-to-later-btn .hold-progress svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+    .add-to-later-btn .hold-progress circle { fill: none; stroke: var(--blue); stroke-width: 3; stroke-dasharray: 88; stroke-dashoffset: 88; stroke-linecap: round; }
+    .add-to-later-btn.holding .hold-progress circle { animation: hold-fill 0.6s ease-out forwards; }
+    @keyframes hold-fill { to { stroke-dashoffset: 0; } }
+    .episode-action-btn.holding { transform: scale(1.05); }
+    .episode-action-btn .hold-progress { position: absolute; inset: 0; border-radius: 24px; overflow: hidden; pointer-events: none; }
+    .episode-action-btn .hold-progress-bar { position: absolute; bottom: 0; left: 0; width: 0; height: 3px; background: var(--blue); }
+    .episode-action-btn.holding .hold-progress-bar { animation: hold-bar-fill 0.6s ease-out forwards; }
+    @keyframes hold-bar-fill { to { width: 100%; } }
 
 
     /* Social Media Feed Styles */
@@ -9240,7 +9251,8 @@
         ${inProgress ? `<div class="spotify-ep-progress"><div class="spotify-ep-progress-fill" style="width:${pct}%"></div></div>` : ''}
         <div class="spotify-ep-duration">${done ? '<i class="ph ph-check-circle"></i> Played' : pr > 0 ? fmt(ep.duration - pr) + ' left' : fmt(ep.duration)}</div>
       </div>
-      <button class="add-to-later-btn ${inForLater ? 'added' : ''}" data-content-id="${ep.id}" data-content-type="episode" title="Save">
+      <button class="add-to-later-btn ${inForLater ? 'added' : ''}" data-content-id="${ep.id}" data-content-type="episode" title="${inForLater ? 'Saved' : 'Hold to save'}">
+        <span class="hold-progress"><svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="14"/></svg></span>
         <i class="ph ${inForLater ? 'ph-check' : 'ph-clock'}"></i>
       </button>
     </div>`;
@@ -9760,10 +9772,11 @@
           <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
           Add Bookmark
         </button>
-        <button class="episode-action-btn ${inForLater ? 'active' : ''}" id="episodeSaveForLaterBtn" data-content-id="${ep.id}" data-content-type="episode">
+        <button class="episode-action-btn ${inForLater ? 'active' : ''}" id="episodeSaveForLaterBtn" data-content-id="${ep.id}" data-content-type="episode" title="${inForLater ? 'Saved' : 'Hold to save'}">
+          <span class="hold-progress"><span class="hold-progress-bar"></span></span>
           ${inForLater
             ? '<svg fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Saved'
-            : '<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Save'}
+            : '<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Hold to save'}
         </button>
       </div>
       ${(ep.descHtml || ep.desc) ? `
@@ -9920,7 +9933,8 @@
           ${podcastMeta}
           ${newsActions}
         </div>
-        <button class="add-to-later-btn ${inForLater ? 'added' : ''}" data-content-id="${item.id}" data-content-type="${contentType}" title="Save">
+        <button class="add-to-later-btn ${inForLater ? 'added' : ''}" data-content-id="${item.id}" data-content-type="${contentType}" title="${inForLater ? 'Saved' : 'Hold to save'}">
+          <span class="hold-progress"><svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="14"/></svg></span>
           <i class="ph ${inForLater ? 'ph-check' : 'ph-clock'}"></i>
         </button>
       </div>
@@ -10273,16 +10287,25 @@
     applyMobileCardView();
   }
 
-  // Handle clicks in feed scroll
-  el.feedScroll.onclick = e => {
-    // Check for add to later button first
+  // Handle hold-to-save in feed scroll
+  const handleFeedScrollSaveStart = e => {
     const laterBtn = e.target.closest('.add-to-later-btn');
     if (laterBtn) {
+      e.preventDefault();
       e.stopPropagation();
       const contentId = laterBtn.dataset.contentId;
       const contentType = laterBtn.dataset.contentType;
-      addToForLater(contentId, contentType);
-      renderAll(); // Re-render to update button state
+      startHoldToSave(laterBtn, contentId, contentType, renderAll);
+    }
+  };
+  el.feedScroll.addEventListener('mousedown', handleFeedScrollSaveStart);
+  el.feedScroll.addEventListener('touchstart', handleFeedScrollSaveStart, { passive: false });
+
+  // Handle clicks in feed scroll
+  el.feedScroll.onclick = e => {
+    // Ignore clicks on add-to-later buttons (handled by hold gesture)
+    if (e.target.closest('.add-to-later-btn')) {
+      e.stopPropagation();
       return;
     }
 
@@ -10977,6 +11000,46 @@
     return state.forLater.some(item => item.contentId === contentId && item.contentType === contentType);
   };
 
+  // Hold-to-save handler state
+  let holdToSaveTimer = null;
+  let holdToSaveBtn = null;
+
+  const startHoldToSave = (btn, contentId, contentType, renderFn) => {
+    // Don't allow holding if already saved
+    if (btn.classList.contains('added')) return;
+
+    // Clear any existing timer
+    clearHoldToSave();
+
+    holdToSaveBtn = btn;
+    btn.classList.add('holding');
+
+    holdToSaveTimer = setTimeout(() => {
+      // Trigger save after hold duration
+      addToForLater(contentId, contentType);
+      btn.classList.remove('holding');
+      holdToSaveBtn = null;
+      holdToSaveTimer = null;
+      if (renderFn) renderFn();
+    }, 600); // 600ms hold duration
+  };
+
+  const clearHoldToSave = () => {
+    if (holdToSaveTimer) {
+      clearTimeout(holdToSaveTimer);
+      holdToSaveTimer = null;
+    }
+    if (holdToSaveBtn) {
+      holdToSaveBtn.classList.remove('holding');
+      holdToSaveBtn = null;
+    }
+  };
+
+  // Cancel hold on mouse/touch end or leave
+  document.addEventListener('mouseup', clearHoldToSave);
+  document.addEventListener('touchend', clearHoldToSave);
+  document.addEventListener('touchcancel', clearHoldToSave);
+
   // === SPEED PANEL ===
   const setSpeed = (speed) => {
     const prev = state.speed;
@@ -11367,15 +11430,24 @@
     }
   };
 
-  el.podcastInboxList.onclick = e => {
-    // Check for add to later button first
+  // Handle hold-to-save in podcast inbox
+  const handlePodcastInboxSaveStart = e => {
     const laterBtn = e.target.closest('.add-to-later-btn');
     if (laterBtn) {
+      e.preventDefault();
       e.stopPropagation();
       const contentId = laterBtn.dataset.contentId;
       const contentType = laterBtn.dataset.contentType;
-      addToForLater(contentId, contentType);
-      renderPodcastInbox(); // Re-render to update button state
+      startHoldToSave(laterBtn, contentId, contentType, renderPodcastInbox);
+    }
+  };
+  el.podcastInboxList.addEventListener('mousedown', handlePodcastInboxSaveStart);
+  el.podcastInboxList.addEventListener('touchstart', handlePodcastInboxSaveStart, { passive: false });
+
+  el.podcastInboxList.onclick = e => {
+    // Ignore clicks on add-to-later buttons (handled by hold gesture)
+    if (e.target.closest('.add-to-later-btn')) {
+      e.stopPropagation();
       return;
     }
 
@@ -11523,8 +11595,28 @@
     }
   };
 
+  // Handle hold-to-save in episode page
+  const handleEpisodePageSaveStart = e => {
+    const saveBtn = e.target.closest('#episodeSaveForLaterBtn');
+    if (saveBtn && !saveBtn.classList.contains('active')) {
+      e.preventDefault();
+      e.stopPropagation();
+      const contentId = saveBtn.dataset.contentId;
+      const contentType = saveBtn.dataset.contentType;
+      startHoldToSave(saveBtn, contentId, contentType, () => renderEpisodePage(state.currentEpisodePage));
+    }
+  };
+  el.episodePage.addEventListener('mousedown', handleEpisodePageSaveStart);
+  el.episodePage.addEventListener('touchstart', handleEpisodePageSaveStart, { passive: false });
+
   // Episode page event handlers
   el.episodePage.onclick = e => {
+    // Ignore clicks on save button (handled by hold gesture)
+    if (e.target.closest('#episodeSaveForLaterBtn')) {
+      e.stopPropagation();
+      return;
+    }
+
     // Back button
     const backBtn = e.target.closest('#episodeBackBtn');
     if (backBtn) {
@@ -11587,16 +11679,6 @@
         // If not playing, start playing first then user can add bookmark
         toast('Start playing to add a bookmark');
       }
-      return;
-    }
-
-    // Save for Later button
-    const saveForLaterBtn = e.target.closest('#episodeSaveForLaterBtn');
-    if (saveForLaterBtn) {
-      const contentId = saveForLaterBtn.dataset.contentId;
-      const contentType = saveForLaterBtn.dataset.contentType;
-      addToForLater(contentId, contentType);
-      renderEpisodePage(state.currentEpisodePage); // Re-render to update button state
       return;
     }
 
