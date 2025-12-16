@@ -1,11 +1,12 @@
 // BRSST Service Worker - Offline caching and performance optimization
-const CACHE_NAME = 'brsst-v3';
-const RUNTIME_CACHE = 'brsst-runtime-v3';
+const CACHE_NAME = 'brsst-v4';
+const RUNTIME_CACHE = 'brsst-runtime-v4';
 
 // Resources to cache immediately on install
 const PRECACHE_URLS = [
   './',
   './index.html',
+  './manifest.json',
   'https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap',
   'https://unpkg.com/@phosphor-icons/web'
 ];
