@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BRSST - Redirecting...</title>
+  <script>
+    // Single Page App redirect for GitHub Pages
+    // Redirects 404s to the main app, preserving the path as a query parameter
+    const path = window.location.pathname;
+    const search = window.location.search;
+    const hash = window.location.hash;
+
+    // Redirect to main app at /rss/
+    // The app uses query parameters, so we just go to the base URL
+    const basePath = '/rss/';
+
+    // If the path starts with /rss/, extract any sub-path
+    if (path.startsWith(basePath)) {
+      const subPath = path.slice(basePath.length);
+      if (subPath) {
+        // Redirect to base with original search and hash
+        window.location.replace(basePath + search + hash);
+      } else {
+        window.location.replace(basePath + search + hash);
+      }
+    } else {
+      // Fallback to base path
+      window.location.replace(basePath);
+    }
+  </script>
+</head>
+<body>
+  <p>Redirecting...</p>
+</body>
+</html>

@@ -2,12 +2,12 @@
   "name": "BRSST",
   "short_name": "BRSST",
   "description": "A podcast and RSS news reader",
-  "start_url": "/",
+  "start_url": "/rss/",
   "display": "standalone",
   "background_color": "#0a0a0a",
   "theme_color": "#0a0a0a",
   "orientation": "portrait-primary",
-  "scope": "/",
+  "scope": "/rss/",
   "lang": "en",
   "categories": ["news", "entertainment", "productivity"],
   "icons": [
@@ -30,21 +30,21 @@
       "name": "News",
       "short_name": "News",
       "description": "View news articles",
-      "url": "/?view=news",
+      "url": "/rss/?view=news",
       "icons": []
     },
     {
       "name": "Podcasts",
       "short_name": "Podcasts",
       "description": "Browse podcasts",
-      "url": "/?view=podcasts",
+      "url": "/rss/?view=podcasts",
       "icons": []
     },
     {
       "name": "Saved",
       "short_name": "Saved",
       "description": "View saved items",
-      "url": "/?view=for-later",
+      "url": "/rss/?view=for-later",
       "icons": []
     }
   ],
