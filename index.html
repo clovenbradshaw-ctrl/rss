@@ -1330,12 +1330,12 @@
     /* Article Details Modal */
     .article-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; z-index: 350; backdrop-filter: blur(8px); padding: 20px; }
     .article-modal.active { display: flex; }
-    .article-modal-box { background: var(--bg2); border-radius: 20px; width: 100%; max-width: 600px; max-height: 90vh; overflow: hidden; border: 1px solid var(--border2); box-shadow: 0 24px 80px rgba(0,0,0,0.6); display: flex; flex-direction: column; }
+    .article-modal-box { background: var(--bg2); border-radius: 20px; width: 100%; max-width: 600px; max-height: 90vh; overflow: hidden; border: 1px solid var(--border2); box-shadow: 0 24px 80px rgba(0,0,0,0.6); display: flex; flex-direction: column; position: relative; }
     .article-modal-header { padding: 16px 20px; display: flex; justify-content: flex-end; position: absolute; top: 0; right: 0; z-index: 10; }
     .article-modal-close { background: rgba(0,0,0,0.5); border: none; color: var(--text); cursor: pointer; padding: 10px; border-radius: 50%; transition: all 0.15s; backdrop-filter: blur(4px); }
     .article-modal-close:hover { background: rgba(0,0,0,0.7); transform: scale(1.05); }
-    .article-modal-body { overflow-y: auto; display: flex; flex-direction: column; }
-    .article-modal-image { width: 100%; aspect-ratio: 16/9; object-fit: cover; cursor: pointer; transition: opacity 0.15s; }
+    .article-modal-body { overflow-y: auto; display: flex; flex-direction: column; flex: 1; min-height: 0; }
+    .article-modal-image { width: 100%; max-width: 100%; aspect-ratio: 16/9; object-fit: cover; cursor: pointer; transition: opacity 0.15s; flex-shrink: 0; display: block; }
     .article-modal-image:hover { opacity: 0.9; }
     .article-modal-content { padding: 24px; }
     .article-modal-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
@@ -1350,6 +1350,7 @@
     @media (max-width: 768px) {
       .article-modal { padding: 0; }
       .article-modal-box { max-width: 100%; max-height: 100%; border-radius: 0; height: 100%; }
+      .article-modal-image { max-height: 40vh; }
       .article-modal-title { font-size: 20px; }
       .article-modal-summary { font-size: 15px; }
     }
