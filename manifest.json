@@ -1,0 +1,58 @@
+{
+  "name": "BRSST",
+  "short_name": "BRSST",
+  "description": "A podcast and RSS news reader",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "en",
+  "categories": ["news", "entertainment", "productivity"],
+  "icons": [
+    {
+      "src": "https://storage.googleapis.com/intelechia-content/im/BRRST%20(3).png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://storage.googleapis.com/intelechia-content/im/BRRST%20(3).png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "News",
+      "short_name": "News",
+      "description": "View news articles",
+      "url": "/?view=news",
+      "icons": []
+    },
+    {
+      "name": "Podcasts",
+      "short_name": "Podcasts",
+      "description": "Browse podcasts",
+      "url": "/?view=podcasts",
+      "icons": []
+    },
+    {
+      "name": "Saved",
+      "short_name": "Saved",
+      "description": "View saved items",
+      "url": "/?view=for-later",
+      "icons": []
+    }
+  ],
+  "prefer_related_applications": false,
+  "related_applications": [],
+  "display_override": ["standalone", "minimal-ui"],
+  "handle_links": "preferred",
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  }
+}
